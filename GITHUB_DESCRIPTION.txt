@@ -1,0 +1,31 @@
+Repository Description (for GitHub):
+===========================================
+
+📅 Smart shift scheduling and management system for Android. Built with Kotlin & Jetpack Compose. Features intelligent auto-scheduling, manual assignment, smart blocking, draft system, and advanced analytics. Originally designed for workplace use, easily adaptable for general purposes.
+
+
+Repository Topics (Tags):
+===========================================
+
+android
+kotlin
+jetpack-compose
+material-design-3
+shift-scheduling
+schedule-management
+work-schedule
+mvvm-architecture
+room-database
+employee-management
+hebrew-support
+rtl
+coroutines
+stateflow
+workplace-app
+
+
+Short Description (one-liner):
+===========================================
+
+Smart Android app for work shift scheduling with auto-generation, blocking system, and analytics - Built with Kotlin & Jetpack Compose
+

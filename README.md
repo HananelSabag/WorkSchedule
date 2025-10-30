@@ -1,116 +1,116 @@
-# 📅 WorkSchedule - מערכת סידור עבודה חכמה
+# 📅 WorkSchedule - Smart Shift Management System
 
-<div dir="rtl">
+A modern Android application for intelligent work shift scheduling and management, built with Kotlin and Jetpack Compose.
 
-אפליקציית Android מתקדמת לניהול וסידור משמרות עבודה, בנויה ב-Kotlin ו-Jetpack Compose.
+> **Note:** This application was originally developed for a specific workplace with predefined shift configurations. However, the architecture is designed to be easily adaptable for general use. Future enhancements may include dynamic shift creation and customization.
 
-## ✨ תכונות עיקריות
+## ✨ Key Features
 
-### 🎯 ניהול עובדים
-- הוספה, עריכה ומחיקה של עובדים
-- תמיכה בשומרי שבת (חסימה אוטומטית של משמרות שבת)
-- סימון "מתגבר" לעובדים שאינם זמינים בשבוע הנוכחי
-- ממשק נוח וידידותי למשתמש
+### 👥 Employee Management
+- Add, edit, and delete employees
+- Shabbat observer support (automatic blocking of Shabbat shifts)
+- "Mitgaber" status for temporarily unavailable employees
+- Intuitive and user-friendly interface
 
-### 🚫 מערכת חסימות חכמה
-- **חסימה רגילה (לא יכול)** - סימון משמרות שעובד לא זמין
-- **חסימת "יכול"** - סימון משמרות שעובד יכול לעבוד בהן בלבד
-- חסימה אוטומטית לשומרי שבת
-- מניעת ערבוב בין סוגי חסימות
-- הודעות אזהרה ברורות
+### 🚫 Smart Blocking System
+- **Regular blocking (Cannot)** - Mark shifts when employees are unavailable
+- **Can-Only blocking** - Mark only the shifts employees are available for
+- Automatic blocking for Shabbat observers
+- Prevention of mixed blocking types per employee
+- Clear warning messages and override options
 
-### 🤖 סידור אוטומטי
-- אלגוריתם חכם לסידור משמרות
-- התחשבות בחסימות ואילוצים
-- חלוקה הוגנת של משמרות
-- זיהוי עומסים וכפילויות
+### 🤖 Automatic Scheduling
+- Intelligent algorithm for shift assignment
+- Considers all blocks and constraints
+- Fair distribution of shifts
+- Overload and duplicate detection
 
-### ✍️ סידור ידני
-- שיבוץ ידני של עובדים למשמרות
-- תמיכה בטקסט חופשי (הערות, שעות מיוחדות)
-- חסימות חכמות עם אישור עקיפה
-- שמירה אוטומטית של טיוטות
-- המשך עבודה מהמקום שעצרת
+### ✍️ Manual Scheduling
+- Manual employee assignment to shifts
+- Free text support (notes, custom hours)
+- Smart blocking with override confirmation
+- Auto-save draft system
+- Continue from where you left off
 
-### 📊 תצוגה מקדימה וניתוח
-- טבלת משמרות מפורטת עם זום
-- עריכה ישירה של תאים
-- **סטטיסטיקות מתקדמות:**
-  - ספירת משמרות לכל עובד
-  - חישוב שעות שבועיות חכם
-  - תמיכה בטקסט חופשי (זיהוי שעות מיוחדות)
-  - זיהוי אוטומטי של שמות עובדים
+### 📊 Preview & Analytics
+- Detailed shift table with zoom capabilities
+- Direct cell editing
+- **Advanced Statistics:**
+  - Shift count per employee
+  - Smart weekly hours calculation
+  - Free text support (custom hours detection)
+  - Automatic employee name recognition from text
 
-### 📤 ייצוא ושיתוף
-- ייצוא לתמונה (PNG)
-- שיתוף ישיר ב-WhatsApp ואפליקציות אחרות
-- תמיכה ב-RTL מלאה
+### 📤 Export & Share
+- Export to image (PNG)
+- Direct sharing via WhatsApp and other apps
+- Full RTL support for Hebrew
 
-### 💾 היסטוריה ושמירה
-- שמירה אוטומטית של סידורים
-- היסטוריה מלאה של כל הסידורים
-- עריכה של סידורים קיימים
-- מחיקה ודריסה של סידורים
-- **מערכת טיוטות חכמה:**
-  - שמירה אוטומטית בעת יציאה מהאפליקציה
-  - פתיחה במסך הנכון (חסימות/סידור ידני)
-  - מחיקה אוטומטית בעת השלמת סידור
+### 💾 History & Storage
+- Automatic schedule saving
+- Complete history of all schedules
+- Edit existing schedules
+- Delete and override schedules
+- **Smart Draft System:**
+  - Auto-save when exiting the app
+  - Opens in the correct screen (blocking/manual)
+  - Auto-delete when schedule is completed
 
-### 🎨 עיצוב ו-UI/UX
-- ממשק משתמש מודרני עם Material Design 3
-- תמיכה מלאה ב-RTL (עברית)
-- Dark Mode מלא
-- אנימציות חלקות
-- חוויית משתמש אינטואיטיבית
+### 🎨 Design & UI/UX
+- Modern UI with Material Design 3
+- Full RTL support (Hebrew)
+- Complete Dark Mode
+- Smooth animations
+- Intuitive user experience
 
-## 🛠️ טכנולוגיות
+## 🛠️ Technologies
 
 ### Core
-- **Kotlin** - שפת תכנות ראשית
-- **Jetpack Compose** - UI framework מודרני
-- **Material Design 3** - עיצוב ממשק
+- **Kotlin** - Primary programming language
+- **Jetpack Compose** - Modern UI framework
+- **Material Design 3** - UI design system
 
 ### Architecture
-- **MVVM** - ארכיטקטורה נקייה
-- **StateFlow** - ניהול מצב reactive
-- **ViewModel** - הפרדת לוגיקה מ-UI
-- **Coroutines** - תכנות אסינכרוני
+- **MVVM** - Clean architecture pattern
+- **StateFlow** - Reactive state management
+- **ViewModel** - Separation of logic from UI
+- **Coroutines** - Asynchronous programming
 
 ### Database & Storage
-- **Room Database** - בסיס נתונים מקומי
-- **KSP** - עיבוד annotations
-- **Gson** - סריאליזציה של JSON
+- **Room Database** - Local database
+- **KSP** - Annotation processing
+- **Gson** - JSON serialization
 
 ### Additional Libraries
-- **Coil** - טעינת תמונות
-- **Material Icons Extended** - אייקונים מורחבים
+- **Coil** - Image loading
+- **Material Icons Extended** - Extended icon set
 
-## 📋 דרישות מערכת
+## 📋 System Requirements
 
-- **Android:** 8.0 (API 26) ומעלה
-- **מקום אחסון:** ~10MB
-- **הרשאות:** אחסון (לשמירת תמונות)
+- **Android:** 8.0 (API 26) and above
+- **Storage:** ~10MB
+- **Permissions:** Storage (for image export)
 
-## 🚀 התקנה ופיתוח
+## 🚀 Installation & Development
 
-### דרישות פיתוח
+### Development Requirements
 ```
-- Android Studio Hedgehog | 2023.1.1 ומעלה
+- Android Studio Hedgehog | 2023.1.1 or higher
 - JDK 11
 - Gradle 8.2
 - Kotlin 1.9.0
 ```
 
-### הרצה מקומית
+### Local Setup
 ```bash
-# שכפול הפרויקט
+# Clone the repository
 git clone https://github.com/YOUR_USERNAME/WorkSchedule.git
 
-# פתיחה ב-Android Studio
-# ובניה והרצה על אמולטור או מכשיר פיזי
+# Open in Android Studio
+# Build and run on emulator or physical device
 ```
 
-### בניית APK
+### Build APK
 ```bash
 # Debug build
 ./gradlew assembleDebug
@@ -119,87 +119,113 @@ git clone https://github.com/YOUR_USERNAME/WorkSchedule.git
 ./gradlew assembleRelease
 ```
 
-## 📱 צילומי מסך
+## 📱 Screenshots
 
-(כאן אפשר להוסיף צילומי מסך של האפליקציה)
+(Add screenshots of your app here)
 
-## 🎯 תרחישי שימוש
+## 🎯 Use Cases
 
-### תרחיש 1: סידור מהיר
-1. פתיחת האפליקציה
-2. לחיצה על "סידור חדש"
-3. בחירת חסימות בסיסיות
-4. לחיצה על "צור סידור אוטומטי"
-5. שמירה והפצה
+### Scenario 1: Quick Schedule
+1. Open the app
+2. Click "New Schedule"
+3. Select basic blocks
+4. Click "Create Automatic Schedule"
+5. Save and distribute
 
-### תרחיש 2: סידור מפורט
-1. יצירת חסימות מפורטות
-2. מעבר לסידור ידני
-3. שיבוץ ידני עם טקסט חופשי
-4. בדיקת סטטיסטיקות
-5. עריכה סופית ושיתוף
+### Scenario 2: Detailed Schedule
+1. Create detailed blocks
+2. Move to manual scheduling
+3. Manual assignment with free text
+4. Check statistics
+5. Final edit and share
 
-### תרחיש 3: המשך עבודה
-1. פתיחת האפליקציה
-2. לחיצה על "המשך טיוטה"
-3. המשך מהמקום שעצרת
-4. השלמה ושמירה
+### Scenario 3: Continue Work
+1. Open the app
+2. Click "Continue Draft"
+3. Continue from where you stopped
+4. Complete and save
 
-## 📝 מבנה הפרויקט
+## 📝 Project Structure
 
 ```
 app/src/main/java/com/hananel/workschedule/
-├── data/                    # מודלים ונתונים
+├── data/                    # Models and data
 │   ├── AppDatabase.kt      # Room database
-│   ├── Employee.kt         # מודל עובד
-│   ├── Schedule.kt         # מודל סידור
-│   ├── ScheduleDao.kt      # DAO לגישה לנתונים
-│   └── ShiftDefinitions.kt # הגדרות משמרות
-├── ui/                      # ממשק משתמש
-│   ├── components/         # קומפוננטות UI
-│   ├── BlockingScreen.kt   # מסך חסימות
-│   ├── ManualCreationScreen.kt  # מסך סידור ידני
-│   ├── PreviewScreen.kt    # מסך תצוגה מקדימה
-│   ├── HistoryScreen.kt    # מסך היסטוריה
-│   └── theme/              # עיצוב וצבעים
-├── viewmodel/               # לוגיקה עסקית
+│   ├── Employee.kt         # Employee model
+│   ├── Schedule.kt         # Schedule model
+│   ├── ScheduleDao.kt      # Data access object
+│   └── ShiftDefinitions.kt # Shift definitions
+├── ui/                      # User interface
+│   ├── components/         # UI components
+│   ├── BlockingScreen.kt   # Blocking screen
+│   ├── ManualCreationScreen.kt  # Manual scheduling
+│   ├── PreviewScreen.kt    # Preview screen
+│   ├── HistoryScreen.kt    # History screen
+│   └── theme/              # Theme and colors
+├── viewmodel/               # Business logic
 │   └── ScheduleViewModel.kt
-├── utils/                   # כלים עזר
-│   └── ScheduleGenerator.kt # אלגוריתם סידור
-└── MainActivity.kt          # Activity ראשי
+├── utils/                   # Utilities
+│   └── ScheduleGenerator.kt # Scheduling algorithm
+└── MainActivity.kt          # Main activity
 ```
 
-## 🔄 גרסאות
+## 🔄 Versions
 
-### גרסה 1.1 (נוכחית)
-- ✅ חישוב שעות חכם עם טקסט חופשי
-- ✅ מערכת טיוטות משופרת
-- ✅ לוגיקת "יכול" משופרת
-- ✅ שמירת חסימות עם סידורים
-- ✅ תיקוני UI ו-UX
+### Version 1.1 (Current)
+- ✅ Smart hours calculation with free text support
+- ✅ Enhanced draft system
+- ✅ Improved "Can-Only" logic
+- ✅ Block persistence with schedules
+- ✅ UI/UX fixes
 
-### גרסה 1.0
-- 🎉 השקה ראשונית
-- סידור אוטומטי וידני
-- ניהול עובדים וחסימות
-- היסטוריה וייצוא
+### Version 1.0
+- 🎉 Initial release
+- Automatic and manual scheduling
+- Employee and block management
+- History and export features
 
-## 🤝 תרומה
+## 🔮 Future Enhancements
 
-רעיונות לשיפור? מצאת באג? 
-פתח Issue או שלח Pull Request!
+### Planned Features
+- **Dynamic Shift Creation** - User-defined shift types and hours
+- **Shift Template System** - Save and reuse shift configurations
+- **Multi-workplace Support** - Manage different locations
+- **Cloud Sync** - Backup and sync across devices
+- **Advanced Analytics** - More detailed reports and insights
+- **Custom Themes** - User-defined color schemes
 
-## 📄 רישיון
+Currently, the shift definitions are hardcoded for a specific workplace, but the architecture supports easy customization.
 
-פרויקט זה הוא קוד פתוח ללא רישיון מגביל.
+## 🤝 Contributing
 
-## 👨‍💻 מפתח
+Found a bug? Have an idea for improvement?
+Feel free to open an Issue or submit a Pull Request!
 
-נבנה בגאווה על ידי **Hananel** 🇮🇱
+### How to Contribute
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is open source and available under the MIT License.
+
+## 👨‍💻 Author
+
+**Hananel Sabag**
+
+Originally developed for internal workplace use, but designed with scalability and adaptability in mind.
+
+## 🙏 Acknowledgments
+
+- Built with modern Android development best practices
+- Inspired by real-world scheduling challenges
+- Designed for efficiency and ease of use
 
 ---
 
-**נבנה עם ❤️ ב-Kotlin & Jetpack Compose**
+**Built with ❤️ in Israel 🇮🇱**
 
-</div>
-
+*Made with Kotlin & Jetpack Compose*
