@@ -33,6 +33,15 @@ WorkSchedule was developed as a complete solution for shift management challenge
 - Prevention of mixed blocking types per employee
 - Clear warning messages and override options
 
+### 🤖 Automatic Schedule Generation (NEW!)
+- **Generic AI-powered algorithm** - Works with any custom shift template
+- **Dynamic time-based logic** - Handles overlaps, rest periods, and shift conflicts
+- **Respects all blocking rules** - Cannot blocks, Can-Only blocks, and Shabbat observer auto-blocks
+- **Employee property support** - Mitgaber employees assigned last, maximum hours per day (12h)
+- **Conflict detection** - Prevents night-to-morning assignments and same-day overlaps
+- **Fair distribution** - Balances shifts across employees
+- **Smart scoring system** - Considers rest periods (8+ hours preferred) and workload
+
 ### ✍️ Manual Scheduling
 - Manual employee assignment to shifts
 - Free text support (notes, custom hours)
@@ -175,6 +184,7 @@ app/src/main/java/com/hananel/workschedule/
 ├── viewmodel/                 # Business logic layer
 │   └── ScheduleViewModel.kt  # Main ViewModel
 ├── utils/                     # Utilities
+│   ├── GenericScheduleGenerator.kt # AI scheduling algorithm
 │   ├── WhatsAppSharer.kt     # Text export
 │   ├── ExcelExporter.kt      # CSV export
 │   └── ImageSharer.kt        # Image export
@@ -192,15 +202,17 @@ app/src/main/java/com/hananel/workschedule/
 ### Creating a Schedule
 1. **Click "New Schedule"** 
 2. **Block unavailable shifts** - Mark when employees can't work
-3. **Assign shifts manually** - Drag employees to shifts or type freely
+3. **Generate schedule** - Choose automatic generation or manual assignment:
+   - **Automatic:** AI creates a fair schedule respecting all rules
+   - **Manual:** Drag employees to shifts or type freely
 4. **Review statistics** - Check fairness and balance
 5. **Export and share** - Send via WhatsApp or save as image
 
 ### Managing Templates
 1. **Click "Edit Table Structure"** from home screen
-2. **Add shifts** - Create up to 8 custom shifts with structured time input
-3. **Reorder shifts** - Drag & drop with hamburger icon (☰) or long press
-4. **Edit shift details** - Names and working hours
+2. **Add shifts** - Create up to 8 custom shifts with structured time input and placeholder hints
+3. **Reorder shifts** - Drag & drop to any position with hamburger icon (☰) or long press on card
+4. **Edit shift details** - Names and working hours with validation
 5. **Enable/disable days** - Choose 4-7 working days (compact 2-column layout)
 6. **Auto-save** - Changes save automatically, exit when done
 
@@ -212,9 +224,10 @@ app/src/main/java/com/hananel/workschedule/
 ## 🔄 Version History
 
 ### Version 2.0 (Current) 🚀
+- ✨ **NEW: Generic Automatic Schedule Generation** - AI algorithm works with any custom template
 - ✨ **NEW: Dynamic Shift Template System** - Fully customizable shifts (2-8 shifts, 4-7 days)
-- ✨ **NEW: Drag & Drop Reordering** - Intuitive shift organization with hamburger menu or long press
-- ✨ **NEW: Structured Time Input** - Easy hour/minute fields for shift times
+- ✨ **NEW: Advanced Drag & Drop** - Reorder shifts to any position with real-time visual feedback
+- ✨ **NEW: Structured Time Input** - Validated hour/minute fields with placeholder hints
 - ✨ **NEW: Auto-Save System** - Smart saving without leaving the editing screen
 - ✨ **NEW: Compact Day Selection** - Space-efficient 2-column grid layout
 - ✨ **NEW: Beautiful History UI** - Modern card design with elegant empty states

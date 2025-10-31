@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -461,15 +462,15 @@ private fun ShiftInputDialog(
 ) {
     var shiftName by remember { mutableStateOf(initialName) }
     
-    // Parse existing hours or use defaults
-    val hoursParts = initialHours.split("-")
-    val startParts = hoursParts.getOrNull(0)?.split(":") ?: listOf("07", "00")
-    val endParts = hoursParts.getOrNull(1)?.split(":") ?: listOf("15", "00")
+    // Parse existing hours or use empty strings for new shifts
+    val hoursParts = if (initialHours.isNotBlank()) initialHours.split("-") else emptyList()
+    val startParts = if (hoursParts.isNotEmpty()) hoursParts[0].split(":") else emptyList()
+    val endParts = if (hoursParts.size > 1) hoursParts[1].split(":") else emptyList()
     
-    var startHour by remember { mutableStateOf(startParts.getOrNull(0)?.trim() ?: "07") }
-    var startMinute by remember { mutableStateOf(startParts.getOrNull(1)?.trim() ?: "00") }
-    var endHour by remember { mutableStateOf(endParts.getOrNull(0)?.trim() ?: "15") }
-    var endMinute by remember { mutableStateOf(endParts.getOrNull(1)?.trim() ?: "00") }
+    var startHour by remember { mutableStateOf(startParts.getOrNull(0)?.trim() ?: "") }
+    var startMinute by remember { mutableStateOf(startParts.getOrNull(1)?.trim() ?: "") }
+    var endHour by remember { mutableStateOf(endParts.getOrNull(0)?.trim() ?: "") }
+    var endMinute by remember { mutableStateOf(endParts.getOrNull(1)?.trim() ?: "") }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -526,11 +527,12 @@ private fun ShiftInputDialog(
                         OutlinedTextField(
                             value = startHour,
                             onValueChange = { 
-                                if (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23) {
+                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) {
                                     startHour = it
                                 }
                             },
                             label = { Text("שעה") },
+                            placeholder = { Text("07", color = Color.Gray) },
                             modifier = Modifier.width(70.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -541,11 +543,12 @@ private fun ShiftInputDialog(
                         OutlinedTextField(
                             value = startMinute,
                             onValueChange = { 
-                                if (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59) {
+                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) {
                                     startMinute = it
                                 }
                             },
                             label = { Text("דקות") },
+                            placeholder = { Text("00", color = Color.Gray) },
                             modifier = Modifier.width(70.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -563,11 +566,12 @@ private fun ShiftInputDialog(
                         OutlinedTextField(
                             value = endHour,
                             onValueChange = { 
-                                if (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23) {
+                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) {
                                     endHour = it
                                 }
                             },
                             label = { Text("שעה") },
+                            placeholder = { Text("15", color = Color.Gray) },
                             modifier = Modifier.width(70.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -578,11 +582,12 @@ private fun ShiftInputDialog(
                         OutlinedTextField(
                             value = endMinute,
                             onValueChange = { 
-                                if (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59) {
+                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) {
                                     endMinute = it
                                 }
                             },
                             label = { Text("דקות") },
+                            placeholder = { Text("00", color = Color.Gray) },
                             modifier = Modifier.width(70.dp),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
@@ -627,6 +632,7 @@ private fun DraggableShiftRowsList(
 ) {
     var draggedIndex by remember { mutableStateOf<Int?>(null) }
     var targetIndex by remember { mutableStateOf<Int?>(null) }
+    var itemHeight by remember { mutableStateOf(0f) }
     
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -638,11 +644,15 @@ private fun DraggableShiftRowsList(
             ShiftRowItemDraggable(
                 shiftRow = row,
                 index = index,
+                totalItems = shiftRows.size,
                 isDragged = isDragged,
                 isTarget = isTarget,
                 onEdit = { onEdit(index) },
                 onDelete = { onDelete(index) },
-                onDragStart = { draggedIndex = index },
+                onDragStart = { 
+                    draggedIndex = index
+                    targetIndex = index
+                },
                 onDragEnd = {
                     if (draggedIndex != null && targetIndex != null && draggedIndex != targetIndex) {
                         onMove(draggedIndex!!, targetIndex!!)
@@ -650,7 +660,13 @@ private fun DraggableShiftRowsList(
                     draggedIndex = null
                     targetIndex = null
                 },
-                onDragOver = { targetIndex = it },
+                onDragOver = { newTarget -> 
+                    if (newTarget in shiftRows.indices) {
+                        targetIndex = newTarget
+                    }
+                },
+                onHeightMeasured = { height -> itemHeight = height },
+                itemHeight = itemHeight,
                 canDelete = canDelete
             )
         }
@@ -662,6 +678,7 @@ private fun DraggableShiftRowsList(
 private fun ShiftRowItemDraggable(
     shiftRow: ShiftRow,
     index: Int,
+    totalItems: Int,
     isDragged: Boolean,
     isTarget: Boolean,
     onEdit: () -> Unit,
@@ -669,56 +686,71 @@ private fun ShiftRowItemDraggable(
     onDragStart: () -> Unit,
     onDragEnd: () -> Unit,
     onDragOver: (Int) -> Unit,
+    onHeightMeasured: (Float) -> Unit,
+    itemHeight: Float,
     canDelete: Boolean
 ) {
     var isDragging by remember { mutableStateOf(false) }
+    var dragOffset by remember { mutableStateOf(0f) }
     
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+                if (itemHeight == 0f) {
+                    onHeightMeasured(coordinates.size.height.toFloat())
+                }
+            }
             .graphicsLayer {
                 alpha = if (isDragging) 0.7f else 1f
-                scaleX = if (isDragging) 1.05f else 1f
-                scaleY = if (isDragging) 1.05f else 1f
+                scaleX = if (isDragging) 1.03f else 1f
+                scaleY = if (isDragging) 1.03f else 1f
+                translationY = if (isDragging) dragOffset else 0f
             }
-            .zIndex(if (isDragging) 1f else 0f)
+            .zIndex(if (isDragging) 10f else 0f)
             // Long press on card (not hamburger) to drag
-            .pointerInput(Unit) {
+            .pointerInput(index, totalItems, itemHeight) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
                         isDragging = true
+                        dragOffset = 0f
                         onDragStart()
                     },
                     onDragEnd = {
                         isDragging = false
+                        dragOffset = 0f
                         onDragEnd()
                     },
                     onDragCancel = {
                         isDragging = false
+                        dragOffset = 0f
                         onDragEnd()
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        // Detect which row we're over
-                        val yPos = change.position.y
-                        if (yPos > 0) {
-                            onDragOver(index + 1)
-                        } else if (yPos < 0) {
-                            onDragOver(index - 1)
+                        dragOffset += dragAmount.y
+                        
+                        // Calculate target index based on cumulative drag distance
+                        if (itemHeight > 0) {
+                            val spacingPx = 8.dp.toPx() // spacing between items
+                            val effectiveItemHeight = itemHeight + spacingPx
+                            val positionShift = (dragOffset / effectiveItemHeight).toInt()
+                            val newTargetIndex = (index + positionShift).coerceIn(0, totalItems - 1)
+                            onDragOver(newTargetIndex)
                         }
                     }
                 )
             },
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDragging -> Color(0xFFE0F2F1)
-                isTarget -> Color(0xFFFFF9C4)
+                isDragging -> Color(0xFFB2DFDB) // Darker teal when dragging
+                isTarget && !isDragged -> Color(0xFFFFF9C4) // Yellow for target position
                 else -> Color(0xFFF5F5F5)
             }
         ),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isDragging) 8.dp else 0.dp
+            defaultElevation = if (isDragging) 12.dp else 0.dp
         )
     ) {
         Row(
@@ -735,28 +767,34 @@ private fun ShiftRowItemDraggable(
                 tint = PrimaryTeal,
                 modifier = Modifier
                     .size(24.dp)
-                    .pointerInput(Unit) {
+                    .pointerInput(index, totalItems, itemHeight) {
                         detectDragGestures(
                             onDragStart = {
                                 isDragging = true
+                                dragOffset = 0f
                                 onDragStart()
                             },
                             onDragEnd = {
                                 isDragging = false
+                                dragOffset = 0f
                                 onDragEnd()
                             },
                             onDragCancel = {
                                 isDragging = false
+                                dragOffset = 0f
                                 onDragEnd()
                             },
                             onDrag = { change, dragAmount ->
                                 change.consume()
-                                // Detect which row we're over
-                                val yPos = change.position.y
-                                if (yPos > 0) {
-                                    onDragOver(index + 1)
-                                } else if (yPos < 0) {
-                                    onDragOver(index - 1)
+                                dragOffset += dragAmount.y
+                                
+                                // Calculate target index based on cumulative drag distance
+                                if (itemHeight > 0) {
+                                    val spacingPx = 8.dp.toPx() // spacing between items
+                                    val effectiveItemHeight = itemHeight + spacingPx
+                                    val positionShift = (dragOffset / effectiveItemHeight).toInt()
+                                    val newTargetIndex = (index + positionShift).coerceIn(0, totalItems - 1)
+                                    onDragOver(newTargetIndex)
                                 }
                             }
                         )

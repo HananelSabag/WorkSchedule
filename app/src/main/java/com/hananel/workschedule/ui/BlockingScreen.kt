@@ -68,6 +68,7 @@ fun BlockingScreen(
     onToggleSavingMode: (String) -> Unit,
     onSetWeekStartDate: (java.time.LocalDate) -> Unit,
     onGenerateManualSchedule: () -> Unit,
+    onGenerateAutomaticSchedule: () -> Unit, // NEW: Generate schedule automatically
     onReturnToSavedSchedule: () -> Unit, // New: return to saved schedule with updated blocks
     onOverrideAndCreateNew: () -> Unit, // New: override and create new manual schedule
     onClearAllBlocks: () -> Unit,
@@ -358,8 +359,34 @@ fun BlockingScreen(
                         }
                     }
                     
-                    // Note: Automatic schedule generation removed - algorithm doesn't support dynamic templates
-                    // Only manual creation is supported for flexible table configurations
+                    // Automatic Schedule Button - NEW GENERIC ALGORITHM!
+                    Button(
+                        onClick = onGenerateAutomaticSchedule,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "צור סידור אוטומטי",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "האלגוריתם בוחר",
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.8f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
                 } // End of Column (else block)

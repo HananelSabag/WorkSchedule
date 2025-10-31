@@ -241,6 +241,10 @@ fun WorkScheduleApp() {
                     viewModel.prepareForManualCreation()
                     currentScreen = Screen.MANUAL_CREATION
                 },
+                onGenerateAutomaticSchedule = {
+                    viewModel.generateSchedule() // Use new generic algorithm
+                    currentScreen = Screen.PREVIEW
+                },
                 onReturnToSavedSchedule = {
                     viewModel.returnToSavedScheduleWithUpdatedBlocks()
                     currentScreen = Screen.PREVIEW

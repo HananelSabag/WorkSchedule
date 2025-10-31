@@ -9,7 +9,7 @@ import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.Schedule
 import com.hananel.workschedule.data.ShiftDefinitions
 import com.hananel.workschedule.data.ShiftRow
-import com.hananel.workschedule.utils.ScheduleGenerator
+import com.hananel.workschedule.utils.GenericScheduleGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -296,6 +296,15 @@ class ScheduleViewModel(
                 _canOnlyBlocks.value = newCanOnly
             }
         }
+        
+        // Smart save/draft: if editing existing schedule, save directly; otherwise mark as draft
+        if (_isEditingScheduleBlocks.value && _currentScheduleId.value != null) {
+            // Editing existing schedule - save changes directly to history
+            saveScheduleChanges()
+        } else {
+            // New schedule - mark as temp draft
+            updateTempDraftStatus()
+        }
     }
     
     fun toggleSavingMode(day: String) {
@@ -519,17 +528,21 @@ class ScheduleViewModel(
                 }
             }
             
-            // Generate schedule using algorithm (with dynamic template support)
-            val (generatedSchedule, impossibleShifts) = ScheduleGenerator.generateSchedule(
+            // Generate schedule using NEW generic algorithm
+            if (templateData == null) {
+                _errorMessage.value = "⚠️ חייב להגדיר תבנית לפני יצירת סידור אוטומטי!"
+                return@launch
+            }
+            
+            val (generatedSchedule, impossibleShifts) = GenericScheduleGenerator.generateSchedule(
                 employees = currentEmployees,
                 blocks = allBlocks,
                 canOnlyBlocks = currentCanOnly,
-                savingMode = currentSaving,
                 templateData = templateData
             )
             
             _currentSchedule.value = generatedSchedule
-            _errorMessage.value = ScheduleGenerator.generateErrorMessage(impossibleShifts)
+            _errorMessage.value = GenericScheduleGenerator.generateErrorMessage(impossibleShifts)
             
             // Use unified duplicate checking system (same as manual)
             if (!isScheduleEmpty()) {
@@ -935,6 +948,16 @@ class ScheduleViewModel(
     
     // Temp Draft Management
     private fun updateTempDraftStatus() {
+        // IMPORTANT: If editing blocks from an existing schedule (from history),
+        // save directly to that schedule instead of creating a draft
+        if (_isEditingScheduleBlocks.value && _currentScheduleId.value != null) {
+            // This is an existing schedule from history - save changes directly
+            saveScheduleChanges()
+            // Don't create a draft
+            _hasTempDraft.value = false
+            return
+        }
+        
         // Check if there's any temp work (manual blocks, schedules, etc.)
         // Ignore automatic Shabbat blocks - they don't count as temp draft
         val currentEmployees = employees.value
@@ -1117,28 +1140,28 @@ class ScheduleViewModel(
                     )
                 }
             } else {
-                // No template - initialize with empty shifts (user must fill in)
+                // No template - initialize with default shifts (user can edit)
                 _editingShiftRows.value = listOf(
                     ShiftRow(
                         templateId = 0,
                         orderIndex = 0,
                         shiftName = "בוקר",
-                        shiftHours = "הזן שעות",
-                        displayName = "בוקר (הזן שעות)"
+                        shiftHours = "07:00-15:00",
+                        displayName = "בוקר (07:00-15:00)"
                     ),
                     ShiftRow(
                         templateId = 0,
                         orderIndex = 1,
                         shiftName = "צהריים",
-                        shiftHours = "הזן שעות",
-                        displayName = "צהריים (הזן שעות)"
+                        shiftHours = "15:00-23:00",
+                        displayName = "צהריים (15:00-23:00)"
                     ),
                     ShiftRow(
                         templateId = 0,
                         orderIndex = 2,
                         shiftName = "לילה",
-                        shiftHours = "הזן שעות",
-                        displayName = "לילה (הזן שעות)"
+                        shiftHours = "23:00-07:00",
+                        displayName = "לילה (23:00-07:00)"
                     )
                 )
                 // Initialize with all 7 days enabled
