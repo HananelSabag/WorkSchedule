@@ -14,6 +14,7 @@ import android.provider.MediaStore
 import androidx.core.content.FileProvider
 import android.widget.Toast
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -21,17 +22,20 @@ import java.util.*
 
 /**
  * Utility for generating schedule images for WhatsApp sharing
+ * Now supports dynamic templates!
  */
 object ImageSharer {
     
     /**
      * Generate schedule image that matches EXACTLY the app's table
+     * @param templateData Dynamic template (null = use hardcoded ShiftDefinitions)
      */
     fun generateScheduleImage(
         context: Context,
         schedule: Map<String, List<String>>,
         savingMode: Map<String, Boolean>,
-        weekStart: String = getCurrentDateString()
+        weekStart: String = getCurrentDateString(),
+        templateData: TemplateData? = null
     ): Bitmap {
         
         // Use EXACT dimensions from SimpleScheduleTable
@@ -40,8 +44,9 @@ object ImageSharer {
         val headerHeight = 70 * 3
         val shiftColumnWidth = 180 * 3
         
-        // RTL layout - days should be RIGHT to LEFT like in the app
-        val daysRTL = ShiftDefinitions.daysOfWeek.reversed()
+        // RTL layout - days should be RIGHT to LEFT like in the app (dynamic or hardcoded)
+        val daysOfWeek = templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
+        val daysRTL = daysOfWeek.reversed()
         
         val totalWidth = shiftColumnWidth + (daysRTL.size * cellWidth)
         val totalHeight = headerHeight + (4 * cellHeight) // ONLY 4 shifts like the app
@@ -153,7 +158,7 @@ object ImageSharer {
         currentX -= cellWidth
         
         // Day headers - RTL order (ראשון → שבת) going from right to left
-        ShiftDefinitions.daysOfWeek.forEachIndexed { index, day ->
+        daysOfWeek.forEachIndexed { index, day ->
             canvas.drawRect(
                 currentX.toFloat(), 
                 0f, 
@@ -265,7 +270,7 @@ object ImageSharer {
             currentX -= cellWidth
             
             // Day cells - RTL order (ראשון to שבת from right to left)
-            ShiftDefinitions.daysOfWeek.forEach { day ->
+            daysOfWeek.forEach { day ->
                 canvas.drawRect(
                     currentX.toFloat(), 
                     currentY.toFloat(), 

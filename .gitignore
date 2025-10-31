@@ -83,3 +83,12 @@ lint-baseline.xml
 
 # Temporary files
 temp_end.txt
+
+# Database files - prevent any local data from being committed
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+app/databases/
+app/src/main/databases/

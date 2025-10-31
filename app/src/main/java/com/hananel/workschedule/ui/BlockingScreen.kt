@@ -35,6 +35,7 @@ import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
 import com.hananel.workschedule.viewmodel.ScheduleViewModel
 import java.time.LocalDate
@@ -59,13 +60,13 @@ fun BlockingScreen(
     weekStartDate: java.time.LocalDate,
     snackbarMessage: String?,
     isEditingScheduleBlocks: Boolean, // New: are we editing blocks of existing schedule from history?
+    templateData: TemplateData? = null, // Dynamic template
     onSelectEmployee: (Employee?) -> Unit,
     onSetBlockingMode: (ScheduleViewModel.BlockingMode) -> Unit,
     onToggleBlock: (Employee, String, String) -> Unit,
     onBlockAllShiftsForDay: (Employee, String) -> Unit, // New callback for blocking all day
     onToggleSavingMode: (String) -> Unit,
     onSetWeekStartDate: (java.time.LocalDate) -> Unit,
-    onGenerateAutomaticSchedule: () -> Unit,
     onGenerateManualSchedule: () -> Unit,
     onReturnToSavedSchedule: () -> Unit, // New: return to saved schedule with updated blocks
     onOverrideAndCreateNew: () -> Unit, // New: override and create new manual schedule
@@ -94,22 +95,78 @@ fun BlockingScreen(
     // RTL Layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier = modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-            // Add space from status bar
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Title with Logo and Back Button
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Empty state when no employees exist
+            if (employees.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(64.dp)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    Text(
+                        text = "אין עובדים במערכת",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Text(
+                        text = "לפני יצירת סידור עבודה,\nעליך להוסיף עובדים במסך ניהול עובדים.",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 24.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    Button(
+                        onClick = onBackClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "חזור למסך הבית",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
+            } else {
+                // Normal blocking screen content
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Add space from status bar
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Title with Logo and Back Button
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                 // Back Button
                 IconButton(onClick = onBackClick) {
                     Icon(
@@ -161,6 +218,7 @@ fun BlockingScreen(
                 blocks = blocks,
                 canOnlyBlocks = canOnlyBlocks,
                 savingMode = savingMode,
+                templateData = templateData, // Dynamic template support
                 weekStartDate = weekStartDate,
                 onSetWeekStartDate = onSetWeekStartDate,
                 onDayHeaderClick = { day ->
@@ -300,37 +358,12 @@ fun BlockingScreen(
                         }
                     }
                     
-                    // Automatic Schedule Button - SECOND AND SMALLER
-                    Button(
-                        onClick = onGenerateAutomaticSchedule,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp), // Increased height so text won't be cut
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(2.dp)
-                        ) {
-                            Text(
-                                text = "צור סידור אוטומטי",
-                                fontSize = 15.sp, // Slightly larger
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "מערכת יוצרת",
-                                fontSize = 12.sp, // Slightly larger
-                                color = Color.White.copy(alpha = 0.8f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    // Note: Automatic schedule generation removed - algorithm doesn't support dynamic templates
+                    // Only manual creation is supported for flexible table configurations
                 }
             }
-        }
+                } // End of Column (else block)
+            } // End of if-else
             
             // Snackbar at the bottom
             SnackbarHost(
@@ -347,7 +380,7 @@ fun BlockingScreen(
                     shape = RoundedCornerShape(8.dp)
                 )
             }
-        }
+        } // End of Box
         
         // Reset Confirmation Dialog
         if (showResetConfirmation) {
@@ -531,7 +564,7 @@ private fun MobileOptimizedTable(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
     ) {
         Column {
             // Header Row - Days with dates

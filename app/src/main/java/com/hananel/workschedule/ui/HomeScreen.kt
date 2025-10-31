@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -31,7 +32,11 @@ fun HomeScreen(
     onNewScheduleClick: () -> Unit,
     onContinueTempDraftClick: () -> Unit, // New callback for temp draft
     onEmployeeManagementClick: () -> Unit,
+    onTemplateSetupClick: () -> Unit, // New: template setup
+    onGoToTemplateSetup: () -> Unit = {}, // Direct navigation to template setup
     hasTempDraft: Boolean = false, // New parameter
+    hasTemplate: Boolean = true, // New: does a template exist?
+    employeeCount: Int = 0, // New: number of employees in system
     modifier: Modifier = Modifier
 ) {
     // State for draft confirmation dialog
@@ -73,6 +78,121 @@ fun HomeScreen(
             
             Spacer(modifier = Modifier.weight(0.5f))
             
+            // Empty State Warning - Show when no employees exist
+            if (employeeCount == 0) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFFFF3CD) // Light yellow background
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFFF9800),
+                            modifier = Modifier.size(48.dp)
+                        )
+                        
+                        Text(
+                            text = "ברוך הבא לאפליקציה!",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF856404),
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Text(
+                            text = "לפני שתוכל ליצור סידור עבודה,\nעליך להוסיף עובדים למערכת.",
+                            fontSize = 16.sp,
+                            color = Color(0xFF856404),
+                            textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+                        
+                        Text(
+                            text = "👇 לחץ על 'ניהול עובדים' למטה",
+                            fontSize = 14.sp,
+                            color = Color(0xFF856404),
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+            
+            // Template Warning - Show when employees exist but no template
+            if (employeeCount > 0 && !hasTemplate) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE3F2FD) // Light blue background
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        
+                        Text(
+                            text = "צריך להגדיר טבלה!",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryTeal,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Text(
+                            text = "לפני יצירת סידור ראשון,\nעליך להגדיר את מבנה הטבלה:\nמשמרות וימים.",
+                            fontSize = 16.sp,
+                            color = PrimaryTeal,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 22.sp
+                        )
+                        
+                        Button(
+                            onClick = onGoToTemplateSetup,
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "הגדר טבלה עכשיו",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+            
             // Main Buttons - Centered vertically
             Column(
                 verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -82,8 +202,9 @@ fun HomeScreen(
                     text = "סידורים אחרונים",
                     subtitle = "($scheduleCount)",
                     icon = Icons.Default.History,
-                    backgroundColor = PrimaryBlue,
-                    onClick = onRecentSchedulesClick
+                    backgroundColor = if (employeeCount == 0) Color.Gray else PrimaryBlue,
+                    onClick = if (employeeCount == 0) { {} } else onRecentSchedulesClick,
+                    enabled = employeeCount > 0
                 )
                 
                 // Show temp draft button only if there's a temp draft
@@ -101,16 +222,25 @@ fun HomeScreen(
                     text = "יצירת סידור חדש",
                     subtitle = "",
                     icon = Icons.Default.Add,
-                    backgroundColor = PrimaryGreen,
-                    onClick = {
-                        // If there's a draft, show confirmation dialog
-                        if (hasTempDraft) {
-                            showDraftConfirmDialog = true
-                        } else {
-                            // No draft, proceed directly
-                            onNewScheduleClick()
+                    backgroundColor = when {
+                        employeeCount == 0 -> Color.Gray
+                        !hasTemplate -> Color.Gray
+                        else -> PrimaryGreen
+                    },
+                    onClick = if (employeeCount == 0 || !hasTemplate) { 
+                        {}
+                    } else {
+                        {
+                            // If there's a draft, show confirmation dialog
+                            if (hasTempDraft) {
+                                showDraftConfirmDialog = true
+                            } else {
+                                // No draft, proceed directly
+                                onNewScheduleClick()
+                            }
                         }
-                    }
+                    },
+                    enabled = employeeCount > 0 && hasTemplate
                 )
                 
                 HomeButton(
@@ -124,19 +254,112 @@ fun HomeScreen(
             
             Spacer(modifier = Modifier.weight(1f))
             
+            // Template edit button - Visual card style
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = PrimaryTeal.copy(alpha = 0.08f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Card(
+                            modifier = Modifier.size(40.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                            ),
+                            shape = RoundedCornerShape(10.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = null,
+                                    tint = PrimaryTeal,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
+                        
+                        Column {
+                            Text(
+                                text = "עריכת מבנה טבלה",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PrimaryTeal
+                            )
+                            Text(
+                                text = "התאמת משמרות וימים",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    
+                    IconButton(
+                        onClick = onTemplateSetupClick,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "עריכה",
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
             // Developer Credit with Copyright - professionally styled at bottom
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.padding(vertical = 12.dp)
             ) {
-                Text(
-                    text = "פותח על ידי חננאל סבג (Hananel Sabag)",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "פותח על ידי חננאל סבג (Hananel Sabag)",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                        ),
+                        shape = RoundedCornerShape(6.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                    ) {
+                        Text(
+                            text = "v2.0",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryTeal,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
                 
                 Text(
                     text = "© ${LocalDate.now().year} כל הזכויות שמורות",
@@ -207,17 +430,21 @@ private fun HomeButton(
     icon: ImageVector,
     backgroundColor: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
-            containerColor = backgroundColor
+            containerColor = backgroundColor,
+            disabledContainerColor = Color.Gray.copy(alpha = 0.6f)
         ),
         modifier = modifier
             .fillMaxWidth()
             .height(80.dp),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(16.dp),
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp) // No shadow!
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -227,7 +454,7 @@ private fun HomeButton(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color.White,
+                tint = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
                 modifier = Modifier.size(32.dp)
             )
             
@@ -240,7 +467,7 @@ private fun HomeButton(
                     text = text,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White,
+                    color = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center
                 )
                 
@@ -248,7 +475,7 @@ private fun HomeButton(
                     Text(
                         text = subtitle,
                         fontSize = 14.sp,
-                        color = Color.White.copy(alpha = 0.8f),
+                        color = if (enabled) Color.White.copy(alpha = 0.8f) else Color.White.copy(alpha = 0.4f),
                         textAlign = TextAlign.Center
                     )
                 }

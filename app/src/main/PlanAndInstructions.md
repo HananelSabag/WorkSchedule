@@ -24,15 +24,9 @@
 
 ## 👥 Default Employees / רשימת עובדים
 
-**English:** The app should start with these 6 employees:
-1. מאור (Maor)
-2. דוד (David)
-3. אלכס (Alex)
-4. דן (Dan)
-5. סלים (Salim)
-6. חננאל (Hananel)
+**English:** The app starts with an empty employee list. Users must add their own employees via the Employee Management screen before creating schedules.
 
-**עברית:** האפליקציה צריכה להתחיל עם 6 העובדים האלה בדיוק.
+**עברית:** האפליקציה מתחילה עם רשימת עובדים ריקה. המשתמשים צריכים להוסיף את העובדים שלהם דרך מסך ניהול עובדים לפני יצירת סידורים.
 
 ---
 
@@ -141,7 +135,7 @@ val CanOnlyBlue = Color(0xFF1976D2)
 - Logo: Calendar icon in teal color (תכלת)
 - Text "סידור עבודה" (Work Schedule)
 - Bottom text: "פותח על ידי חננאל סבג" (Developed by Hananel Sabag)
-- English name: "Hananel Sabag"
+- Subtitle: "Work Schedule Manager"
 
 ---
 
@@ -284,12 +278,12 @@ Show buttons for each day: ראשון, שני, שלישי, רביעי, חמיש�
 
 ```
 📊 סטטיסטיקה:
-מאור: 4 משמרות
-דוד: 5 משמרות
-אלכס: 4 משמרות
-דן: 5 משמרות
-סלים: 4 משמרות
-חננאל: 5 משמרות
+Employee 1: 4 shifts
+Employee 2: 5 shifts
+Employee 3: 4 shifts
+Employee 4: 5 shifts
+Employee 5: 4 shifts
+Employee 6: 5 shifts
 ```
 
 #### View/Edit Mode Buttons / כפתורי צפייה/עריכה:
@@ -521,7 +515,7 @@ Two buttons:
 data class Employee(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String,              // "מאור", "דוד", etc.
+    val name: String,              // Employee names
     val shabbatObserver: Boolean   // true/false
 )
 ```
@@ -553,22 +547,21 @@ data class Schedule(
 ```
 📅 *סידור עבודה - שבוע 12/10/2024*
 
-*ראשון:*
-  בוקר: מאור
-  בוקר ארוך: -----
-  צהריים: דן, אלכס
-  לילה: סלים
+*Sunday:*
+  Morning: Employee1
+  Long Morning: -----
+  Afternoon: Employee4, Employee3
+  Night: Employee5
 
-*שני:*
-  בוקר: דוד
-  בוקר ארוך: חננאל
-  צהריים: -----
-  לילה: מאור
+*Monday:*
+  Morning: Employee2
+  Long Morning: Employee6
+  Afternoon: -----
+  Night: Employee1
 
 [...continue for all days...]
 
 _נוצר באמצעות מערכת שיבוץ עובדים_
-_פותח על ידי חננאל סבג_
 ```
 
 **Code:**
@@ -1004,8 +997,8 @@ CompositionLocalProvider(
 User → Blocking Screen → ViewModel → Database
 משתמש → מסך חסימות → ViewModel → מסד נתונים
 
-blocksMap["מאור-ראשון-בוקר"] = true (Cannot)
-canOnlyMap["דוד-שני-לילה"] = true (Can Only)
+blocksMap["Employee1-Sunday-Morning"] = true (Cannot)
+canOnlyMap["Employee2-Monday-Night"] = true (Can Only)
 ```
 
 ### 2. Generate Schedule / יצירת סידור
@@ -1016,8 +1009,8 @@ ViewModel → ScheduleGenerator.generate()
          → Return Map<"יום-משמרת", List<Employee>>
 
 Example output:
-scheduleMap["ראשון-בוקר"] = ["מאור"]
-scheduleMap["ראשון-צהריים"] = ["דן", "אלכס"]
+scheduleMap["Sunday-Morning"] = ["Employee1"]
+scheduleMap["Sunday-Afternoon"] = ["Employee4", "Employee3"]
 scheduleMap["ראשון-לילה"] = []  // Empty!
 ```
 

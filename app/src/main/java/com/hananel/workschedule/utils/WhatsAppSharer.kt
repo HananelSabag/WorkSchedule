@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.content.FileProvider
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -13,19 +14,22 @@ import java.util.*
 
 /**
  * Utility for sharing schedules via WhatsApp
+ * Now supports dynamic templates!
  */
 object WhatsAppSharer {
     
     /**
      * Share schedule as formatted text via WhatsApp
+     * @param templateData Dynamic template (null = use hardcoded ShiftDefinitions)
      */
     fun shareScheduleText(
         context: Context,
         schedule: Map<String, List<String>>,
         savingMode: Map<String, Boolean>,
-        weekStart: String = getCurrentWeekString()
+        weekStart: String = getCurrentWeekString(),
+        templateData: TemplateData? = null
     ) {
-        val scheduleText = formatScheduleText(schedule, savingMode, weekStart)
+        val scheduleText = formatScheduleText(schedule, savingMode, weekStart, templateData)
         
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
@@ -79,25 +83,32 @@ object WhatsAppSharer {
     private fun formatScheduleText(
         schedule: Map<String, List<String>>,
         savingMode: Map<String, Boolean>,
-        weekStart: String
+        weekStart: String,
+        templateData: TemplateData? = null
     ): String {
         val stringBuilder = StringBuilder()
         
         stringBuilder.append("📅 *סידור עבודה - שבוע $weekStart*\n\n")
         
-        // Create table-like format matching real schedule
-        val realScheduleShifts = listOf(
-            "בוקר 6:45-15:00",
-            "בוקר ארוך 06:45-18:45", 
-            "שישי עד 6:45-13:00",
-            "צהריים 23:00-14:45",
-            "לילה 7:00-22:30"
-        )
+        // Get days and shifts (dynamic or hardcoded)
+        val daysOfWeek = templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
+        val shiftsToShow = if (templateData != null) {
+            templateData.shiftRows.map { "${it.shiftName} ${it.shiftHours}" }
+        } else {
+            // Legacy hardcoded shifts
+            listOf(
+                "בוקר 6:45-15:00",
+                "בוקר ארוך 06:45-18:45", 
+                "שישי עד 6:45-13:00",
+                "צהריים 23:00-14:45",
+                "לילה 7:00-22:30"
+            )
+        }
         
         // Header with days and dates
         stringBuilder.append("```\n")
         stringBuilder.append("        ")
-        ShiftDefinitions.daysOfWeek.forEachIndexed { index, day ->
+        daysOfWeek.forEachIndexed { index, day ->
             val date = getCurrentDateString(index)
             stringBuilder.append("$day($date)  ")
         }
@@ -105,10 +116,10 @@ object WhatsAppSharer {
         stringBuilder.append("=" .repeat(60) + "\n")
         
         // Shift rows
-        realScheduleShifts.forEach { shiftDisplay ->
+        shiftsToShow.forEach { shiftDisplay ->
             stringBuilder.append("${shiftDisplay.padEnd(12)} ")
             
-            ShiftDefinitions.daysOfWeek.forEach { day ->
+            daysOfWeek.forEach { day ->
                 val shiftId = getShiftIdFromDisplay(shiftDisplay)
                 
                 // Special handling for Friday in "בוקר ארוך" row - should be בוקר-קצר

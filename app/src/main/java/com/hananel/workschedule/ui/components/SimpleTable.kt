@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
 import kotlin.math.max
 import kotlin.math.min
@@ -46,6 +47,7 @@ fun SimpleScheduleTable(
     canOnlyBlocks: Map<String, Boolean>,
     savingMode: Map<String, Boolean>,
     schedule: Map<String, List<String>>? = null, // For preview mode
+    templateData: TemplateData? = null, // Dynamic template (null = use hardcoded)
     isEditMode: Boolean = false, // For preview mode  
     onCellClick: ((Employee, String, String) -> Unit)? = null, // For blocking mode
     onCellEdit: ((String, String) -> Unit)? = null, // For preview edit mode
@@ -56,6 +58,11 @@ fun SimpleScheduleTable(
     isBlockingMode: Boolean = false, // For red border in blocking screen
     modifier: Modifier = Modifier
 ) {
+    // Get days list (dynamic or hardcoded)
+    val daysOfWeek = remember(templateData) {
+        templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
+    }
+    
     var scale by remember { mutableFloatStateOf(1f) }
     
     // RTL Layout
@@ -156,6 +163,8 @@ fun SimpleScheduleTable(
                         canOnlyBlocks = canOnlyBlocks,
                         savingMode = savingMode,
                         schedule = schedule,
+                        templateData = templateData,
+                        daysOfWeek = daysOfWeek,
                         isEditMode = isEditMode,
                         onCellClick = onCellClick,
                         onCellEdit = onCellEdit,
@@ -179,6 +188,8 @@ private fun ScheduleTableContent(
     canOnlyBlocks: Map<String, Boolean>,
     savingMode: Map<String, Boolean>,
     schedule: Map<String, List<String>>?,
+    templateData: TemplateData? = null,
+    daysOfWeek: List<String>,
     isEditMode: Boolean,
     onCellClick: ((Employee, String, String) -> Unit)?,
     onCellEdit: ((String, String) -> Unit)?,
@@ -204,7 +215,7 @@ private fun ScheduleTableContent(
     val cellBorderColor = if (isBlockingMode) Color(0xFFE53935) else Color.Black
 
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
         border = if (isBlockingMode) BorderStroke(3.dp, borderColor) else null
     ) {
         Column {
@@ -240,7 +251,7 @@ private fun ScheduleTableContent(
                 }
                 
                 // Day headers - Full names always, all clickable for blocking
-                ShiftDefinitions.daysOfWeek.forEach { day ->
+                daysOfWeek.forEach { day ->
                     // Regular day header - clickable for blocking all shifts
                     Box(
                         modifier = Modifier
@@ -268,7 +279,7 @@ private fun ScheduleTableContent(
                             
                             // Date
                             Text(
-                                text = getCurrentDateForDay(ShiftDefinitions.daysOfWeek.indexOf(day), weekStartDate),
+                                text = getCurrentDateForDay(daysOfWeek.indexOf(day), weekStartDate),
                                 color = Color.Black, // Black text (#000000)
                                 fontSize = 12.sp, // Larger date
                                 textAlign = TextAlign.Center
@@ -279,7 +290,20 @@ private fun ScheduleTableContent(
             }
             
             // Get shifts for table
-            val shiftsToShow = getShiftsForTable(savingMode)
+            val shiftsToShow = if (templateData != null) {
+                // Dynamic template: convert ShiftRows to ShiftDisplayInfo
+                templateData.shiftRows.map { shiftRow ->
+                    ShiftDisplayInfo(
+                        shiftId = shiftRow.shiftName,
+                        displayName = shiftRow.shiftName,
+                        timeRange = shiftRow.shiftHours,
+                        availableDays = daysOfWeek // All days
+                    )
+                }
+            } else {
+                // Legacy: use hardcoded shifts
+                getShiftsForTable(savingMode)
+            }
             
             // Shifts rows
             shiftsToShow.forEach { shiftInfo ->
@@ -318,7 +342,7 @@ private fun ScheduleTableContent(
                     }
                     
                     // Day cells
-                    ShiftDefinitions.daysOfWeek.forEach { day ->
+                    daysOfWeek.forEach { day ->
                         // Special handling for Saturday - combine morning shifts
                         if (day == "שבת" && (shiftInfo.shiftId == "בוקר" || shiftInfo.shiftId == "בוקר-ארוך")) {
                             // Only render for "בוקר" shift, skip "בוקר-ארוך" for Saturday
@@ -522,13 +546,13 @@ private fun getShiftsForTable(savingMode: Map<String, Boolean>): List<ShiftDispl
             shiftId = "צהריים",
             displayName = "צהריים",
             timeRange = "14:45-23:00",
-            availableDays = ShiftDefinitions.daysOfWeek
+            availableDays = listOf("ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת")
         ),
         ShiftDisplayInfo(
             shiftId = "לילה",
             displayName = "לילה",
             timeRange = "22:30-07:00",
-            availableDays = ShiftDefinitions.daysOfWeek
+            availableDays = listOf("ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת")
         )
     )
 }

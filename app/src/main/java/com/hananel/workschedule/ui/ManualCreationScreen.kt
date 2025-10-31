@@ -48,6 +48,7 @@ import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
 import com.hananel.workschedule.viewmodel.ScheduleViewModel
 import java.time.format.DateTimeFormatter
@@ -64,6 +65,7 @@ fun ManualCreationScreen(
     canOnlyBlocks: Map<String, Boolean>,
     savingMode: Map<String, Boolean>, 
     weekStartDate: java.time.LocalDate, // Keep for display only, no editing
+    templateData: TemplateData? = null, // Dynamic template
     onSelectEmployee: (Employee?) -> Unit,
     onToggleEmployeeInShift: (Employee, String, String) -> Unit,
     onAddFreeTextToCell: (String, String) -> Unit, // New callback for free text
@@ -154,6 +156,7 @@ fun ManualCreationScreen(
                 canOnlyBlocks = canOnlyBlocks,
                 savingMode = savingMode,
                 schedule = schedule, // הצגת הסידור הנוכחי
+                templateData = templateData, // Dynamic template support
                 isEditMode = false, // לא במצב עריכת טקסט
                 weekStartDate = weekStartDate,
                 onSetWeekStartDate = null, // ללא עריכת תאריך

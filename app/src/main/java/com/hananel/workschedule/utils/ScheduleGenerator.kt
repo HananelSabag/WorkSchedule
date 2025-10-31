@@ -2,26 +2,31 @@ package com.hananel.workschedule.utils
 
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 
 /**
  * Schedule generation algorithm implementing all hard and soft rules from specification
+ * Now supports dynamic templates!
  */
 object ScheduleGenerator {
     
     data class ShiftAssignment(
         val day: String,
         val shiftId: String,
-        val dayIndex: Int
+        val dayIndex: Int,
+        val shiftName: String = ""
     )
     
     /**
      * Generate weekly schedule according to specification rules
+     * @param templateData Dynamic template configuration (null = use hardcoded ShiftDefinitions)
      */
     fun generateSchedule(
         employees: List<Employee>,
         blocks: Map<String, Boolean>,
         canOnlyBlocks: Map<String, Boolean>,
-        savingMode: Map<String, Boolean>
+        savingMode: Map<String, Boolean>,
+        templateData: TemplateData? = null
     ): Pair<Map<String, List<String>>, List<String>> {
         
         val schedule = mutableMapOf<String, MutableList<String>>()
@@ -31,19 +36,23 @@ object ScheduleGenerator {
         // Initialize
         employees.forEach { employeeShifts[it.name] = mutableListOf() }
         
-        // Collect all shifts for the week
-        val allShifts = collectAllShifts(savingMode)
+        // Collect all shifts for the week (dynamic or hardcoded)
+        val allShifts = if (templateData != null) {
+            collectAllShiftsDynamic(templateData, savingMode)
+        } else {
+            collectAllShifts(savingMode)
+        }
         
         // Sort by difficulty (fewer available employees first)
         allShifts.sortBy { shift ->
-            getAvailableEmployees(shift, employees, blocks, canOnlyBlocks, employeeShifts).size
+            getAvailableEmployees(shift, employees, blocks, canOnlyBlocks, employeeShifts, templateData).size
         }
         
         // Assign each shift
         allShifts.forEach { shift ->
             val key = "${shift.day}-${shift.shiftId}"
             
-            val availableEmployees = getAvailableEmployees(shift, employees, blocks, canOnlyBlocks, employeeShifts)
+            val availableEmployees = getAvailableEmployees(shift, employees, blocks, canOnlyBlocks, employeeShifts, templateData)
             
             if (availableEmployees.isNotEmpty()) {
                 // Calculate scores and choose best employee
@@ -65,13 +74,35 @@ object ScheduleGenerator {
         return schedule to impossibleShifts
     }
     
+    // Dynamic template shift collection
+    private fun collectAllShiftsDynamic(
+        templateData: TemplateData,
+        savingMode: Map<String, Boolean>
+    ): MutableList<ShiftAssignment> {
+        val shifts = mutableListOf<ShiftAssignment>()
+        
+        templateData.dayColumns.forEachIndexed { dayIndex, dayColumn ->
+            templateData.shiftRows.forEach { shiftRow ->
+                shifts.add(ShiftAssignment(
+                    day = dayColumn.dayNameHebrew,
+                    shiftId = shiftRow.shiftName,
+                    dayIndex = dayIndex,
+                    shiftName = shiftRow.shiftName
+                ))
+            }
+        }
+        
+        return shifts
+    }
+    
+    // Legacy hardcoded shift collection (fallback)
     private fun collectAllShifts(savingMode: Map<String, Boolean>): MutableList<ShiftAssignment> {
         val shifts = mutableListOf<ShiftAssignment>()
         
         ShiftDefinitions.daysOfWeek.forEachIndexed { dayIndex, day ->
             val dayShifts = ShiftDefinitions.getShiftsForDay(day, savingMode[day] ?: false)
             dayShifts.forEach { shiftInfo ->
-                shifts.add(ShiftAssignment(day, shiftInfo.id, dayIndex))
+                shifts.add(ShiftAssignment(day, shiftInfo.id, dayIndex, shiftInfo.name))
             }
         }
         
@@ -83,7 +114,8 @@ object ScheduleGenerator {
         employees: List<Employee>,
         blocks: Map<String, Boolean>,
         canOnlyBlocks: Map<String, Boolean>,
-        employeeShifts: Map<String, List<ShiftAssignment>>
+        employeeShifts: Map<String, List<ShiftAssignment>>,
+        templateData: TemplateData? = null
     ): List<Employee> {
         
         return employees.filter { emp ->
@@ -100,7 +132,14 @@ object ScheduleGenerator {
             // Check HARD RULE 5: Shabbat Observer Auto-Blocks
             if (emp.shabbatObserver) {
                 val shiftKey = "${shift.day}-${shift.shiftId}"
-                if (ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)) {
+                // For dynamic templates, check if it's Friday afternoon/night or Saturday morning/afternoon
+                val isShabbatShift = if (templateData != null) {
+                    // Simple logic: Friday columns with afternoon/night shifts or Saturday columns
+                    shift.day.contains("שישי") || shift.day.contains("שבת")
+                } else {
+                    ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)
+                }
+                if (isShabbatShift) {
                     return@filter false
                 }
             }

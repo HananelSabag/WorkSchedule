@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
 
 @Composable
@@ -43,6 +45,7 @@ fun PreviewScreen(
     errorMessage: String,
     savingMode: Map<String, Boolean>,
     weekStartDate: java.time.LocalDate,
+    templateData: TemplateData? = null, // Dynamic template
     onUpdateCell: (String, String) -> Unit,
     onSaveSchedule: () -> Unit, // Deprecated - smart save system handles this automatically
     onShareSchedule: (ShareType) -> Unit,
@@ -90,11 +93,16 @@ fun PreviewScreen(
                         )
                     }
                     
+                    // Dynamic title based on context
                     Text(
-                        text = "תצוגה מקדימה - סידור עבודה",
-                        fontSize = 18.sp,
+                        text = if (isEditingExistingSchedule) {
+                            "צפייה בסידור"
+                        } else {
+                            "סידור עבודה"
+                        },
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryTeal, // Use logo color
+                        color = PrimaryTeal,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
@@ -110,31 +118,33 @@ fun PreviewScreen(
             
             
             
-            // Return to Blocking Button - At the top as requested, red color, less wide
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start
-                ) {
-                    Button(
-                        onClick = onReturnToBlocking,
-                        colors = ButtonDefaults.buttonColors(containerColor = BlockedRed),
-                        modifier = Modifier.width(160.dp),
-                        shape = RoundedCornerShape(8.dp)
+            // Return to Blocking Button - Show only when editing (makes sense to return to edit blocks)
+            if (isEditingExistingSchedule) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start
                     ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "חזור לחסימות",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Button(
+                            onClick = onReturnToBlocking,
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                            modifier = Modifier.width(180.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "עריכת חסימות",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }
@@ -161,13 +171,13 @@ fun PreviewScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (isEditingExistingSchedule) {
-                                "שינויים נשמרים אוטומטית • לחיצה ארוכה על תא = עריכת טקסט חופשי"
+                                "עריכה: שינויים נשמרים אוטומטית • לחיצה ארוכה = עריכת טקסט חופשי"
                             } else {
-                            "הסידור שמור בהיסטוריה • לחיצה ארוכה על תא = עריכת טקסט חופשי"
-                        },
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 14.sp
+                                "הסידור נשמר בהיסטוריה ✓ • לחיצה ארוכה על תא = עריכת טקסט חופשי"
+                            },
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            lineHeight = 14.sp
                         )
                     }
                 }
@@ -182,6 +192,7 @@ fun PreviewScreen(
                     canOnlyBlocks = emptyMap(),
                     savingMode = savingMode,
                     schedule = schedule,
+                    templateData = templateData, // Dynamic template support
                     isEditMode = true, // Always enable long-press editing
                     weekStartDate = weekStartDate,
                     isBlockingMode = false, // Professional colors like export - no red border
@@ -258,11 +269,13 @@ fun PreviewScreen(
             }
             
             // Statistics - moved to bottom as requested
-            item {
+            // Using key(schedule) to ensure recomposition when schedule changes (e.g., cell edits)
+            item(key = schedule.hashCode()) {
                 EmployeeStatistics(
                     employees = employees, 
                     schedule = schedule,
-                    savingMode = savingMode
+                    savingMode = savingMode,
+                    templateData = templateData
                 )
             }
         }
@@ -281,112 +294,102 @@ fun PreviewScreen(
 private fun EmployeeStatistics(
     employees: List<Employee>,
     schedule: Map<String, List<String>>,
-    savingMode: Map<String, Boolean> = emptyMap()
+    savingMode: Map<String, Boolean> = emptyMap(),
+    templateData: TemplateData? = null
 ) {
     // Helper function to extract employee name from text (first word before space)
     fun extractEmployeeName(text: String): String {
         return text.trim().split(" ").firstOrNull() ?: text
     }
     
-    // SMART: Calculate hours with free text support
-    fun calculateHours(cellKey: String, employeeText: String): Double {
+    // Parse shift hours from time range string (e.g., "07:00-15:00" → 8.0 hours)
+    // MUST be defined BEFORE calculateHours since it's called from there
+    fun parseShiftHours(hoursText: String): Double {
+        return try {
+            // Format: "HH:MM-HH:MM" or "H:MM-H:MM"
+            val parts = hoursText.split("-")
+            if (parts.size != 2) return 8.0
+            
+            val startParts = parts[0].trim().split(":")
+            val endParts = parts[1].trim().split(":")
+            
+            if (startParts.size < 2 || endParts.size < 2) return 8.0
+            
+            val startHour = startParts[0].toIntOrNull() ?: 0
+            val startMin = startParts[1].toIntOrNull() ?: 0
+            val endHour = endParts[0].toIntOrNull() ?: 0
+            val endMin = endParts[1].toIntOrNull() ?: 0
+            
+            val startTotalMin = startHour * 60 + startMin
+            var endTotalMin = endHour * 60 + endMin
+            
+            // Handle overnight shifts (e.g., 23:00-07:00)
+            if (endTotalMin <= startTotalMin) {
+                endTotalMin += 24 * 60
+            }
+            
+            val totalMin = endTotalMin - startTotalMin
+            val hours = totalMin / 60.0
+            
+            // Return reasonable value (between 0 and 24 hours)
+            if (hours > 0 && hours <= 24) hours else 8.0
+            
+        } catch (e: Exception) {
+            8.0 // Default fallback
+        }
+    }
+    
+    // SIMPLE: Calculate hours from shift hours definition in template
+    fun calculateHours(cellKey: String): Double {
         val parts = cellKey.split("-")
         if (parts.size < 2) return 8.0
         
+        val shiftName = parts.drop(1).joinToString("-")
+        
+        // Try to get hours from dynamic template first
+        if (templateData != null) {
+            val shiftRow = templateData.shiftRows.find { it.shiftName == shiftName }
+            if (shiftRow != null) {
+                // Parse hours from shiftHours string (e.g., "07:00-15:00")
+                return parseShiftHours(shiftRow.shiftHours)
+            }
+        }
+        
+        // Fallback: hardcoded (for old schedules without template)
         val day = parts[0]
-        val shiftId = parts.drop(1).joinToString("-")
         val isSaving = savingMode[day] ?: false
         val shifts = ShiftDefinitions.getShiftsForDay(day, isSaving)
-        val shift = shifts.find { it.id == shiftId }
-        
-        // Step 1: Check if there's free text (space + character after employee name)
-        val hasFreeText = employeeText.trim().contains(" ") && 
-                          employeeText.trim().split(" ").size > 1
-        
-        if (!hasFreeText) {
-            // Step 2: No free text - use default shift hours
-            return shift?.hours ?: 8.0
-        }
-        
-        // Step 3: Has free text - analyze and calculate
-        try {
-            // Extract all numbers (single or double digits)
-            val numbers = Regex("""\d+""").findAll(employeeText).map { it.value.toInt() }.toList()
-            
-            if (numbers.isEmpty()) {
-                // No numbers found - use default
-                return shift?.hours ?: 8.0
-            }
-            
-            val startHour: Int
-            val endHour: Int
-            
-            if (numbers.size == 1) {
-                // Case A: Only end time changed
-                startHour = shift?.startHour ?: 7
-                endHour = numbers[0]
-            } else {
-                // Case B: Both start and end changed
-                // First number in string = start, second = end
-                startHour = numbers[0]
-                endHour = numbers[1]
-            }
-            
-            // Calculate hours difference
-            var hours = if (endHour > startHour) {
-                (endHour - startHour).toDouble()
-            } else {
-                // Overnight shift
-                (24 - startHour + endHour).toDouble()
-            }
-            
-            // Add break time (0.25 = 15 minutes)
-            hours += 0.25
-            
-            // Step 4: Protections
-            if (hours > 12.25 || hours <= 0) {
-                // Invalid - return default 8 hours
-                return 8.0
-            }
-            
-            return hours
-            
-        } catch (e: Exception) {
-            // Any error - return default
-            return 8.0
-        }
+        val shift = shifts.find { it.id == shiftName }
+        return shift?.hours ?: 8.0
     }
     
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header with refresh button
+            // Header - clean and simple
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Icon(
+                    imageVector = Icons.Default.BarChart,
+                    contentDescription = null,
+                    tint = PrimaryTeal,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "📊 סטטיסטיקה",
+                    text = "סטטיסטיקה שבועית",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal
-                )
-                
-                // Refresh button (statistics auto-update, but this is for manual refresh)
-                Text(
-                    text = "🔄",
-                    fontSize = 18.sp,
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .alpha(0.6f),
                     color = PrimaryTeal
                 )
             }
@@ -426,7 +429,7 @@ private fun EmployeeStatistics(
             
             Spacer(modifier = Modifier.height(4.dp))
             
-            // Table Rows - IMPROVED: Smart employee name detection + hours calculation
+            // Table Rows - Calculate stats dynamically (will recompose when schedule changes)
             employees.forEach { employee ->
                 // Count shifts - extract first word from text to match employee name
                 var shiftCount = 0
@@ -437,8 +440,8 @@ private fun EmployeeStatistics(
                         val extractedName = extractEmployeeName(text)
                         if (extractedName.equals(employee.name, ignoreCase = true)) {
                             shiftCount++
-                            // SMART: Calculate hours based on the full text (supports free text)
-                            totalHours += calculateHours(cellKey, text)
+                            // Calculate hours from shift definition in template
+                            totalHours += calculateHours(cellKey)
                         }
                     }
                 }
@@ -521,7 +524,7 @@ private fun SchedulePreviewTable(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
     ) {
         Column {
             // Header Row - Days with dates
@@ -711,11 +714,11 @@ private fun ShareMenu(
     onShareType: (ShareType) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
+        ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -798,7 +801,7 @@ private fun ErrorPopup(
                 .fillMaxWidth(0.85f)
                 .wrapContentHeight(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
             shape = RoundedCornerShape(16.dp)
         ) {
             Column(

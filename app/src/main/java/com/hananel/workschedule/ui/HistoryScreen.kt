@@ -1,5 +1,6 @@
 package com.hananel.workschedule.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -78,36 +79,79 @@ fun HistoryScreen(
             }
             
             if (schedules.isEmpty()) {
-                // Empty state
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = GrayLight)
+                // Empty state - Beautiful and Centered
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Column(
-                        modifier = Modifier.padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    // Beautiful animated-style icon
+                    Card(
+                        modifier = Modifier.size(120.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = PrimaryTeal.copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(60.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = null,
+                                tint = PrimaryTeal,
+                                modifier = Modifier.size(64.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    Text(
+                        text = "אין סידורים שמורים",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    Text(
+                        text = "הסידורים שתיצור יישמרו כאן\nוניתן יהיה לפתוח אותם בכל זמן",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 24.sp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // CTA Button
+                    Button(
+                        onClick = onBackClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp) // No shadow!
                     ) {
                         Icon(
-                            imageVector = Icons.Default.History,
+                            imageVector = Icons.Default.Add,
                             contentDescription = null,
-                            tint = GrayMedium,
-                            modifier = Modifier.size(64.dp)
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
                         )
-                        
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "אין סידורים שמורים",
+                            text = "צור סידור חדש",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        Text(
-                            text = "צור סידור חדש כדי לראות אותו כאן",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                            color = Color.White
                         )
                     }
                 }
@@ -170,87 +214,146 @@ private fun ScheduleHistoryCard(
     
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)) // Clean border instead
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Schedule Info
-            Column(
-                modifier = Modifier.weight(1f)
+            // Header with icon and title
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "שבוע ${formatDate(schedule.weekStart)}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Calendar Icon
+                Card(
+                    modifier = Modifier.size(48.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = null,
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                }
                 
-                Text(
-                    text = "נשמר ב: ${formatDate(schedule.createdDate)}",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
+                // Schedule Info
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = "שבוע ${formatDate(schedule.weekStart)}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = formatDate(schedule.createdDate),
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
+            
+            // Divider
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                thickness = 1.dp
+            )
             
             // Action Buttons
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Open Button
+                // Open Button - Primary
                 Button(
                     onClick = onScheduleClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
-                    modifier = Modifier.height(40.dp),
-                    shape = RoundedCornerShape(8.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp) // No shadow!
                 ) {
                     Icon(
                         imageVector = Icons.Default.FolderOpen,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "פתח",
+                        text = "פתח סידור",
                         color = Color.White,
-                        fontSize = 12.sp,
+                        fontSize = 15.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 
                 // Rename Button (if callback provided)
                 if (onRenameClick != null) {
-                    IconButton(
+                    OutlinedButton(
                         onClick = { 
-                            // Initialize with current name
                             newName = schedule.weekStart
                             showRenameDialog = true 
                         },
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.5.dp, PrimaryTeal),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "שנה שם",
-                            tint = PrimaryTeal
+                            contentDescription = "ערוך",
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
                 
                 // Delete Button
-                IconButton(
+                OutlinedButton(
                     onClick = { showDeleteConfirm = true },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.5.dp, BlockedRed.copy(alpha = 0.6f)),
+                    contentPadding = PaddingValues(0.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "מחק סידור",
-                        tint = BlockedRed
+                        contentDescription = "מחק",
+                        tint = BlockedRed,
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }

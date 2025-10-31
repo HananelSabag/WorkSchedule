@@ -84,11 +84,13 @@ fun WorkScheduleApp() {
     val hasTempDraft by viewModel.hasTempDraft.collectAsState()
     val draftHasManualAssignments by viewModel.draftHasManualAssignments.collectAsState()
     val duplicateDialog by viewModel.duplicateScheduleDialog.collectAsState()
+    val templateData by viewModel.activeTemplate.collectAsState()
     
     // Handle system back button - natural navigation like other Android apps
     BackHandler(enabled = currentScreen != Screen.HOME && currentScreen != Screen.SPLASH) {
         currentScreen = when (currentScreen) {
             Screen.EMPLOYEE_MANAGEMENT -> Screen.HOME
+            Screen.TEMPLATE_SETUP -> Screen.HOME
             Screen.BLOCKING -> Screen.HOME
             Screen.MANUAL_CREATION -> Screen.BLOCKING // Manual creation goes back to blocking
             Screen.PREVIEW -> Screen.HOME
@@ -113,11 +115,23 @@ fun WorkScheduleApp() {
             
             HomeScreen(
                 scheduleCount = schedules.size,
+                employeeCount = employees.size,
+                hasTemplate = templateData != null, // Pass template status to HomeScreen
                 onRecentSchedulesClick = { currentScreen = Screen.HISTORY },
                 onNewScheduleClick = { 
-                    // Start completely fresh
-                    viewModel.startNewSchedule()
-                    currentScreen = Screen.BLOCKING 
+                    // Check if template exists - MUST have template before creating schedule
+                    if (templateData == null) {
+                        // No template - redirect to template setup (required!)
+                        currentScreen = Screen.TEMPLATE_SETUP
+                    } else {
+                        // Has template - start fresh schedule
+                        viewModel.startNewSchedule()
+                        currentScreen = Screen.BLOCKING
+                    }
+                },
+                onGoToTemplateSetup = {
+                    // Direct navigation to template setup from warning message
+                    currentScreen = Screen.TEMPLATE_SETUP
                 },
                 onContinueTempDraftClick = {
                     // Continue existing draft
@@ -130,6 +144,7 @@ fun WorkScheduleApp() {
                     }
                 },
                 onEmployeeManagementClick = { currentScreen = Screen.EMPLOYEE_MANAGEMENT },
+                onTemplateSetupClick = { currentScreen = Screen.TEMPLATE_SETUP },
                 hasTempDraft = hasTempDraft
             )
         }
@@ -150,6 +165,46 @@ fun WorkScheduleApp() {
             )
         }
         
+        Screen.TEMPLATE_SETUP -> {
+            val editingShiftRows by viewModel.editingShiftRows.collectAsState()
+            val editingDayColumns by viewModel.editingDayColumns.collectAsState()
+            val hasExistingTemplate = templateData != null
+
+            // Load template for editing (or load default values if no template)
+            LaunchedEffect(Unit) {
+                viewModel.loadTemplateForEditing()
+            }
+            
+            ShiftTemplateSetupScreen(
+                shiftRows = editingShiftRows,
+                dayColumns = editingDayColumns,
+                hasExistingTemplate = hasExistingTemplate, // Dynamic title
+                onAddShiftRow = { name, hours ->
+                    viewModel.addShiftRow(name, hours) // New: requires name and hours
+                },
+                onEditShiftRow = { index, name, hours ->
+                    viewModel.editShiftRow(index, name, hours)
+                },
+                onDeleteShiftRow = { index ->
+                    viewModel.deleteShiftRow(index)
+                },
+                onMoveShiftRow = { fromIndex, toIndex ->
+                    viewModel.moveShiftRow(fromIndex, toIndex)
+                },
+                onToggleDayColumn = { index ->
+                    viewModel.toggleDayColumn(index)
+                },
+                onAutoSave = {
+                    viewModel.saveTemplate() // Just save, don't navigate
+                },
+                onSaveAndExit = {
+                    viewModel.saveTemplate()
+                    currentScreen = Screen.HOME // Save AND navigate
+                },
+                onBackClick = { currentScreen = Screen.HOME }
+            )
+        }
+        
         Screen.BLOCKING -> {
             val selectedEmployee by viewModel.selectedEmployee.collectAsState()
             val blockingMode by viewModel.blockingMode.collectAsState()
@@ -159,6 +214,7 @@ fun WorkScheduleApp() {
             val weekStartDate by viewModel.weekStartDate.collectAsState()
             val snackbarMessage by viewModel.snackbarMessage.collectAsState()
             val isEditingScheduleBlocks by viewModel.isEditingScheduleBlocks.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
             
             BlockingScreen(
                 employees = employees,
@@ -170,6 +226,7 @@ fun WorkScheduleApp() {
                 weekStartDate = weekStartDate,
                 snackbarMessage = snackbarMessage,
                 isEditingScheduleBlocks = isEditingScheduleBlocks,
+                templateData = templateData,
                 onSelectEmployee = { employee -> viewModel.selectEmployee(employee) },
                 onSetBlockingMode = { mode -> viewModel.setBlockingMode(mode) },
                 onToggleBlock = { employee, day, shift -> 
@@ -180,10 +237,6 @@ fun WorkScheduleApp() {
                 },
                 onToggleSavingMode = { day -> viewModel.toggleSavingMode(day) },
                 onSetWeekStartDate = { date -> viewModel.setWeekStartDate(date) },
-                onGenerateAutomaticSchedule = { 
-                    viewModel.generateSchedule()
-                    // Navigation handled by LaunchedEffect based on dialog state
-                },
                 onGenerateManualSchedule = {
                     viewModel.prepareForManualCreation()
                     currentScreen = Screen.MANUAL_CREATION
@@ -209,6 +262,7 @@ fun WorkScheduleApp() {
             val canOnlyBlocks by viewModel.canOnlyBlocks.collectAsState()
             val savingMode by viewModel.savingMode.collectAsState()
             val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
             
             var shouldNavigate by remember { mutableStateOf(false) }
             
@@ -231,6 +285,7 @@ fun WorkScheduleApp() {
                 canOnlyBlocks = canOnlyBlocks,
                 savingMode = savingMode,
                 weekStartDate = weekStartDate, // Read-only for display
+                templateData = templateData,
                 onSelectEmployee = { employee -> viewModel.selectEmployee(employee) },
                 onToggleEmployeeInShift = { employee, day, shift ->
                     viewModel.toggleEmployeeInManualSchedule(employee, day, shift)
@@ -263,10 +318,11 @@ fun WorkScheduleApp() {
             val savingMode by viewModel.savingMode.collectAsState()
             val weekStartDate by viewModel.weekStartDate.collectAsState()
             val isEditingExistingSchedule by viewModel.isEditingExistingSchedule.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
             
-            // Clear temp draft when reaching preview - data is already saved to history
+            // Clear draft completely when reaching preview - schedule is already saved to history
             LaunchedEffect(Unit) {
-                viewModel.clearTempDraft()
+                viewModel.clearDraft()
             }
             
             PreviewScreen(
@@ -275,6 +331,7 @@ fun WorkScheduleApp() {
                 errorMessage = errorMessage,
                 savingMode = savingMode,
                 weekStartDate = weekStartDate,
+                templateData = templateData,
                 onUpdateCell = { key, value -> 
                     viewModel.updateScheduleCell(key, value)
                 },
@@ -291,7 +348,8 @@ fun WorkScheduleApp() {
                                 context,
                                 currentSchedule,
                                 savingMode,
-                                weekStartString
+                                weekStartString,
+                                templateData
                             )
                             com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(
                                 context,
@@ -305,7 +363,8 @@ fun WorkScheduleApp() {
                                 context,
                                 currentSchedule,
                                 savingMode,
-                                weekStartString
+                                weekStartString,
+                                templateData
                             )
                             com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(
                                 context,
@@ -415,5 +474,5 @@ fun WorkScheduleApp() {
 }
 
 enum class Screen {
-    SPLASH, HOME, EMPLOYEE_MANAGEMENT, BLOCKING, MANUAL_CREATION, PREVIEW, HISTORY
+    SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION, PREVIEW, HISTORY
 }

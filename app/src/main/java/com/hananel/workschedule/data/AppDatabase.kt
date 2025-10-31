@@ -11,14 +11,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Employee::class, Schedule::class],
-    version = 2,
+    entities = [
+        Employee::class, 
+        Schedule::class,
+        ShiftTemplate::class,
+        ShiftRow::class,
+        DayColumn::class
+    ],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     
     abstract fun employeeDao(): EmployeeDao
     abstract fun scheduleDao(): ScheduleDao
+    abstract fun shiftTemplateDao(): ShiftTemplateDao
     
     companion object {
         @Volatile
@@ -31,6 +38,48 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
         
+        // Migration from version 2 to 3 - adding shift template tables
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Create shift_templates table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shift_templates (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        rowCount INTEGER NOT NULL,
+                        columnCount INTEGER NOT NULL,
+                        isActive INTEGER NOT NULL,
+                        createdDate INTEGER NOT NULL,
+                        lastModified INTEGER NOT NULL
+                    )
+                """)
+                
+                // Create shift_rows table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS shift_rows (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        templateId INTEGER NOT NULL,
+                        orderIndex INTEGER NOT NULL,
+                        shiftName TEXT NOT NULL,
+                        shiftHours TEXT NOT NULL,
+                        displayName TEXT NOT NULL
+                    )
+                """)
+                
+                // Create day_columns table
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS day_columns (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        templateId INTEGER NOT NULL,
+                        dayIndex INTEGER NOT NULL,
+                        dayNameHebrew TEXT NOT NULL,
+                        dayNameEnglish TEXT NOT NULL,
+                        isEnabled INTEGER NOT NULL
+                    )
+                """)
+            }
+        }
+        
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -38,8 +87,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "work_schedule_database"
                 )
-                    .addMigrations(MIGRATION_1_2)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                     .addCallback(DatabaseCallback(context))
+                    .fallbackToDestructiveMigration() // During development
                     .build()
                 INSTANCE = instance
                 instance
@@ -53,28 +103,14 @@ abstract class AppDatabase : RoomDatabase() {
         
         override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
             super.onCreate(db)
-            // Pre-populate with default employees
-            INSTANCE?.let { database ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    populateDatabase(database.employeeDao())
-                }
-            }
+            // Database created - no default employees
+            // Users will add their own employees via Employee Management screen
         }
         
-        private suspend fun populateDatabase(employeeDao: EmployeeDao) {
-            // Insert default employees from specification
-            val defaultEmployees = listOf(
-                Employee(name = "מאור", shabbatObserver = false),
-                Employee(name = "דוד", shabbatObserver = false),
-                Employee(name = "אלכס", shabbatObserver = false),
-                Employee(name = "דן", shabbatObserver = false),
-                Employee(name = "סלים", shabbatObserver = false),
-                Employee(name = "חננאל", shabbatObserver = false)
-            )
-            
-            defaultEmployees.forEach { employee ->
-                employeeDao.insertEmployee(employee)
-            }
+        override fun onOpen(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+            super.onOpen(db)
+            // No automatic template creation - user must create their own template first
+            // This ensures users customize the table to their needs before creating schedules
         }
     }
 }

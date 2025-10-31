@@ -4,9 +4,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.hananel.workschedule.data.AppDatabase
+import com.hananel.workschedule.data.DayColumn
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.Schedule
 import com.hananel.workschedule.data.ShiftDefinitions
+import com.hananel.workschedule.data.ShiftRow
 import com.hananel.workschedule.utils.ScheduleGenerator
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,10 +19,25 @@ class ScheduleViewModel(
     
     private val employeeDao = database.employeeDao()
     private val scheduleDao = database.scheduleDao()
+    private val shiftTemplateDao = database.shiftTemplateDao()
+    private val dynamicShiftManager = com.hananel.workschedule.data.DynamicShiftManager(shiftTemplateDao)
     
     // Employee-related state
     val employees = employeeDao.getAllEmployees()
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    
+    // Template-related state
+    val activeTemplate = dynamicShiftManager.getActiveTemplateWithData()
+        .stateIn(viewModelScope, SharingStarted.Lazily, null)
+    
+    private val _editingShiftRows = MutableStateFlow<List<com.hananel.workschedule.data.ShiftRow>>(emptyList())
+    val editingShiftRows = _editingShiftRows.asStateFlow()
+    
+    private val _editingDayColumns = MutableStateFlow<List<com.hananel.workschedule.data.DayColumn>>(emptyList())
+    val editingDayColumns = _editingDayColumns.asStateFlow()
+    
+    private val _hasActiveTemplate = MutableStateFlow(false)
+    val hasActiveTemplate = _hasActiveTemplate.asStateFlow()
     
     // Schedule-related state
     val schedules = scheduleDao.getAllSchedules()
@@ -475,21 +492,40 @@ class ScheduleViewModel(
             val currentCanOnly = canOnlyBlocks.value
             val currentSaving = savingMode.value
             
+            // Get active template
+            val templateData = dynamicShiftManager.getActiveTemplateDataSync()
+            
             // Apply Shabbat Observer blocks automatically
             val allBlocks = convertedBlocks.toMutableMap()
-            currentEmployees.filter { it.shabbatObserver }.forEach { employee ->
-                ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
-                    val blockKey = "${employee.name}-$shiftKey"
-                    allBlocks[blockKey] = true
+            if (templateData != null) {
+                // Dynamic: block Friday and Saturday for Shabbat observers
+                currentEmployees.filter { it.shabbatObserver }.forEach { employee ->
+                    templateData.dayColumns.forEach { dayColumn ->
+                        if (dayColumn.dayNameHebrew.contains("שישי") || dayColumn.dayNameHebrew.contains("שבת")) {
+                            templateData.shiftRows.forEach { shiftRow ->
+                                val blockKey = "${employee.name}-${dayColumn.dayNameHebrew}-${shiftRow.shiftName}"
+                                allBlocks[blockKey] = true
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Legacy: use hardcoded Shabbat blocked shifts
+                currentEmployees.filter { it.shabbatObserver }.forEach { employee ->
+                    ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
+                        val blockKey = "${employee.name}-$shiftKey"
+                        allBlocks[blockKey] = true
+                    }
                 }
             }
             
-            // Generate schedule using algorithm
+            // Generate schedule using algorithm (with dynamic template support)
             val (generatedSchedule, impossibleShifts) = ScheduleGenerator.generateSchedule(
                 employees = currentEmployees,
                 blocks = allBlocks,
                 canOnlyBlocks = currentCanOnly,
-                savingMode = currentSaving
+                savingMode = currentSaving,
+                templateData = templateData
             )
             
             _currentSchedule.value = generatedSchedule
@@ -587,6 +623,9 @@ class ScheduleViewModel(
                 _currentScheduleId.value = schedule.id
                 _isEditingExistingSchedule.value = true
                 _isEditingScheduleBlocks.value = false // Not editing blocks, just viewing
+                
+                // Clear draft when opening from history - this schedule is already saved
+                clearDraft()
             } catch (e: Exception) {
                 // Handle JSON parsing error
                 e.printStackTrace()
@@ -1030,6 +1069,224 @@ class ScheduleViewModel(
     fun clearDraft() {
         deleteDraft()
         _hasTempDraft.value = false
+    }
+    
+    // ============ Shift Template Management Functions ============
+    
+    init {
+        // Check if we have an active template - no automatic creation!
+        // User must create their own template before creating schedules
+        viewModelScope.launch {
+            val template = dynamicShiftManager.getActiveTemplateDataSync()
+            _hasActiveTemplate.value = template != null
+        }
+    }
+    
+    fun loadTemplateForEditing() {
+        viewModelScope.launch {
+            val template = shiftTemplateDao.getActiveTemplateSync()
+            if (template != null) {
+                // Load existing template
+                _editingShiftRows.value = shiftTemplateDao.getShiftRowsSync(template.id)
+                
+                // Load ALL day columns (not just enabled) - FIXED: show all 7 days
+                val existingColumns = shiftTemplateDao.getAllDayColumnsSync(template.id)
+                
+                // Ensure all 7 days exist (for templates created before this fix)
+                val allDayNames = listOf(
+                    "ראשון" to "Sunday",
+                    "שני" to "Monday",
+                    "שלישי" to "Tuesday",
+                    "רביעי" to "Wednesday",
+                    "חמישי" to "Thursday",
+                    "שישי" to "Friday",
+                    "שבת" to "Saturday"
+                )
+                
+                // Create a map of existing columns by day index
+                val existingMap = existingColumns.associateBy { it.dayIndex }
+                
+                // Build list with all 7 days, using existing data or creating new entries
+                _editingDayColumns.value = allDayNames.mapIndexed { index, (hebrew, english) ->
+                    existingMap[index] ?: DayColumn(
+                        templateId = template.id,
+                        dayIndex = index,
+                        dayNameHebrew = hebrew,
+                        dayNameEnglish = english,
+                        isEnabled = true
+                    )
+                }
+            } else {
+                // No template - initialize with empty shifts (user must fill in)
+                _editingShiftRows.value = listOf(
+                    ShiftRow(
+                        templateId = 0,
+                        orderIndex = 0,
+                        shiftName = "בוקר",
+                        shiftHours = "הזן שעות",
+                        displayName = "בוקר (הזן שעות)"
+                    ),
+                    ShiftRow(
+                        templateId = 0,
+                        orderIndex = 1,
+                        shiftName = "צהריים",
+                        shiftHours = "הזן שעות",
+                        displayName = "צהריים (הזן שעות)"
+                    ),
+                    ShiftRow(
+                        templateId = 0,
+                        orderIndex = 2,
+                        shiftName = "לילה",
+                        shiftHours = "הזן שעות",
+                        displayName = "לילה (הזן שעות)"
+                    )
+                )
+                // Initialize with all 7 days enabled
+                val dayNames = listOf(
+                    "ראשון" to "Sunday",
+                    "שני" to "Monday",
+                    "שלישי" to "Tuesday",
+                    "רביעי" to "Wednesday",
+                    "חמישי" to "Thursday",
+                    "שישי" to "Friday",
+                    "שבת" to "Saturday"
+                )
+                _editingDayColumns.value = dayNames.mapIndexed { index, (hebrew, english) ->
+                    DayColumn(
+                        templateId = 0,
+                        dayIndex = index,
+                        dayNameHebrew = hebrew,
+                        dayNameEnglish = english,
+                        isEnabled = true
+                    )
+                }
+            }
+        }
+    }
+    
+    fun addShiftRow(shiftName: String, shiftHours: String) {
+        val currentRows = _editingShiftRows.value
+        if (currentRows.size < 8 && shiftName.isNotBlank() && shiftHours.isNotBlank()) {
+            val newRow = com.hananel.workschedule.data.ShiftRow(
+                templateId = 0, // Will be set when saving
+                orderIndex = currentRows.size,
+                shiftName = shiftName,
+                shiftHours = shiftHours,
+                displayName = "$shiftName ($shiftHours)"
+            )
+            _editingShiftRows.value = currentRows + newRow
+        }
+    }
+    
+    fun updateShiftRow(index: Int, shiftName: String, shiftHours: String) {
+        val currentRows = _editingShiftRows.value.toMutableList()
+        if (index in currentRows.indices) {
+            val row = currentRows[index]
+            currentRows[index] = row.copy(
+                shiftName = shiftName,
+                shiftHours = shiftHours,
+                displayName = "$shiftName ($shiftHours)"
+            )
+            _editingShiftRows.value = currentRows
+        }
+    }
+    
+    fun editShiftRow(index: Int, shiftName: String, shiftHours: String) {
+        val currentRows = _editingShiftRows.value.toMutableList()
+        if (index in currentRows.indices) {
+            currentRows[index] = currentRows[index].copy(
+                shiftName = shiftName,
+                shiftHours = shiftHours,
+                displayName = "$shiftName ($shiftHours)"
+            )
+            _editingShiftRows.value = currentRows
+        }
+    }
+    
+    fun deleteShiftRow(index: Int) {
+        val currentRows = _editingShiftRows.value.toMutableList()
+        if (index in currentRows.indices && currentRows.size > 2) {
+            currentRows.removeAt(index)
+            // Update order indices
+            currentRows.forEachIndexed { idx, row ->
+                currentRows[idx] = row.copy(orderIndex = idx)
+            }
+            _editingShiftRows.value = currentRows
+        }
+    }
+    
+    fun moveShiftRow(fromIndex: Int, toIndex: Int) {
+        val currentRows = _editingShiftRows.value.toMutableList()
+        if (fromIndex in currentRows.indices && toIndex in currentRows.indices) {
+            val movedRow = currentRows.removeAt(fromIndex)
+            currentRows.add(toIndex, movedRow)
+            // Update order indices
+            currentRows.forEachIndexed { idx, row ->
+                currentRows[idx] = row.copy(orderIndex = idx)
+            }
+            _editingShiftRows.value = currentRows
+        }
+    }
+    
+    fun toggleDayColumn(index: Int) {
+        val currentColumns = _editingDayColumns.value.toMutableList()
+        if (index in currentColumns.indices) {
+            val column = currentColumns[index]
+            val enabledCount = currentColumns.count { it.isEnabled }
+            
+            // Don't allow disabling if it would go below 4 enabled days
+            if (column.isEnabled && enabledCount <= 4) {
+                return
+            }
+            
+            currentColumns[index] = column.copy(isEnabled = !column.isEnabled)
+            _editingDayColumns.value = currentColumns
+        }
+    }
+    
+    fun saveTemplate() {
+        viewModelScope.launch {
+            try {
+                val allRows = _editingShiftRows.value
+                val allColumns = _editingDayColumns.value // Save ALL columns (enabled and disabled)
+                val enabledColumns = allColumns.filter { it.isEnabled }
+                
+                // Filter out empty rows (no name or no hours)
+                val validRows = allRows.filter { row ->
+                    row.shiftName.isNotBlank() && row.shiftHours.isNotBlank()
+                }
+                
+                // Validate - at least 2 valid shifts and 4 enabled days
+                if (validRows.size < 2 || enabledColumns.size < 4) {
+                    return@launch
+                }
+                
+                // Deactivate all existing templates
+                shiftTemplateDao.deactivateAllTemplates()
+                
+                // Create new template with valid rows only
+                val template = com.hananel.workschedule.data.ShiftTemplate(
+                    name = "תבנית מותאמת",
+                    rowCount = validRows.size,
+                    columnCount = enabledColumns.size, // Count only enabled columns
+                    isActive = true
+                )
+                
+                // Save only valid rows (no empty ones) and ALL columns (for editing later)
+                shiftTemplateDao.createCompleteTemplate(template, validRows, allColumns)
+                _hasActiveTemplate.value = true
+                
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    fun createDefaultTemplate() {
+        viewModelScope.launch {
+            dynamicShiftManager.createDefaultTemplate()
+            _hasActiveTemplate.value = true
+        }
     }
 }
 

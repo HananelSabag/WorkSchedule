@@ -274,7 +274,7 @@ private fun EmployeeCard(
     
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
     ) {
         Row(
             modifier = Modifier
