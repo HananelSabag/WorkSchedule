@@ -91,6 +91,10 @@ class ScheduleViewModel(
     private val _draftHasManualAssignments = MutableStateFlow(false)
     val draftHasManualAssignments = _draftHasManualAssignments.asStateFlow()
     
+    // Flag to trigger navigation after auto-generation completes
+    private val _autoGenerationComplete = MutableStateFlow(false)
+    val autoGenerationComplete = _autoGenerationComplete.asStateFlow()
+    
     // Unified duplicate handling system
     private val _duplicateScheduleDialog = MutableStateFlow<DuplicateDialogState?>(null)
     val duplicateScheduleDialog = _duplicateScheduleDialog.asStateFlow()
@@ -385,6 +389,7 @@ class ScheduleViewModel(
     fun clearTempDraft() {
         // Clear temp draft status when reaching preview (data already saved)
         _hasTempDraft.value = false
+        _draftHasManualAssignments.value = false
     }
     
     fun clearAllBlocks() {
@@ -410,72 +415,125 @@ class ScheduleViewModel(
     }
     
     fun blockAllShiftsForDay(employee: Employee, day: String) {
-        // Block all shifts for the specified day for the given employee
-        val shifts = listOf("בוקר", "בוקר-ארוך", "בוקר-קצר", "צהריים", "לילה", "לילה-ארוך")
+        // Get all shifts for the specified day from template or fallback to defaults
+        val templateData = activeTemplate.value // Use the StateFlow value directly
+        val shifts = if (templateData != null) {
+            // Use dynamic template - get all shift names for this day
+            templateData.shiftRows.map { it.shiftName }
+        } else {
+            // Fallback to hardcoded shifts
+            val isSaving = _savingMode.value[day] ?: false
+            ShiftDefinitions.getShiftsForDay(day, isSaving).map { it.id }
+        }
         
-        when (_blockingMode.value) {
+        // CHECK FOR TOGGLE: See if employee is already in ALL cells of this column
+        val currentBlocks = _blocks.value
+        val currentCanOnly = _canOnlyBlocks.value
+        
+        val employeeKeysInColumn = shifts.map { shift -> "${employee.name}-$day-$shift" }
+        val allCellsHaveEmployee = when (_blockingMode.value) {
             BlockingMode.CANNOT -> {
-                // PROTECTION: Check if employee already has CAN_ONLY restrictions
-                val hasCanOnlyRestrictions = _canOnlyBlocks.value.any { (canOnlyKey, isCanOnly) ->
-                    isCanOnly && canOnlyKey.startsWith("${employee.name}-")
+                employeeKeysInColumn.all { key -> currentBlocks[key] == true }
+            }
+            BlockingMode.CAN_ONLY -> {
+                employeeKeysInColumn.all { key -> currentCanOnly[key] == true }
+            }
+        }
+        
+        // If employee is in all cells, REMOVE (toggle off). Otherwise, ADD (toggle on)
+        if (allCellsHaveEmployee) {
+            // TOGGLE OFF - Remove employee from all cells in this column
+            when (_blockingMode.value) {
+                BlockingMode.CANNOT -> {
+                    val newBlocks = _blocks.value.toMutableMap()
+                    employeeKeysInColumn.forEach { key ->
+                        // Check if this is an automatic Shabbat block - don't remove those
+                        val parts = key.split("-")
+                        if (parts.size >= 3) {
+                            val shiftKey = "${parts[1]}-${parts[2]}"
+                            val isAutomaticShabbatBlock = employee.shabbatObserver &&
+                                    ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)
+                            if (!isAutomaticShabbatBlock) {
+                                newBlocks.remove(key)
+                            }
+                        }
+                    }
+                    _blocks.value = newBlocks
                 }
-                
-                if (hasCanOnlyRestrictions) {
-                    // Show snackbar - cannot mix CANNOT and CAN_ONLY for same employee
-                    _snackbarMessage.value = "⚠️ עבור ${employee.name} כבר נבחרו תאים ב'יכול רק'.\nלא ניתן לשלב גם 'לא יכול' לאותו עובד."
-                    return
-                }
-                
-                val newBlocks = _blocks.value.toMutableMap()
-                shifts.forEach { shift ->
-                    val key = "${employee.name}-$day-$shift"
-                    newBlocks[key] = true
-                    // Remove from can-only if exists
+                BlockingMode.CAN_ONLY -> {
                     val newCanOnly = _canOnlyBlocks.value.toMutableMap()
-                    newCanOnly.remove(key)
+                    employeeKeysInColumn.forEach { key ->
+                        newCanOnly.remove(key)
+                    }
                     _canOnlyBlocks.value = newCanOnly
                 }
-                _blocks.value = newBlocks
             }
-            
-            BlockingMode.CAN_ONLY -> {
-                // PROTECTION: Check if employee already has manual CANNOT restrictions (except automatic Shabbat blocks)
-                val hasManualCannotRestrictions = _blocks.value.any { (blockKey, isBlocked) ->
-                    if (!isBlocked) return@any false
-                    
-                    val parts = blockKey.split("-")
-                    if (parts.size < 3 || parts[0] != employee.name) return@any false
-                    
-                    val blockDay = parts[1]
-                    val blockShift = parts[2]
-                    val blockShiftKey = "$blockDay-$blockShift"
-                    
-                    // This is a manual block (not automatic Shabbat block)
-                    !(employee.shabbatObserver && ShiftDefinitions.shabbatBlockedShifts.contains(blockShiftKey))
-                }
-                
-                if (hasManualCannotRestrictions) {
-                    // Show snackbar - cannot mix CANNOT and CAN_ONLY for same employee
-                    _snackbarMessage.value = "⚠️ עבור ${employee.name} כבר נבחרו תאים ב'לא יכול'.\nלא ניתן לשלב גם 'יכול רק' לאותו עובד."
-                    return
-                }
-                
-                val newBlocks = _blocks.value.toMutableMap()
-                val newCanOnly = _canOnlyBlocks.value.toMutableMap()
-                
-                shifts.forEach { shift ->
-                    val key = "${employee.name}-$day-$shift"
-                    newCanOnly[key] = true
-                    // Remove from blocks if exists (but not automatic Shabbat ones)
-                    val isAutomaticShabbatBlock = employee.shabbatObserver &&
-                            ShiftDefinitions.shabbatBlockedShifts.contains("$day-$shift")
-                    if (!isAutomaticShabbatBlock) {
-                        newBlocks.remove(key)
+        } else {
+            // TOGGLE ON - Add employee to all cells in this column
+            when (_blockingMode.value) {
+                BlockingMode.CANNOT -> {
+                    // PROTECTION: Check if employee already has CAN_ONLY restrictions
+                    val hasCanOnlyRestrictions = _canOnlyBlocks.value.any { (canOnlyKey, isCanOnly) ->
+                        isCanOnly && canOnlyKey.startsWith("${employee.name}-")
                     }
+                    
+                    if (hasCanOnlyRestrictions) {
+                        // Show snackbar - cannot mix CANNOT and CAN_ONLY for same employee
+                        _snackbarMessage.value = "⚠️ עבור ${employee.name} כבר נבחרו תאים ב'יכול רק'.\nלא ניתן לשלב גם 'לא יכול' לאותו עובד."
+                        return
+                    }
+                    
+                    val newBlocks = _blocks.value.toMutableMap()
+                    shifts.forEach { shift ->
+                        val key = "${employee.name}-$day-$shift"
+                        newBlocks[key] = true
+                        // Remove from can-only if exists
+                        val newCanOnly = _canOnlyBlocks.value.toMutableMap()
+                        newCanOnly.remove(key)
+                        _canOnlyBlocks.value = newCanOnly
+                    }
+                    _blocks.value = newBlocks
                 }
                 
-                _blocks.value = newBlocks
-                _canOnlyBlocks.value = newCanOnly
+                BlockingMode.CAN_ONLY -> {
+                    // PROTECTION: Check if employee already has manual CANNOT restrictions (except automatic Shabbat blocks)
+                    val hasManualCannotRestrictions = _blocks.value.any { (blockKey, isBlocked) ->
+                        if (!isBlocked) return@any false
+                        
+                        val parts = blockKey.split("-")
+                        if (parts.size < 3 || parts[0] != employee.name) return@any false
+                        
+                        val blockDay = parts[1]
+                        val blockShift = parts[2]
+                        val blockShiftKey = "$blockDay-$blockShift"
+                        
+                        // This is a manual block (not automatic Shabbat block)
+                        !(employee.shabbatObserver && ShiftDefinitions.shabbatBlockedShifts.contains(blockShiftKey))
+                    }
+                    
+                    if (hasManualCannotRestrictions) {
+                        // Show snackbar - cannot mix CANNOT and CAN_ONLY for same employee
+                        _snackbarMessage.value = "⚠️ עבור ${employee.name} כבר נבחרו תאים ב'לא יכול'.\nלא ניתן לשלב גם 'יכול רק' לאותו עובד."
+                        return
+                    }
+                    
+                    val newBlocks = _blocks.value.toMutableMap()
+                    val newCanOnly = _canOnlyBlocks.value.toMutableMap()
+                    
+                    shifts.forEach { shift ->
+                        val key = "${employee.name}-$day-$shift"
+                        newCanOnly[key] = true
+                        // Remove from blocks if exists (but not automatic Shabbat ones)
+                        val isAutomaticShabbatBlock = employee.shabbatObserver &&
+                                ShiftDefinitions.shabbatBlockedShifts.contains("$day-$shift")
+                        if (!isAutomaticShabbatBlock) {
+                            newBlocks.remove(key)
+                        }
+                    }
+                    
+                    _blocks.value = newBlocks
+                    _canOnlyBlocks.value = newCanOnly
+                }
             }
         }
         
@@ -564,7 +622,14 @@ class ScheduleViewModel(
                 }
             }
             updateTempDraftStatus() // Update after generation
+            
+            // Signal that generation is complete and ready to navigate
+            _autoGenerationComplete.value = true
         }
+    }
+    
+    fun resetAutoGenerationFlag() {
+        _autoGenerationComplete.value = false
     }
     
     fun updateScheduleCell(cellKey: String, value: String) {
@@ -639,6 +704,8 @@ class ScheduleViewModel(
                 
                 // Clear draft when opening from history - this schedule is already saved
                 clearDraft()
+                // Explicitly mark as NOT a temp draft - this is a saved schedule being viewed
+                clearTempDraft()
             } catch (e: Exception) {
                 // Handle JSON parsing error
                 e.printStackTrace()

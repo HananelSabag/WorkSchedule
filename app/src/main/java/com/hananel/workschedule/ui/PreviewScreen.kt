@@ -269,14 +269,18 @@ fun PreviewScreen(
             }
             
             // Statistics - moved to bottom as requested
-            // Using key(schedule) to ensure recomposition when schedule changes (e.g., cell edits)
-            item(key = schedule.hashCode()) {
-                EmployeeStatistics(
-                    employees = employees, 
-                    schedule = schedule,
-                    savingMode = savingMode,
-                    templateData = templateData
-                )
+            // Statistics will recompose automatically when schedule map changes
+            item {
+                // Force recomposition by using the schedule as a key in LaunchedEffect
+                val scheduleKey = remember(schedule) { schedule.hashCode() }
+                key(scheduleKey) {
+                    EmployeeStatistics(
+                        employees = employees, 
+                        schedule = schedule,
+                        savingMode = savingMode,
+                        templateData = templateData
+                    )
+                }
             }
         }
         

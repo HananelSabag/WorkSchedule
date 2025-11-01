@@ -215,6 +215,15 @@ fun WorkScheduleApp() {
             val snackbarMessage by viewModel.snackbarMessage.collectAsState()
             val isEditingScheduleBlocks by viewModel.isEditingScheduleBlocks.collectAsState()
             val templateData by viewModel.activeTemplate.collectAsState()
+            val autoGenerationComplete by viewModel.autoGenerationComplete.collectAsState()
+            
+            // Navigate to preview when auto-generation completes
+            LaunchedEffect(autoGenerationComplete) {
+                if (autoGenerationComplete) {
+                    currentScreen = Screen.PREVIEW
+                    viewModel.resetAutoGenerationFlag()
+                }
+            }
             
             BlockingScreen(
                 employees = employees,
@@ -243,7 +252,7 @@ fun WorkScheduleApp() {
                 },
                 onGenerateAutomaticSchedule = {
                     viewModel.generateSchedule() // Use new generic algorithm
-                    currentScreen = Screen.PREVIEW
+                    // Navigation will happen automatically when generation completes
                 },
                 onReturnToSavedSchedule = {
                     viewModel.returnToSavedScheduleWithUpdatedBlocks()
