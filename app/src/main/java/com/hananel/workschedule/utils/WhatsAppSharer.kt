@@ -90,20 +90,8 @@ object WhatsAppSharer {
         
         stringBuilder.append("📅 *סידור עבודה - שבוע $weekStart*\n\n")
         
-        // Get days and shifts (dynamic or hardcoded)
+        // Get days and shifts from template (or fallback to hardcoded)
         val daysOfWeek = templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
-        val shiftsToShow = if (templateData != null) {
-            templateData.shiftRows.map { "${it.shiftName} ${it.shiftHours}" }
-        } else {
-            // Legacy hardcoded shifts
-            listOf(
-                "בוקר 6:45-15:00",
-                "בוקר ארוך 06:45-18:45", 
-                "שישי עד 6:45-13:00",
-                "צהריים 23:00-14:45",
-                "לילה 7:00-22:30"
-            )
-        }
         
         // Header with days and dates
         stringBuilder.append("```\n")
@@ -115,26 +103,51 @@ object WhatsAppSharer {
         stringBuilder.append("\n")
         stringBuilder.append("=" .repeat(60) + "\n")
         
-        // Shift rows
-        shiftsToShow.forEach { shiftDisplay ->
-            stringBuilder.append("${shiftDisplay.padEnd(12)} ")
-            
-            daysOfWeek.forEach { day ->
-                val shiftId = getShiftIdFromDisplay(shiftDisplay)
+        // Shift rows - FULLY DYNAMIC: use template data directly
+        if (templateData != null) {
+            // Dynamic template - iterate shifts from template
+            templateData.shiftRows.forEach { shiftRow ->
+                val shiftDisplay = "${shiftRow.shiftName} ${shiftRow.shiftHours}"
+                stringBuilder.append("${shiftDisplay.padEnd(20)} ")
                 
-                // Special handling for Friday in "בוקר ארוך" row - should be בוקר-קצר
-                val actualKey = if (day == "שישי" && shiftId == "בוקר-ארוך") {
-                    "$day-בוקר-קצר"
-                } else {
-                    "$day-$shiftId"
+                daysOfWeek.forEach { day ->
+                    // Key format: "יום-שם משמרת" - EXACTLY as saved in schedule
+                    val key = "$day-${shiftRow.shiftName}"
+                    val employees = schedule[key] ?: emptyList()
+                    val employeeText = if (employees.isEmpty()) "-----" else employees.joinToString(",")
+                    
+                    stringBuilder.append("${employeeText.padEnd(10)} ")
                 }
-                
-                val employees = schedule[actualKey] ?: emptyList()
-                val employeeText = if (employees.isEmpty()) "-----" else employees.joinToString(",")
-                
-                stringBuilder.append("${employeeText.padEnd(8)} ")
+                stringBuilder.append("\n")
             }
-            stringBuilder.append("\n")
+        } else {
+            // Legacy: hardcoded shifts for backward compatibility
+            val legacyShifts = listOf(
+                "בוקר 6:45-15:00",
+                "בוקר ארוך 06:45-18:45", 
+                "שישי עד 6:45-13:00",
+                "צהריים 23:00-14:45",
+                "לילה 7:00-22:30"
+            )
+            
+            legacyShifts.forEach { shiftDisplay ->
+                stringBuilder.append("${shiftDisplay.padEnd(20)} ")
+                
+                daysOfWeek.forEach { day ->
+                    val shiftId = getShiftIdFromDisplay(shiftDisplay)
+                    val actualKey = if (day == "שישי" && shiftId == "בוקר-ארוך") {
+                        "$day-בוקר-קצר"
+                    } else {
+                        "$day-$shiftId"
+                    }
+                    
+                    val employees = schedule[actualKey] ?: emptyList()
+                    val employeeText = if (employees.isEmpty()) "-----" else employees.joinToString(",")
+                    
+                    stringBuilder.append("${employeeText.padEnd(10)} ")
+                }
+                stringBuilder.append("\n")
+            }
         }
         
         stringBuilder.append("```\n\n")

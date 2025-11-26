@@ -467,29 +467,50 @@ private fun EmployeeSelectionPanel(
             }
             
             // Employee selection buttons
-            Text("עובדים:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp) // Match BlockingScreen spacing
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(employees) { employee ->
-                    val isSelected = selectedEmployee?.id == employee.id
-                    Button(
-                        onClick = { 
-                            if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSelected) PrimaryTeal else Color.Gray
-                        ),
-                        modifier = Modifier.height(32.dp), // Match BlockingScreen height
-                        shape = RoundedCornerShape(16.dp), // Match BlockingScreen shape
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp) // Match BlockingScreen padding
-                    ) {
-                        Text(
-                            text = employee.name,
-                            fontSize = 11.sp, // Match BlockingScreen font size
-                            color = Color.White,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "עובדים:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface // Use theme color - works in dark mode
+                    )
+                    Text(
+                        text = "לחץ על אחד השמות כדי להכניס לטבלה",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Subtle but visible in dark mode
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp) // Match BlockingScreen spacing
+                ) {
+                    items(employees) { employee ->
+                        val isSelected = selectedEmployee?.id == employee.id
+                        Button(
+                            onClick = { 
+                                if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected) PrimaryTeal else Color.Gray
+                            ),
+                            modifier = Modifier.height(32.dp), // Match BlockingScreen height
+                            shape = RoundedCornerShape(16.dp), // Match BlockingScreen shape
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp) // Match BlockingScreen padding
+                        ) {
+                            Text(
+                                text = employee.name,
+                                fontSize = 11.sp, // Match BlockingScreen font size
+                                color = Color.White,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }

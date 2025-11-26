@@ -308,6 +308,49 @@ fun ShiftTemplateSetupScreen(
                     }
                 }
                 
+                // Table Preview Section
+                val enabledDaysForPreview = dayColumns.filter { it.isEnabled }
+                if (shiftRows.isNotEmpty() && enabledDaysForPreview.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFF8E1) // Light yellow/amber
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Visibility,
+                                    contentDescription = null,
+                                    tint = Color(0xFFF57C00),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = "תצוגה מקדימה של הטבלה",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFF57C00)
+                                )
+                            }
+                            
+                            // Table preview
+                            TablePreview(
+                                shiftRows = shiftRows,
+                                dayColumns = enabledDaysForPreview
+                            )
+                        }
+                    }
+                }
+                
                 // Done Button (auto-save on every action)
                 val validRows = shiftRows.filter { it.shiftName.isNotBlank() && it.shiftHours.isNotBlank() }
                 val enabledDays = dayColumns.count { it.isEnabled }
@@ -915,6 +958,139 @@ private fun DayColumnItemCompact(
                 )
             )
         }
+    }
+}
+
+// Table preview component - shows how the schedule table will look
+@Composable
+private fun TablePreview(
+    shiftRows: List<ShiftRow>,
+    dayColumns: List<DayColumn>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color.White, RoundedCornerShape(8.dp))
+            .padding(8.dp)
+    ) {
+        // Header row with days (RTL - right to left)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF3E7C3A), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
+                .padding(8.dp)
+        ) {
+            // Corner cell - "סידור עבודה"
+            Box(
+                modifier = Modifier
+                    .weight(0.8f)
+                    .background(Color.Black, RoundedCornerShape(4.dp))
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "סידור עבודה",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(4.dp))
+            
+            // Day headers (RTL - show in original order since Row is already RTL)
+            dayColumns.forEach { day ->
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .background(Color(0xFF4CAF50), RoundedCornerShape(4.dp))
+                        .padding(vertical = 8.dp, horizontal = 2.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = day.dayNameHebrew,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1
+                    )
+                }
+                Spacer(modifier = Modifier.width(2.dp))
+            }
+        }
+        
+        // Shift rows
+        shiftRows.forEach { shift ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp)
+            ) {
+                // Shift name cell
+                Box(
+                    modifier = Modifier
+                        .weight(0.8f)
+                        .background(Color(0xFF3E7C3A), RoundedCornerShape(4.dp))
+                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = shift.shiftName,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                        Text(
+                            text = shift.shiftHours,
+                            fontSize = 8.sp,
+                            color = Color.Black,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(4.dp))
+                
+                // Empty cells for days
+                dayColumns.forEach { _ ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(Color(0xFFB6D7A8), RoundedCornerShape(4.dp))
+                            .padding(vertical = 8.dp, horizontal = 2.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "-----",
+                            fontSize = 9.sp,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(2.dp))
+                }
+            }
+        }
+        
+        // Info text
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "זוהי תצוגה מקדימה - בסידור האמיתי יופיעו שמות העובדים",
+            fontSize = 10.sp,
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+        )
     }
 }
 

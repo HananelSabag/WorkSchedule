@@ -87,6 +87,10 @@ class ScheduleViewModel(
     private val _isEditingScheduleBlocks = MutableStateFlow(false)
     val isEditingScheduleBlocks = _isEditingScheduleBlocks.asStateFlow()
     
+    // Track the edited schedule's name/date for display in blocking screen title
+    private val _editedScheduleName = MutableStateFlow<String?>(null)
+    val editedScheduleName = _editedScheduleName.asStateFlow()
+    
     // Track if draft has manual assignments (to open correct screen)
     private val _draftHasManualAssignments = MutableStateFlow(false)
     val draftHasManualAssignments = _draftHasManualAssignments.asStateFlow()
@@ -732,11 +736,31 @@ class ScheduleViewModel(
                 _currentScheduleId.value = schedule.id
                 _isEditingExistingSchedule.value = true
                 _isEditingScheduleBlocks.value = true // Special mode: editing blocks from history
+                _editedScheduleName.value = schedule.weekStart // Store schedule name/date for display
                 
                 // Clear temp draft when editing from history
                 clearTempDraft()
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+    }
+    
+    // Create a copy of the current schedule as a new schedule
+    fun createScheduleCopy() {
+        viewModelScope.launch {
+            try {
+                // Clear the current schedule ID - this will create a NEW schedule
+                _currentScheduleId.value = null
+                _isEditingExistingSchedule.value = false
+                _isEditingScheduleBlocks.value = false
+                _editedScheduleName.value = null
+                
+                // Keep blocks and schedule data as-is, just mark as new
+                // User can now modify and save as a new schedule
+                _snackbarMessage.value = "נוצר עותק - ניתן לערוך ולשמור כסידור חדש"
+            } catch (e: Exception) {
+                _errorMessage.value = "שגיאה ביצירת עותק: ${e.message}"
             }
         }
     }

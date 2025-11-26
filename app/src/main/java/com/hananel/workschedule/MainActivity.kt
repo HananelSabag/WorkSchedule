@@ -214,6 +214,7 @@ fun WorkScheduleApp() {
             val weekStartDate by viewModel.weekStartDate.collectAsState()
             val snackbarMessage by viewModel.snackbarMessage.collectAsState()
             val isEditingScheduleBlocks by viewModel.isEditingScheduleBlocks.collectAsState()
+            val editedScheduleName by viewModel.editedScheduleName.collectAsState()
             val templateData by viewModel.activeTemplate.collectAsState()
             val autoGenerationComplete by viewModel.autoGenerationComplete.collectAsState()
             
@@ -235,6 +236,7 @@ fun WorkScheduleApp() {
                 weekStartDate = weekStartDate,
                 snackbarMessage = snackbarMessage,
                 isEditingScheduleBlocks = isEditingScheduleBlocks,
+                editedScheduleName = editedScheduleName,
                 templateData = templateData,
                 onSelectEmployee = { employee -> viewModel.selectEmployee(employee) },
                 onSetBlockingMode = { mode -> viewModel.setBlockingMode(mode) },
@@ -260,6 +262,10 @@ fun WorkScheduleApp() {
                 },
                 onOverrideAndCreateNew = {
                     viewModel.overrideAndCreateNewManualSchedule()
+                    currentScreen = Screen.MANUAL_CREATION
+                },
+                onCreateScheduleCopy = {
+                    viewModel.createScheduleCopy()
                     currentScreen = Screen.MANUAL_CREATION
                 },
                 onClearAllBlocks = { viewModel.clearAllBlocks() },

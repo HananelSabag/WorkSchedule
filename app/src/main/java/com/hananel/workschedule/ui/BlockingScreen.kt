@@ -1,5 +1,6 @@
 package com.hananel.workschedule.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.ScreenRotation
@@ -60,6 +62,7 @@ fun BlockingScreen(
     weekStartDate: java.time.LocalDate,
     snackbarMessage: String?,
     isEditingScheduleBlocks: Boolean, // New: are we editing blocks of existing schedule from history?
+    editedScheduleName: String? = null, // Schedule name/date when editing from history
     templateData: TemplateData? = null, // Dynamic template
     onSelectEmployee: (Employee?) -> Unit,
     onSetBlockingMode: (ScheduleViewModel.BlockingMode) -> Unit,
@@ -71,6 +74,7 @@ fun BlockingScreen(
     onGenerateAutomaticSchedule: () -> Unit, // NEW: Generate schedule automatically
     onReturnToSavedSchedule: () -> Unit, // New: return to saved schedule with updated blocks
     onOverrideAndCreateNew: () -> Unit, // New: override and create new manual schedule
+    onCreateScheduleCopy: () -> Unit, // New: create a copy of current schedule
     onClearAllBlocks: () -> Unit,
     onDismissSnackbar: () -> Unit,
     onBackClick: () -> Unit,
@@ -177,14 +181,23 @@ fun BlockingScreen(
                     )
                 }
                 
-                Text(
-                    text = "חסימות משמרות",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal, // Use logo color
+                Column(
                     modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = if (isEditingScheduleBlocks && editedScheduleName != null) {
+                            "עריכת סידור $editedScheduleName"
+                        } else {
+                            "חסימות משמרות"
+                        },
+                        fontSize = if (isEditingScheduleBlocks && editedScheduleName != null) 16.sp else 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryTeal,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2
+                    )
+                }
                 
                 // Reset button + Logo
                 Row(
@@ -295,13 +308,46 @@ fun BlockingScreen(
                         }
                     }
                     
+                    // Create Copy Button - NEW OPTION
+                    OutlinedButton(
+                        onClick = onCreateScheduleCopy,
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = PrimaryGreen
+                        ),
+                        border = BorderStroke(2.dp, PrimaryGreen),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ContentCopy,
+                                contentDescription = null,
+                                tint = PrimaryGreen,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "צור עותק של הסידור",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryGreen
+                            )
+                        }
+                    }
+                    
                     // Override and Create New Button - SECONDARY
                     Button(
                         onClick = onOverrideAndCreateNew,
                         colors = ButtonDefaults.buttonColors(containerColor = Orange),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp),
+                            .height(52.dp),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Column(
@@ -310,14 +356,14 @@ fun BlockingScreen(
                         ) {
                             Text(
                                 text = "דרוס והכן סידור חדש",
-                                fontSize = 15.sp,
+                                fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White,
                                 textAlign = TextAlign.Center
                             )
                             Text(
                                 text = "צור סידור ידני מאפס",
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 color = Color.White.copy(alpha = 0.8f),
                                 textAlign = TextAlign.Center
                             )
@@ -517,29 +563,50 @@ private fun EmployeeSelectionPanel(
             }
             
             // Employee selection buttons - More visible and efficient
-            Text("עובדים:", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(employees) { employee ->
-                    val isSelected = selectedEmployee?.id == employee.id
-                    Button(
-                        onClick = { 
-                            if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSelected) PrimaryTeal else Color.Gray
-                        ),
-                        modifier = Modifier.height(32.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = employee.name,
-                            fontSize = 11.sp,
-                            color = Color.White,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                        )
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "עובדים:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface // Use theme color - works in dark mode
+                    )
+                    Text(
+                        text = "לחץ על אחד השמות כדי להכניס לטבלה",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Subtle but visible in dark mode
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                    )
+                }
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(employees) { employee ->
+                        val isSelected = selectedEmployee?.id == employee.id
+                        Button(
+                            onClick = { 
+                                if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSelected) PrimaryTeal else Color.Gray
+                            ),
+                            modifier = Modifier.height(32.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = employee.name,
+                                fontSize = 11.sp,
+                                color = Color.White,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
                     }
                 }
             }

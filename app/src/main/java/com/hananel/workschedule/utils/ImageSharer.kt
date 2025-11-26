@@ -48,8 +48,12 @@ object ImageSharer {
         val daysOfWeek = templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
         val daysRTL = daysOfWeek.reversed()
         
+        // Get shift rows from template (dynamic count!)
+        val shiftRows = templateData?.shiftRows ?: emptyList()
+        val numShifts = if (templateData != null) shiftRows.size else 4 // Dynamic or 4 for legacy
+        
         val totalWidth = shiftColumnWidth + (daysRTL.size * cellWidth)
-        val totalHeight = headerHeight + (4 * cellHeight) // ONLY 4 shifts like the app
+        val totalHeight = headerHeight + (numShifts * cellHeight)
         
         val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -195,146 +199,281 @@ object ImageSharer {
             currentX -= cellWidth // Move LEFT for next day
         }
         
-        // ONLY 4 shifts like in the app - EXACT same order and names  
-        val appShifts = listOf(
-            Pair("בוקר", "06:45-15:00"),
-            Pair("בוקר ארוך\n(שישי עד 13:00)", "06:45-18:45"), 
-            Pair("צהריים", "14:45-23:00"),
-            Pair("לילה", "22:30-07:00")
-        )
-        
+        // Draw shift rows - FULLY DYNAMIC from template
         var currentY = headerHeight
         
-        appShifts.forEach { (shiftName, timeRange) ->
-            // Start from RIGHT side for RTL layout
-            currentX = totalWidth - shiftColumnWidth
+        if (templateData != null) {
+            // Dynamic: use template shift rows
+            templateData.shiftRows.forEach { shiftRow ->
+                drawShiftRow(
+                    canvas, shiftRow.shiftName, shiftRow.shiftHours,
+                    daysOfWeek, schedule, currentY, totalWidth,
+                    cellWidth, cellHeight, shiftColumnWidth,
+                    shiftColumnBackgroundPaint, cellBackgroundPaint,
+                    shiftTextPaint, timeTextPaint, bodyTextPaint, borderPaint
+                )
+                currentY += cellHeight
+            }
+        } else {
+            // Legacy hardcoded shifts for backward compatibility
+            val legacyShifts = listOf(
+                Pair("בוקר", "06:45-15:00"),
+                Pair("בוקר ארוך\n(שישי עד 13:00)", "06:45-18:45"), 
+                Pair("צהריים", "14:45-23:00"),
+                Pair("לילה", "22:30-07:00")
+            )
             
-            // Shift column FIRST (rightmost in RTL)
+            legacyShifts.forEach { (shiftName, timeRange) ->
+                drawLegacyShiftRow(
+                    canvas, shiftName, timeRange,
+                    daysOfWeek, schedule, currentY, totalWidth,
+                    cellWidth, cellHeight, shiftColumnWidth,
+                    shiftColumnBackgroundPaint, cellBackgroundPaint,
+                    shiftTextPaint, timeTextPaint, bodyTextPaint, borderPaint
+                )
+                currentY += cellHeight
+            }
+        }
+        
+        return bitmap
+    }
+    
+    /**
+     * Draw a dynamic shift row (uses shift name directly from template)
+     */
+    private fun drawShiftRow(
+        canvas: Canvas,
+        shiftName: String,
+        shiftHours: String,
+        daysOfWeek: List<String>,
+        schedule: Map<String, List<String>>,
+        currentY: Int,
+        totalWidth: Int,
+        cellWidth: Int,
+        cellHeight: Int,
+        shiftColumnWidth: Int,
+        shiftColumnBackgroundPaint: Paint,
+        cellBackgroundPaint: Paint,
+        shiftTextPaint: Paint,
+        timeTextPaint: Paint,
+        bodyTextPaint: Paint,
+        borderPaint: Paint
+    ) {
+        var currentX = totalWidth - shiftColumnWidth
+        
+        // Shift column (rightmost in RTL)
+        canvas.drawRect(
+            currentX.toFloat(), 
+            currentY.toFloat(), 
+            (currentX + shiftColumnWidth).toFloat(), 
+            (currentY + cellHeight).toFloat(), 
+            shiftColumnBackgroundPaint
+        )
+        
+        // Draw shift name and hours
+        canvas.drawText(
+            shiftName,
+            currentX + shiftColumnWidth / 2f,
+            currentY + cellHeight / 2f - 20f,
+            shiftTextPaint
+        )
+        canvas.drawText(
+            shiftHours,
+            currentX + shiftColumnWidth / 2f,
+            currentY + cellHeight / 2f + 30f,
+            timeTextPaint
+        )
+        
+        canvas.drawRect(
+            currentX.toFloat(), 
+            currentY.toFloat(), 
+            (currentX + shiftColumnWidth).toFloat(), 
+            (currentY + cellHeight).toFloat(), 
+            borderPaint
+        )
+        
+        // Move LEFT for day cells
+        currentX -= cellWidth
+        
+        // Day cells - RTL order
+        daysOfWeek.forEach { day ->
             canvas.drawRect(
                 currentX.toFloat(), 
                 currentY.toFloat(), 
-                (currentX + shiftColumnWidth).toFloat(), 
+                (currentX + cellWidth).toFloat(), 
                 (currentY + cellHeight).toFloat(), 
-                shiftColumnBackgroundPaint
+                cellBackgroundPaint
             )
             
-            // Draw shift name and time with PERFECT spacing and centered parentheses!
-            if (shiftName.contains("\n")) {
-                val lines = shiftName.split("\n")
-                // First line - shift name (like "בוקר ארוך")
-                canvas.drawText(
-                    lines[0],
-                    currentX + shiftColumnWidth / 2f,
-                    currentY + cellHeight / 2f - 40f, // High up
-                    shiftTextPaint
-                )
-                // Second line - Friday note CENTERED between name and time
-                canvas.drawText(
-                    lines[1],
-                    currentX + shiftColumnWidth / 2f,
-                    currentY + cellHeight / 2f + 5f, // PERFECTLY centered
-                    timeTextPaint // Use smaller paint for the note
-                )
-                // Time range - at the bottom with space
-                canvas.drawText(
-                    timeRange,
-                    currentX + shiftColumnWidth / 2f,
-                    currentY + cellHeight / 2f + 45f, // Low down
-                    timeTextPaint // Use smaller paint for times
-                )
+            // Key format: "יום-שם משמרת" - EXACTLY as saved in schedule
+            val key = "$day-$shiftName"
+            val employees = schedule[key] ?: emptyList()
+            
+            if (employees.isNotEmpty()) {
+                val uniqueEmployees = employees.distinct()
+                uniqueEmployees.forEachIndexed { index, employee ->
+                    canvas.drawText(
+                        employee,
+                        currentX + cellWidth / 2f,
+                        currentY + cellHeight / 2f + (index - uniqueEmployees.size / 2f + 0.5f) * 40f,
+                        bodyTextPaint
+                    )
+                }
             } else {
-                // Regular shift - balanced spacing
                 canvas.drawText(
-                    shiftName,
-                    currentX + shiftColumnWidth / 2f,
-                    currentY + cellHeight / 2f - 20f, // Balanced up
-                    shiftTextPaint
-                )
-                canvas.drawText(
-                    timeRange,
-                    currentX + shiftColumnWidth / 2f,
-                    currentY + cellHeight / 2f + 30f, // Balanced down
-                    timeTextPaint // Use smaller paint for times
+                    "-----",
+                    currentX + cellWidth / 2f,
+                    currentY + cellHeight / 2f,
+                    bodyTextPaint
                 )
             }
             
             canvas.drawRect(
                 currentX.toFloat(), 
                 currentY.toFloat(), 
-                (currentX + shiftColumnWidth).toFloat(), 
+                (currentX + cellWidth).toFloat(), 
                 (currentY + cellHeight).toFloat(), 
                 borderPaint
             )
             
-            // Move LEFT for day cells
             currentX -= cellWidth
+        }
+    }
+    
+    /**
+     * Draw legacy hardcoded shift row (for backward compatibility)
+     */
+    private fun drawLegacyShiftRow(
+        canvas: Canvas,
+        shiftName: String,
+        timeRange: String,
+        daysOfWeek: List<String>,
+        schedule: Map<String, List<String>>,
+        currentY: Int,
+        totalWidth: Int,
+        cellWidth: Int,
+        cellHeight: Int,
+        shiftColumnWidth: Int,
+        shiftColumnBackgroundPaint: Paint,
+        cellBackgroundPaint: Paint,
+        shiftTextPaint: Paint,
+        timeTextPaint: Paint,
+        bodyTextPaint: Paint,
+        borderPaint: Paint
+    ) {
+        var currentX = totalWidth - shiftColumnWidth
+        
+        // Shift column (rightmost in RTL)
+        canvas.drawRect(
+            currentX.toFloat(), 
+            currentY.toFloat(), 
+            (currentX + shiftColumnWidth).toFloat(), 
+            (currentY + cellHeight).toFloat(), 
+            shiftColumnBackgroundPaint
+        )
+        
+        // Draw shift name and time with proper spacing
+        if (shiftName.contains("\n")) {
+            val lines = shiftName.split("\n")
+            canvas.drawText(
+                lines[0],
+                currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight / 2f - 40f,
+                shiftTextPaint
+            )
+            canvas.drawText(
+                lines[1],
+                currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight / 2f + 5f,
+                timeTextPaint
+            )
+            canvas.drawText(
+                timeRange,
+                currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight / 2f + 45f,
+                timeTextPaint
+            )
+        } else {
+            canvas.drawText(
+                shiftName,
+                currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight / 2f - 20f,
+                shiftTextPaint
+            )
+            canvas.drawText(
+                timeRange,
+                currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight / 2f + 30f,
+                timeTextPaint
+            )
+        }
+        
+        canvas.drawRect(
+            currentX.toFloat(), 
+            currentY.toFloat(), 
+            (currentX + shiftColumnWidth).toFloat(), 
+            (currentY + cellHeight).toFloat(), 
+            borderPaint
+        )
+        
+        currentX -= cellWidth
+        
+        // Day cells - RTL order
+        daysOfWeek.forEach { day ->
+            canvas.drawRect(
+                currentX.toFloat(), 
+                currentY.toFloat(), 
+                (currentX + cellWidth).toFloat(), 
+                (currentY + cellHeight).toFloat(), 
+                cellBackgroundPaint
+            )
             
-            // Day cells - RTL order (ראשון to שבת from right to left)
-            daysOfWeek.forEach { day ->
-                canvas.drawRect(
-                    currentX.toFloat(), 
-                    currentY.toFloat(), 
-                    (currentX + cellWidth).toFloat(), 
-                    (currentY + cellHeight).toFloat(), 
-                    cellBackgroundPaint
-                )
-                
-                val shiftId = getShiftIdFromName(shiftName)
-                
-                // Special handling for Friday in "בוקר ארוך" row - should be בוקר-קצר
-                val actualKey = if (day == "שישי" && shiftId == "בוקר-ארוך") {
-                    "$day-בוקר-קצר"
-                } else {
-                    "$day-$shiftId"
-                }
-                
-                // Special handling for Saturday morning like in the app
-                val employees = if (day == "שבת" && shiftId == "בוקר") {
-                    // Combine both morning shifts for Saturday
-                    (schedule["$day-בוקר"] ?: emptyList()) + 
-                    (schedule["$day-בוקר-ארוך"] ?: emptyList())
-                } else if (day == "שבת" && shiftId == "בוקר-ארוך") {
-                    // Skip second morning shift for Saturday
-                    emptyList()
-                } else {
-                    schedule[actualKey] ?: emptyList()
-                }
-                
-                if (employees.isNotEmpty()) {
-                    // Draw each employee name on separate line with larger font
-                    val uniqueEmployees = employees.distinct()
-                    uniqueEmployees.forEachIndexed { index, employee ->
-                        canvas.drawText(
-                            employee,
-                            currentX + cellWidth / 2f,
-                            currentY + cellHeight / 2f + (index - uniqueEmployees.size / 2f + 0.5f) * 40f,
-                            bodyTextPaint // Already set to 50f - large and clear
-                        )
-                    }
-                } else {
+            val shiftId = getShiftIdFromName(shiftName)
+            
+            val actualKey = if (day == "שישי" && shiftId == "בוקר-ארוך") {
+                "$day-בוקר-קצר"
+            } else {
+                "$day-$shiftId"
+            }
+            
+            val employees = if (day == "שבת" && shiftId == "בוקר") {
+                (schedule["$day-בוקר"] ?: emptyList()) + 
+                (schedule["$day-בוקר-ארוך"] ?: emptyList())
+            } else if (day == "שבת" && shiftId == "בוקר-ארוך") {
+                emptyList()
+            } else {
+                schedule[actualKey] ?: emptyList()
+            }
+            
+            if (employees.isNotEmpty()) {
+                val uniqueEmployees = employees.distinct()
+                uniqueEmployees.forEachIndexed { index, employee ->
                     canvas.drawText(
-                        "-----",
+                        employee,
                         currentX + cellWidth / 2f,
-                        currentY + cellHeight / 2f,
+                        currentY + cellHeight / 2f + (index - uniqueEmployees.size / 2f + 0.5f) * 40f,
                         bodyTextPaint
                     )
                 }
-                
-                canvas.drawRect(
-                    currentX.toFloat(), 
-                    currentY.toFloat(), 
-                    (currentX + cellWidth).toFloat(), 
-                    (currentY + cellHeight).toFloat(), 
-                    borderPaint
+            } else {
+                canvas.drawText(
+                    "-----",
+                    currentX + cellWidth / 2f,
+                    currentY + cellHeight / 2f,
+                    bodyTextPaint
                 )
-                
-                currentX -= cellWidth // Move LEFT for next day
             }
             
-            currentY += cellHeight
+            canvas.drawRect(
+                currentX.toFloat(), 
+                currentY.toFloat(), 
+                (currentX + cellWidth).toFloat(), 
+                (currentY + cellHeight).toFloat(), 
+                borderPaint
+            )
+            
+            currentX -= cellWidth
         }
-        
-        return bitmap
     }
     
     /**
