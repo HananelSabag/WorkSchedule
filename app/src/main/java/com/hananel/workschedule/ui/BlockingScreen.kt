@@ -33,6 +33,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.animation.core.*
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
 import com.hananel.workschedule.data.Employee

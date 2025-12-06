@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Theme for Android 12+ with Splash Screen API -->
+    <style name="Theme.WorkSchedule" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:statusBarColor">@color/splash_background</item>
+        <item name="android:navigationBarColor">@color/splash_background</item>
+        
+        <!-- Splash Screen API for Android 12+ -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/splash_background</item>
+    </style>
+    
+    <!-- Colors for splash - same dark theme -->
+    <color name="splash_background">#0F1A19</color>
+    <color name="primary_teal">#2C7873</color>
+</resources>
+

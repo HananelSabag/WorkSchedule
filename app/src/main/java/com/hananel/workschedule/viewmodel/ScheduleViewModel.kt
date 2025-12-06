@@ -1095,13 +1095,17 @@ class ScheduleViewModel(
     
     // Temp Draft Management
     private fun updateTempDraftStatus() {
-        // IMPORTANT: If editing blocks from an existing schedule (from history),
-        // save directly to that schedule instead of creating a draft
-        if (_isEditingScheduleBlocks.value && _currentScheduleId.value != null) {
-            // This is an existing schedule from history - save changes directly
-            saveScheduleChanges()
-            // Don't create a draft
+        // IMPORTANT: If viewing or editing an existing schedule from history,
+        // do NOT update temp draft status - we're not in draft mode!
+        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
+            // We're viewing/editing an existing saved schedule from history
+            // The data in state is the history schedule, NOT a new draft
             _hasTempDraft.value = false
+            
+            // If specifically editing blocks, save changes to the schedule
+            if (_isEditingScheduleBlocks.value) {
+                saveScheduleChanges()
+            }
             return
         }
         
@@ -1169,6 +1173,13 @@ class ScheduleViewModel(
     fun saveDraftOnAppClose() {
         viewModelScope.launch {
             try {
+                // IMPORTANT: Don't save draft if we're viewing/editing a history schedule!
+                // This would overwrite the user's actual draft with the history schedule data
+                if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
+                    // We're viewing a history schedule - don't touch the draft
+                    return@launch
+                }
+                
                 // Only save if there's actual temp draft data
                 if (_hasTempDraft.value) {
                     val gson = com.google.gson.Gson()
