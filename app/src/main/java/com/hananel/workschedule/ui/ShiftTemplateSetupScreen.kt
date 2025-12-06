@@ -20,6 +20,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -961,135 +963,195 @@ private fun DayColumnItemCompact(
     }
 }
 
-// Table preview component - shows how the schedule table will look
+// Table preview component - Beautiful modern design
 @Composable
 private fun TablePreview(
     shiftRows: List<ShiftRow>,
     dayColumns: List<DayColumn>
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White, RoundedCornerShape(8.dp))
-            .padding(8.dp)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        // Header row with days (RTL - right to left)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF3E7C3A), RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp))
-                .padding(8.dp)
+        Column(
+            modifier = Modifier.padding(2.dp)
         ) {
-            // Corner cell - "סידור עבודה"
-            Box(
-                modifier = Modifier
-                    .weight(0.8f)
-                    .background(Color.Black, RoundedCornerShape(4.dp))
-                    .padding(vertical = 8.dp, horizontal = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "סידור עבודה",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(4.dp))
-            
-            // Day headers (RTL - show in original order since Row is already RTL)
-            dayColumns.forEach { day ->
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(Color(0xFF4CAF50), RoundedCornerShape(4.dp))
-                        .padding(vertical = 8.dp, horizontal = 2.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = day.dayNameHebrew,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1
-                    )
-                }
-                Spacer(modifier = Modifier.width(2.dp))
-            }
-        }
-        
-        // Shift rows
-        shiftRows.forEach { shift ->
+            // Header row with days
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 2.dp)
+                    .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                PrimaryTeal,
+                                Color(0xFF3D8B85)
+                            )
+                        )
+                    )
+                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Shift name cell
+                // Corner cell with logo placeholder
                 Box(
                     modifier = Modifier
-                        .weight(0.8f)
-                        .background(Color(0xFF3E7C3A), RoundedCornerShape(4.dp))
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
+                        .weight(1.2f)
+                        .padding(horizontal = 2.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = shift.shiftName,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
+                            text = "📅",
+                            fontSize = 16.sp
                         )
                         Text(
-                            text = shift.shiftHours,
-                            fontSize = 8.sp,
-                            color = Color.Black,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.width(4.dp))
-                
-                // Empty cells for days
-                dayColumns.forEach { _ ->
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .background(Color(0xFFB6D7A8), RoundedCornerShape(4.dp))
-                            .padding(vertical = 8.dp, horizontal = 2.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "-----",
+                            text = "סידור",
                             fontSize = 9.sp,
-                            color = Color.Gray,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
                             textAlign = TextAlign.Center
                         )
                     }
-                    Spacer(modifier = Modifier.width(2.dp))
+                }
+                
+                // Day headers
+                dayColumns.forEach { day ->
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 1.dp)
+                            .background(
+                                Color.White.copy(alpha = 0.15f),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = day.dayNameHebrew,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
+                        )
+                    }
                 }
             }
+            
+            // Shift rows with alternating colors
+            shiftRows.forEachIndexed { index, shift ->
+                val isEven = index % 2 == 0
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            if (isEven) Color(0xFFF8FAFA) else Color.White
+                        )
+                        .padding(vertical = 4.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Shift name cell
+                    Box(
+                        modifier = Modifier
+                            .weight(1.2f)
+                            .padding(horizontal = 2.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        PrimaryGreen.copy(alpha = 0.9f),
+                                        PrimaryGreen.copy(alpha = 0.7f)
+                                    )
+                                ),
+                                RoundedCornerShape(6.dp)
+                            )
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = shift.shiftName,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = shift.shiftHours,
+                                fontSize = 7.sp,
+                                color = Color.White.copy(alpha = 0.9f),
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                    
+                    // Empty cells for days
+                    dayColumns.forEach { _ ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 1.dp)
+                                .background(
+                                    Color(0xFFE8F5E9),
+                                    RoundedCornerShape(4.dp)
+                                )
+                                .border(
+                                    width = 0.5.dp,
+                                    color = PrimaryGreen.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
+                                .padding(vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "—",
+                                fontSize = 10.sp,
+                                color = Color(0xFFAED581),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+            
+            // Bottom rounded corners padding
+            Spacer(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(Color.White)
+            )
         }
-        
-        // Info text
-        Spacer(modifier = Modifier.height(8.dp))
+    }
+    
+    // Info text below the card
+    Spacer(modifier = Modifier.height(8.dp))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         Text(
-            text = "זוהי תצוגה מקדימה - בסידור האמיתי יופיעו שמות העובדים",
-            fontSize = 10.sp,
-            color = Color.Gray,
+            text = "💡",
+            fontSize = 12.sp
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = "כך תיראה הטבלה שלך",
+            fontSize = 11.sp,
+            color = Color(0xFFF57C00),
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+            fontWeight = FontWeight.Medium
         )
     }
 }

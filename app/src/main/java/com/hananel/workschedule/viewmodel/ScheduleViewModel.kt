@@ -706,14 +706,66 @@ class ScheduleViewModel(
                 _isEditingExistingSchedule.value = true
                 _isEditingScheduleBlocks.value = false // Not editing blocks, just viewing
                 
-                // Clear draft when opening from history - this schedule is already saved
-                clearDraft()
-                // Explicitly mark as NOT a temp draft - this is a saved schedule being viewed
-                clearTempDraft()
+                // Parse and restore the week start date from the schedule
+                parseAndRestoreWeekStartDate(schedule.weekStart)
+                
+                // IMPORTANT: Do NOT clear draft when viewing from history!
+                // The user may have a work-in-progress draft that they want to return to.
+                // Just mark that we're viewing an existing schedule, not creating a new draft.
+                // The draft system is separate from viewing saved schedules.
+                _hasTempDraft.value = false // We're not in draft mode, we're viewing saved schedule
             } catch (e: Exception) {
                 // Handle JSON parsing error
                 e.printStackTrace()
             }
+        }
+    }
+    
+    /**
+     * Parse the weekStart string from a saved schedule and restore _weekStartDate
+     * Format expected: "dd/MM - dd/MM" (e.g., "15/12 - 21/12")
+     * Falls back to next Sunday if parsing fails
+     */
+    private fun parseAndRestoreWeekStartDate(weekStart: String) {
+        try {
+            // Try to parse format "dd/MM - dd/MM" (e.g., "15/12 - 21/12")
+            val parts = weekStart.split(" - ")
+            if (parts.size == 2) {
+                val startDatePart = parts[0].trim() // "15/12"
+                val dateParts = startDatePart.split("/")
+                if (dateParts.size == 2) {
+                    val day = dateParts[0].toIntOrNull() ?: return
+                    val month = dateParts[1].toIntOrNull() ?: return
+                    
+                    // Determine the year - use current year, or next year if the month is before current month
+                    val today = java.time.LocalDate.now()
+                    var year = today.year
+                    
+                    // If the month is significantly before current month, it might be next year
+                    // Or if it's after, it might be from past schedules
+                    val targetDate = try {
+                        java.time.LocalDate.of(year, month, day)
+                    } catch (e: Exception) {
+                        // Invalid date, try to recover
+                        return
+                    }
+                    
+                    // If the date is more than 6 months in the future, it's probably from last year
+                    if (targetDate.isAfter(today.plusMonths(6))) {
+                        year -= 1
+                    }
+                    // If the date is more than 6 months in the past, it's probably from next year
+                    else if (targetDate.isBefore(today.minusMonths(6))) {
+                        year += 1
+                    }
+                    
+                    val restoredDate = java.time.LocalDate.of(year, month, day)
+                    _weekStartDate.value = restoredDate
+                }
+            }
+        } catch (e: Exception) {
+            // If parsing fails, keep the current weekStartDate (next Sunday)
+            e.printStackTrace()
         }
     }
     
@@ -738,8 +790,12 @@ class ScheduleViewModel(
                 _isEditingScheduleBlocks.value = true // Special mode: editing blocks from history
                 _editedScheduleName.value = schedule.weekStart // Store schedule name/date for display
                 
-                // Clear temp draft when editing from history
-                clearTempDraft()
+                // Parse and restore the week start date from the schedule
+                parseAndRestoreWeekStartDate(schedule.weekStart)
+                
+                // IMPORTANT: Do NOT clear draft when editing from history!
+                // The user may have a work-in-progress draft that they want to return to.
+                _hasTempDraft.value = false // We're editing existing schedule, not a new draft
             } catch (e: Exception) {
                 e.printStackTrace()
             }
