@@ -1,6 +1,7 @@
 package com.hananel.workschedule.ui
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -219,36 +220,42 @@ fun SplashScreen(
                         modifier = Modifier
                             .size(140.dp)
                             .scale(pulseScale)
-                            .alpha(0.3f * logoAlpha)
+                            .alpha(0.4f * logoAlpha)
                             .blur(30.dp)
                             .background(PrimaryTeal, CircleShape)
                     )
                     
-                    // Logo container with gradient border
-                    Box(
+                    // Logo container with gradient border - clean circle only
+                    Surface(
                         modifier = Modifier
                             .size(130.dp)
                             .scale(logoScale)
-                            .alpha(logoAlpha)
-                            .background(
-                                Brush.linearGradient(
-                                    colors = listOf(
-                                        PrimaryTeal,
-                                        PrimaryGreen.copy(alpha = 0.8f),
-                                        PrimaryTeal
-                                    )
-                                ),
-                                CircleShape
+                            .alpha(logoAlpha),
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.95f),
+                        border = BorderStroke(
+                            width = 3.dp,
+                            brush = Brush.linearGradient(
+                                colors = listOf(
+                                    PrimaryTeal,
+                                    PrimaryGreen.copy(alpha = 0.8f),
+                                    PrimaryTeal
+                                )
                             )
-                            .padding(3.dp)
-                            .background(Color(0xFF0F2826), CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo),
-                            contentDescription = "Work Schedule Logo",
-                            modifier = Modifier.size(80.dp)
                         )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo),
+                                contentDescription = "Work Schedule Logo",
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(CircleShape)
+                            )
+                        }
                     }
                 }
                 

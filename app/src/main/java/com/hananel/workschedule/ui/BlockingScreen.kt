@@ -163,12 +163,12 @@ fun BlockingScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
                         .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp) // Reduced spacing for better UX
                 ) {
-                    // Add space from status bar
-                    Spacer(modifier = Modifier.height(24.dp))
+                    // Add space from status bar - reduced
+                    Spacer(modifier = Modifier.height(16.dp))
                     
                     // Title with Logo and Back Button
                     Row(
@@ -248,7 +248,7 @@ fun BlockingScreen(
                 onCellClick = { employee, day, shift ->
                     onToggleBlock(employee, day, shift)
                 },
-                modifier = Modifier.fillMaxWidth().height(450.dp) // Fixed height, no cutting!
+                modifier = Modifier.fillMaxWidth().height(380.dp) // Reduced height for better UX - less scrolling
             )
             
             // Employee Selection Panel (moved to BOTTOM so it won't push table down)
@@ -260,19 +260,36 @@ fun BlockingScreen(
                 onSetBlockingMode = onSetBlockingMode
             )
             
-            // Legend moved to bottom to save space above table
-            Card(
+            // Legend moved to bottom - Modern compact design
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = GrayLight)
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text("● אדום = לא יכול", fontSize = 12.sp, color = BlockedRed, fontWeight = FontWeight.Bold)
-                    Text("● כחול = יכול רק", fontSize = 12.sp, color = CanOnlyBlue, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(10.dp),
+                            color = BlockedRed,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("לא יכול", fontSize = 12.sp, color = BlockedRed, fontWeight = FontWeight.Bold)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(10.dp),
+                            color = CanOnlyBlue,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("יכול רק", fontSize = 12.sp, color = CanOnlyBlue, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             
@@ -516,18 +533,25 @@ private fun EmployeeSelectionPanel(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = GrayLight)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Selected employee indicator - Enhanced
+            // Selected employee indicator - Modern design
             if (selectedEmployee != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryTeal.copy(alpha = 0.2f)),
-                    border = CardDefaults.outlinedCardBorder(enabled = true)
+                    colors = CardDefaults.cardColors(
+                        containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -535,17 +559,23 @@ private fun EmployeeSelectionPanel(
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Person, 
-                            contentDescription = null, 
-                            modifier = Modifier.size(20.dp),
-                            tint = PrimaryTeal
-                        )
+                        // Person icon with background
+                        Surface(
+                            color = PrimaryTeal.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Person, 
+                                contentDescription = null, 
+                                modifier = Modifier.size(32.dp).padding(4.dp),
+                                tint = PrimaryTeal
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "👤 עובד נבחר:",
-                                fontSize = 12.sp,
+                                text = "עובד נבחר",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
@@ -557,18 +587,17 @@ private fun EmployeeSelectionPanel(
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = "לחץ על תא בטבלה",
+                            text = "👆 לחץ על תא",
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.End
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
             
-            // Employee selection buttons - More visible and efficient
+            // Employee selection buttons - Modern chips style
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -576,72 +605,88 @@ private fun EmployeeSelectionPanel(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "עובדים:",
-                        fontSize = 12.sp,
+                        text = "👥 בחר עובד:",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface // Use theme color - works in dark mode
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "לחץ על אחד השמות כדי להכניס לטבלה",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Subtle but visible in dark mode
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        text = "${employees.size} עובדים",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(employees) { employee ->
                         val isSelected = selectedEmployee?.id == employee.id
-                        Button(
+                        FilterChip(
                             onClick = { 
                                 if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) PrimaryTeal else Color.Gray
+                            label = {
+                                Text(
+                                    text = employee.name,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            selected = isSelected,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryTeal,
+                                selectedLabelColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
                             ),
-                            modifier = Modifier.height(32.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = employee.name,
-                                fontSize = 11.sp,
-                                color = Color.White,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = PrimaryTeal.copy(alpha = 0.3f),
+                                selectedBorderColor = PrimaryTeal,
+                                enabled = true,
+                                selected = isSelected
                             )
-                        }
+                        )
                     }
                 }
             }
             
-            // Mode buttons - more compact
+            // Mode buttons - Modern with icons, KEEPING RED AND BLUE COLORS!
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                // "לא יכול" button - RED when active
                 Button(
                     onClick = { onSetBlockingMode(ScheduleViewModel.BlockingMode.CANNOT) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CANNOT) 
-                            BlockedRed else Color.Gray
+                            BlockedRed else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (blockingMode == ScheduleViewModel.BlockingMode.CANNOT)
+                            Color.White else BlockedRed
                     ),
-                    modifier = Modifier.weight(1f).height(36.dp),
-                    shape = RoundedCornerShape(6.dp)
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = if (blockingMode != ScheduleViewModel.BlockingMode.CANNOT) 
+                        BorderStroke(1.dp, BlockedRed.copy(alpha = 0.5f)) else null
                 ) {
-                    Text("לא יכול", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("🚫 לא יכול", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 
+                // "יכול רק" button - BLUE when active
                 Button(
                     onClick = { onSetBlockingMode(ScheduleViewModel.BlockingMode.CAN_ONLY) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CAN_ONLY) 
-                            CanOnlyBlue else Color.Gray
+                            CanOnlyBlue else MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = if (blockingMode == ScheduleViewModel.BlockingMode.CAN_ONLY)
+                            Color.White else CanOnlyBlue
                     ),
-                    modifier = Modifier.weight(1f).height(36.dp),
-                    shape = RoundedCornerShape(6.dp)
+                    modifier = Modifier.weight(1f).height(40.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    border = if (blockingMode != ScheduleViewModel.BlockingMode.CAN_ONLY) 
+                        BorderStroke(1.dp, CanOnlyBlue.copy(alpha = 0.5f)) else null
                 ) {
-                    Text("יכול רק", fontSize = 11.sp, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("✅ יכול רק", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

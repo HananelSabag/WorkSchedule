@@ -109,7 +109,7 @@ fun ShiftTemplateSetupScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFE3F2FD) // Light blue
+                        containerColor = PrimaryBlue.copy(alpha = 0.1f)
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -126,14 +126,14 @@ fun ShiftTemplateSetupScreen(
                             Icon(
                                 imageVector = Icons.Default.Info,
                                 contentDescription = null,
-                                tint = Color(0xFF1976D2),
+                                tint = PrimaryBlue,
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
                                 text = "כיצד להגדיר את הטבלה?",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1976D2)
+                                color = PrimaryBlue
                             )
                         }
                         
@@ -143,7 +143,7 @@ fun ShiftTemplateSetupScreen(
                                     "• לפחות 2 משמרות ו-4 ימים נדרשים\n" +
                                     "• לחץ על משמרת לעריכה",
                             fontSize = 14.sp,
-                            color = Color(0xFF1565C0),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
                             lineHeight = 20.sp
                         )
                     }
@@ -316,7 +316,7 @@ fun ShiftTemplateSetupScreen(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFF8E1) // Light yellow/amber
+                            containerColor = Orange.copy(alpha = 0.1f)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -333,14 +333,14 @@ fun ShiftTemplateSetupScreen(
                                 Icon(
                                     imageVector = Icons.Default.Visibility,
                                     contentDescription = null,
-                                    tint = Color(0xFFF57C00),
+                                    tint = Orange,
                                     modifier = Modifier.size(24.dp)
                                 )
                                 Text(
                                     text = "תצוגה מקדימה של הטבלה",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFFF57C00)
+                                    color = Orange
                                 )
                             }
                             
@@ -788,9 +788,9 @@ private fun ShiftRowItemDraggable(
             },
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDragging -> Color(0xFFB2DFDB) // Darker teal when dragging
-                isTarget && !isDragged -> Color(0xFFFFF9C4) // Yellow for target position
-                else -> Color(0xFFF5F5F5)
+                isDragging -> PrimaryTeal.copy(alpha = 0.3f) // Teal when dragging
+                isTarget && !isDragged -> Yellow.copy(alpha = 0.3f) // Yellow for target position
+                else -> MaterialTheme.colorScheme.surfaceVariant
             }
         ),
         shape = RoundedCornerShape(8.dp),
@@ -925,7 +925,10 @@ private fun DayColumnItemCompact(
                 onClick = onToggle
             ),
         colors = CardDefaults.cardColors(
-            containerColor = if (dayColumn.isEnabled) Color(0xFFE8F5E9) else Color(0xFFF5F5F5)
+            containerColor = if (dayColumn.isEnabled) 
+                PrimaryGreen.copy(alpha = 0.15f) 
+            else 
+                MaterialTheme.colorScheme.surfaceVariant
         ),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -941,7 +944,10 @@ private fun DayColumnItemCompact(
                 text = dayColumn.dayNameHebrew,
                 fontSize = 14.sp,
                 fontWeight = if (dayColumn.isEnabled) FontWeight.Bold else FontWeight.Normal,
-                color = if (dayColumn.isEnabled) MaterialTheme.colorScheme.onSurface else Color.Gray,
+                color = if (dayColumn.isEnabled) 
+                    MaterialTheme.colorScheme.onSurface 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
             )
             
@@ -954,9 +960,9 @@ private fun DayColumnItemCompact(
                     checkedThumbColor = Color.White,
                     checkedTrackColor = PrimaryGreen,
                     uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = Color.Gray,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.outline,
                     disabledCheckedThumbColor = Color.White,
-                    disabledCheckedTrackColor = Color(0xFFB0BEC5)
+                    disabledCheckedTrackColor = PrimaryGreen.copy(alpha = 0.5f)
                 )
             )
         }

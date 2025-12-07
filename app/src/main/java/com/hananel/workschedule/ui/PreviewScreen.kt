@@ -369,13 +369,16 @@ private fun EmployeeStatistics(
     
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header - clean and simple
+            // Header - modern design
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -383,15 +386,20 @@ private fun EmployeeStatistics(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.BarChart,
-                    contentDescription = null,
-                    tint = PrimaryTeal,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    color = PrimaryTeal.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = PrimaryTeal,
+                        modifier = Modifier.size(28.dp).padding(4.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.width(10.dp))
                 Text(
-                    text = "סטטיסטיקה שבועית",
+                    text = "📊 סטטיסטיקה שבועית",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = PrimaryTeal
@@ -402,8 +410,8 @@ private fun EmployeeStatistics(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryBlue.copy(alpha = 0.1f), RoundedCornerShape(4.dp))
-                    .padding(8.dp),
+                    .background(PrimaryBlue.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
@@ -431,7 +439,7 @@ private fun EmployeeStatistics(
                 )
             }
             
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             
             // Table Rows - Calculate stats dynamically (will recompose when schedule changes)
             employees.forEach { employee ->
@@ -460,22 +468,21 @@ private fun EmployeeStatistics(
                     Text(
                         text = employee.name,
                         fontSize = 14.sp,
-                        color = Color.Black, // Force black text in both light and dark mode
+                        color = MaterialTheme.colorScheme.onSurface, // Theme-aware text color
                         modifier = Modifier.weight(1f)
                     )
                     
                     // Shift count badge
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (shiftCount > 0) PrimaryGreen.copy(alpha = 0.2f) else GrayLight
-                        ),
+                    Surface(
+                        color = if (shiftCount > 0) PrimaryGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.width(70.dp)
                     ) {
                         Text(
                             text = shiftCount.toString(),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (shiftCount > 0) PrimaryGreen else GrayMedium,
+                            color = if (shiftCount > 0) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             textAlign = TextAlign.Center
                         )
@@ -484,10 +491,9 @@ private fun EmployeeStatistics(
                     Spacer(modifier = Modifier.width(8.dp))
                     
                     // Weekly hours badge
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (totalHours > 0) PrimaryTeal.copy(alpha = 0.2f) else GrayLight
-                        ),
+                    Surface(
+                        color = if (totalHours > 0) PrimaryTeal.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.width(70.dp)
                     ) {
                         Text(
@@ -498,7 +504,7 @@ private fun EmployeeStatistics(
                             },
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (totalHours > 0) PrimaryTeal else GrayMedium,
+                            color = if (totalHours > 0) PrimaryTeal else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                             textAlign = TextAlign.Center
                         )
@@ -508,7 +514,7 @@ private fun EmployeeStatistics(
                 // Divider between rows (except last)
                 if (employee != employees.last()) {
                     HorizontalDivider(
-                        color = GrayLight,
+                        color = MaterialTheme.colorScheme.outlineVariant,
                         thickness = 1.dp,
                         modifier = Modifier.padding(horizontal = 8.dp)
                     )

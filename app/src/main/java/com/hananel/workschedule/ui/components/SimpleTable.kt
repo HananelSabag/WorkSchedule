@@ -70,71 +70,91 @@ fun SimpleScheduleTable(
         Column(
             modifier = modifier.fillMaxSize()
         ) {
-            // Simple Control Panel - Only Zoom
+            // Modern Control Panel - Zoom Controls
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = GrayLight)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(12.dp),
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Zoom Controls
+                    // Zoom Controls with modern buttons
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        IconButton(
+                        // Zoom out button
+                        FilledTonalIconButton(
                             onClick = { 
-                                // תיקון בעיית הזום - צמצום ב-10% מדויק
                                 val currentPercent = (scale * 100).toInt()
                                 val newPercent = maxOf(50, currentPercent - 10)
                                 scale = newPercent / 100f
                             },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(36.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = PrimaryTeal.copy(alpha = 0.15f),
+                                contentColor = PrimaryTeal
+                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ZoomOut,
                                 contentDescription = "הקטן",
-                                tint = PrimaryTeal
+                                modifier = Modifier.size(20.dp)
                             )
                         }
 
-                        Text(
-                            text = "${(scale * 100).toInt()}%",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryTeal
-                        )
+                        // Zoom percentage badge
+                        Surface(
+                            color = PrimaryTeal,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = "${(scale * 100).toInt()}%",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            )
+                        }
 
-                        IconButton(
+                        // Zoom in button
+                        FilledTonalIconButton(
                             onClick = { 
-                                // תיקון בעיית הזום - הגדלה ב-10% מדויק
                                 val currentPercent = (scale * 100).toInt()
                                 val newPercent = minOf(200, currentPercent + 10)
                                 scale = newPercent / 100f
                             },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(36.dp),
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = PrimaryTeal.copy(alpha = 0.15f),
+                                contentColor = PrimaryTeal
+                            )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ZoomIn,
                                 contentDescription = "הגדל",
-                                tint = PrimaryTeal
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    // Reset View
+                    // Reset View - compact button
                     TextButton(
-                        onClick = { scale = 1f }
+                        onClick = { scale = 1f },
+                        colors = ButtonDefaults.textButtonColors(contentColor = PrimaryTeal)
                     ) {
                         Text(
-                            text = "איפוס זום",
-                            fontSize = 14.sp,
-                            color = PrimaryTeal
+                            text = "⟳ איפוס",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }

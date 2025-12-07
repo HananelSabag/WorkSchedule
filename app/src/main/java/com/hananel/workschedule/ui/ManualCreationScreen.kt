@@ -209,21 +209,46 @@ fun ManualCreationScreen(
                 onSelectEmployee = onSelectEmployee
             )
             
-            // Instructions with color legend
-            Card(
+            // Instructions with color legend - Modern design
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F8FF))
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    Text("🔴 חסום", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("🔵 יכול", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("⚫ משובץ", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    Text("👆 לחץ ארוך", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(10.dp),
+                            color = BlockedRed,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("חסום", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BlockedRed)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(10.dp),
+                            color = CanOnlyBlue,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("יכול", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CanOnlyBlue)
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(
+                            modifier = Modifier.size(10.dp),
+                            color = Color.Black,
+                            shape = RoundedCornerShape(3.dp)
+                        ) {}
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("משובץ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text("👆 לחץ ארוך", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             
@@ -416,18 +441,25 @@ private fun EmployeeSelectionPanel(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = GrayLight)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Selected employee indicator - Enhanced (like BlockingScreen)
+            // Selected employee indicator - Modern design (matches BlockingScreen)
             if (selectedEmployee != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryTeal.copy(alpha = 0.2f)),
-                    border = CardDefaults.outlinedCardBorder(enabled = true)
+                    colors = CardDefaults.cardColors(
+                        containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -435,17 +467,23 @@ private fun EmployeeSelectionPanel(
                             .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Person, 
-                            contentDescription = null, 
-                            modifier = Modifier.size(20.dp),
-                            tint = PrimaryTeal
-                        )
+                        // Person icon with background
+                        Surface(
+                            color = PrimaryTeal.copy(alpha = 0.2f),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Person, 
+                                contentDescription = null, 
+                                modifier = Modifier.size(32.dp).padding(4.dp),
+                                tint = PrimaryTeal
+                            )
+                        }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "👤 עובד נבחר:",
-                                fontSize = 12.sp,
+                                text = "עובד נבחר",
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
@@ -457,18 +495,17 @@ private fun EmployeeSelectionPanel(
                         }
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
-                            text = "לחץ על תא בטבלה",
+                            text = "👆 לחץ על תא",
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.End
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
             
-            // Employee selection buttons
+            // Employee selection buttons - Modern chips style (matches BlockingScreen)
             Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -476,41 +513,47 @@ private fun EmployeeSelectionPanel(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "עובדים:",
-                        fontSize = 12.sp,
+                        text = "👥 בחר עובד:",
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface // Use theme color - works in dark mode
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "לחץ על אחד השמות כדי להכניס לטבלה",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant, // Subtle but visible in dark mode
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                        text = "${employees.size} עובדים",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp) // Match BlockingScreen spacing
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(employees) { employee ->
                         val isSelected = selectedEmployee?.id == employee.id
-                        Button(
+                        FilterChip(
                             onClick = { 
                                 if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
                             },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) PrimaryTeal else Color.Gray
+                            label = {
+                                Text(
+                                    text = employee.name,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                )
+                            },
+                            selected = isSelected,
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = PrimaryTeal,
+                                selectedLabelColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                labelColor = MaterialTheme.colorScheme.onSurface
                             ),
-                            modifier = Modifier.height(32.dp), // Match BlockingScreen height
-                            shape = RoundedCornerShape(16.dp), // Match BlockingScreen shape
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp) // Match BlockingScreen padding
-                        ) {
-                            Text(
-                                text = employee.name,
-                                fontSize = 11.sp, // Match BlockingScreen font size
-                                color = Color.White,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = PrimaryTeal.copy(alpha = 0.3f),
+                                selectedBorderColor = PrimaryTeal,
+                                enabled = true,
+                                selected = isSelected
                             )
-                        }
+                        )
                     }
                 }
             }

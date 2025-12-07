@@ -89,17 +89,33 @@ fun EmployeeManagementScreen(
             // Add Employee Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = GrayLight)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "הוסף עובד חדש",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PersonAdd,
+                            contentDescription = null,
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "הוסף עובד חדש",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryTeal
+                        )
+                    }
                     
                     OutlinedTextField(
                         value = newEmployeeName,
@@ -274,7 +290,16 @@ private fun EmployeeCard(
     
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp) // No shadow!
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(12.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, 
+            if (employee.shabbatObserver) BlockedRed.copy(alpha = 0.3f)
+            else if (employee.isMitgaber) Orange.copy(alpha = 0.3f)
+            else MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Row(
             modifier = Modifier
@@ -287,11 +312,21 @@ private fun EmployeeCard(
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = employee.name,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = PrimaryTeal,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = employee.name,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
                 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -301,64 +336,82 @@ private fun EmployeeCard(
                         checked = employee.shabbatObserver,
                         onCheckedChange = { isChecked ->
                             onToggleShabbatObserver(employee.copy(shabbatObserver = isChecked))
-                        }
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = BlockedRed,
+                            checkmarkColor = Color.White
+                        )
                     )
                     Text(
                         text = "שומר שבת",
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        color = if (employee.shabbatObserver) BlockedRed else MaterialTheme.colorScheme.onSurface
                     )
                     
-                    Spacer(modifier = Modifier.width(16.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     
                     Checkbox(
                         checked = employee.isMitgaber,
                         onCheckedChange = { isChecked ->
                             onToggleShabbatObserver(employee.copy(isMitgaber = isChecked))
-                        }
+                        },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = Orange,
+                            checkmarkColor = Color.White
+                        )
                     )
                     Text(
                         text = "מתגבר",
                         fontSize = 14.sp,
-                        color = if (employee.isMitgaber) Orange else Color.Unspecified
+                        color = if (employee.isMitgaber) Orange else MaterialTheme.colorScheme.onSurface
                     )
                 }
                 
-                // Employee status text
+                // Employee status text - as chips
                 Row(
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     if (employee.shabbatObserver) {
-                        Text(
-                            text = "חסום אוטומטית בשישי-שבת",
-                            fontSize = 12.sp,
-                            color = BlockedRed
-                        )
-                    }
-                    if (employee.shabbatObserver && employee.isMitgaber) {
-                        Text(
-                            text = " • ",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
+                        Surface(
+                            color = BlockedRed.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "🔴 חסום בשישי-שבת",
+                                fontSize = 11.sp,
+                                color = BlockedRed,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                     if (employee.isMitgaber) {
-                        Text(
-                            text = "גמיש בשיבוץ",
-                            fontSize = 12.sp,
-                            color = Orange
-                        )
+                        Surface(
+                            color = Orange.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = "⭐ גמיש בשיבוץ",
+                                fontSize = 11.sp,
+                                color = Orange,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
             }
             
             // Delete Button
-            IconButton(
-                onClick = { showDeleteConfirm = true }
+            FilledTonalIconButton(
+                onClick = { showDeleteConfirm = true },
+                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                    containerColor = BlockedRed.copy(alpha = 0.1f),
+                    contentColor = BlockedRed
+                )
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "מחק עובד",
-                    tint = BlockedRed
+                    contentDescription = "מחק עובד"
                 )
             }
         }

@@ -1,6 +1,7 @@
 package com.hananel.workschedule.ui
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -121,38 +122,35 @@ fun HomeScreen(
                             modifier = Modifier
                                 .size(52.dp)
                                 .scale(breatheScale)
-                                .alpha(0.2f)
+                                .alpha(0.3f)
                                 .blur(15.dp)
                                 .background(PrimaryTeal, CircleShape)
                         )
                         
-                        // Logo container
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(
-                                    Brush.linearGradient(
-                                        colors = listOf(
-                                            PrimaryTeal.copy(alpha = 0.2f),
-                                            PrimaryGreen.copy(alpha = 0.1f)
-                                        )
-                                    ),
-                                    CircleShape
+                        // Logo container - clean circle only
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape = CircleShape,
+                            color = Color.White,
+                            border = BorderStroke(
+                                width = 2.dp,
+                                brush = Brush.linearGradient(
+                                    colors = listOf(PrimaryTeal, PrimaryGreen.copy(alpha = 0.6f))
                                 )
-                                .border(
-                                    width = 2.dp,
-                                    brush = Brush.linearGradient(
-                                        colors = listOf(PrimaryTeal, PrimaryGreen.copy(alpha = 0.6f))
-                                    ),
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.logo),
-                                contentDescription = "Logo",
-                                modifier = Modifier.size(30.dp)
                             )
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.logo),
+                                    contentDescription = "Logo",
+                                    modifier = Modifier
+                                        .size(30.dp)
+                                        .clip(CircleShape)
+                                )
+                            }
                         }
                     }
                     
