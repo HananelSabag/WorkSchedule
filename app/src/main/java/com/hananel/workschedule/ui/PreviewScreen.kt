@@ -190,116 +190,93 @@ fun PreviewScreen(
                 )
             }
             
-            // Action Buttons Row - Premium style, side by side
+            // Action Buttons - Two rows for better layout
             item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Download to Gallery Button - Premium style
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
-                                )
-                            )
-                            .clickable { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
-                        contentAlignment = Alignment.Center
+                    // First row: Download + WhatsApp
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
+                        // Download to Gallery Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                    )
+                                )
+                                .clickable { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Download,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "הורד",
-                                    fontSize = 14.sp,
+                                    text = "הורד לגלריה",
+                                    fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
-                                Text(
-                                    text = "לגלריה",
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
                             }
                         }
-                    }
-                    
-                    // Share on WhatsApp Button - Premium style
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(Color(0xFF25D366), Color(0xFF128C7E))
+                        
+                        // Share on WhatsApp Button
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        colors = listOf(Color(0xFF25D366), Color(0xFF128C7E))
+                                    )
                                 )
-                            )
-                            .clickable { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
+                                .clickable { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.Chat,
                                     contentDescription = null,
                                     tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(22.dp)
                                 )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(
-                                    text = "שתף",
-                                    fontSize = 14.sp,
+                                    text = "שתף בווצאפ",
+                                    fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
-                                )
-                                Text(
-                                    text = "בווצאפ",
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
                                 )
                             }
                         }
                     }
                     
-                    // Statistics Button - Premium style
+                    // Second row: Statistics - full width
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .height(64.dp)
-                            .clip(RoundedCornerShape(16.dp))
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(PrimaryBlue, Color(0xFF1565C0))
@@ -309,37 +286,22 @@ fun PreviewScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 10.dp),
-                            horizontalArrangement = Arrangement.Start,
+                            horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(36.dp)
-                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BarChart,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "סטטיסטיקה",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "שעות",
-                                    fontSize = 10.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.BarChart,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "📊 סטטיסטיקה שבועית",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
                     }
                 }
@@ -413,39 +375,34 @@ fun PreviewScreen(
         // Statistics Popup Dialog
         if (showStatisticsPopup) {
             Dialog(onDismissRequest = { showStatisticsPopup = false }) {
-                Card(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                        .padding(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(20.dp)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
                     ) {
-                        // Header with close button
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(20.dp)
                         ) {
+                            // Header
                             Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    color = PrimaryBlue.copy(alpha = 0.15f),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.BarChart,
-                                        contentDescription = null,
-                                        tint = PrimaryBlue,
-                                        modifier = Modifier.size(32.dp).padding(6.dp)
-                                    )
-                                }
+                                Icon(
+                                    imageVector = Icons.Default.BarChart,
+                                    contentDescription = null,
+                                    tint = PrimaryBlue,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
                                 Text(
                                     text = "📊 סטטיסטיקה שבועית",
                                     fontSize = 18.sp,
@@ -454,27 +411,41 @@ fun PreviewScreen(
                                 )
                             }
                             
-                            IconButton(
-                                onClick = { showStatisticsPopup = false }
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "סגור",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            Spacer(modifier = Modifier.height(16.dp))
+                            
+                            // Statistics content
+                            val scheduleKey = remember(schedule) { schedule.hashCode() }
+                            key(scheduleKey) {
+                                EmployeeStatistics(
+                                    employees = employees, 
+                                    schedule = schedule,
+                                    savingMode = savingMode,
+                                    templateData = templateData
                                 )
                             }
                         }
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        // Statistics content
-                        val scheduleKey = remember(schedule) { schedule.hashCode() }
-                        key(scheduleKey) {
-                            EmployeeStatistics(
-                                employees = employees, 
-                                schedule = schedule,
-                                savingMode = savingMode,
-                                templateData = templateData
+                    }
+                    
+                    // Close button - top right corner, outside the card
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .offset(x = 8.dp, y = (-8).dp)
+                            .size(36.dp)
+                            .clickable { showStatisticsPopup = false },
+                        shape = CircleShape,
+                        color = BlockedRed,
+                        shadowElevation = 4.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "סגור",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
