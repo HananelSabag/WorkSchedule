@@ -70,12 +70,21 @@ fun HistoryScreen(
                     textAlign = TextAlign.Center
                 )
                 
-                // App Logo
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(24.dp)
-                )
+                // App Logo with white background for visibility
+                Surface(
+                    modifier = Modifier.size(28.dp),
+                    shape = androidx.compose.foundation.shape.CircleShape,
+                    color = Color.White,
+                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(2.dp)
+                    )
+                }
             }
             
             if (schedules.isEmpty()) {

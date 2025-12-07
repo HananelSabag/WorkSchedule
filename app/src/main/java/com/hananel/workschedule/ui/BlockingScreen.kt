@@ -11,10 +11,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Person
@@ -34,6 +36,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.animation.core.*
@@ -220,12 +223,21 @@ fun BlockingScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    // App Logo
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    // App Logo with white background for visibility
+                    Surface(
+                        modifier = Modifier.size(28.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(2.dp)
+                        )
+                    }
                 }
             }
             
@@ -248,7 +260,7 @@ fun BlockingScreen(
                 onCellClick = { employee, day, shift ->
                     onToggleBlock(employee, day, shift)
                 },
-                modifier = Modifier.fillMaxWidth().height(380.dp) // Reduced height for better UX - less scrolling
+                modifier = Modifier.fillMaxWidth().height(420.dp) // Restored height for 100% zoom visibility
             )
             
             // Employee Selection Panel (moved to BOTTOM so it won't push table down)
@@ -392,66 +404,108 @@ fun BlockingScreen(
                     }
                 }
             } else {
-                // NORMAL MODE: Show regular Manual/Auto buttons
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                // NORMAL MODE: Show Manual/Auto buttons SIDE BY SIDE - Premium style
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp), // Bottom spacing
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    // Manual Schedule Button - FIRST AND LARGE!
-                    Button(
-                        onClick = onGenerateManualSchedule,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                    // Manual Schedule Button - Premium style
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(64.dp), // Larger height
-                        shape = RoundedCornerShape(12.dp)
+                            .weight(1f)
+                            .height(72.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                                )
+                            )
+                            .clickable(onClick = onGenerateManualSchedule),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "צור סידור ידני",
-                                fontSize = 18.sp, // Larger font
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "אתה בוחר",
-                                fontSize = 13.sp, // Larger subtitle
-                                color = Color.White.copy(alpha = 0.8f),
-                                textAlign = TextAlign.Center
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "סידור ידני",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "אתה בוחר",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                     
-                    // Automatic Schedule Button - NEW GENERIC ALGORITHM!
-                    Button(
-                        onClick = onGenerateAutomaticSchedule,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                    // Automatic Schedule Button - Premium style
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
-                        shape = RoundedCornerShape(12.dp)
+                            .weight(1f)
+                            .height(72.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                )
+                            )
+                            .clickable(onClick = onGenerateAutomaticSchedule),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "צור סידור אוטומטי",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "האלגוריתם בוחר",
-                                fontSize = 12.sp,
-                                color = Color.White.copy(alpha = 0.8f),
-                                textAlign = TextAlign.Center
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(
+                                    text = "אוטומטי",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "אלגוריתם",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                 }

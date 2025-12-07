@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -358,33 +359,60 @@ fun ShiftTemplateSetupScreen(
                 val enabledDays = dayColumns.count { it.isEnabled }
                 val canFinish = validRows.size >= 2 && enabledDays >= 4
                 
-                Button(
-                    onClick = {
-                        if (canFinish) {
-                            onSaveAndExit() // Save and exit to home
-                        }
-                    },
-                    enabled = canFinish,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryTeal,
-                        disabledContainerColor = Color.Gray
-                    ),
+                // Premium style Finish Button
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
+                        .height(64.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = if (canFinish) 
+                                    listOf(PrimaryTeal, Color(0xFF00796B))
+                                else 
+                                    listOf(Color.Gray, Color.DarkGray)
+                            )
+                        )
+                        .clickable(enabled = canFinish) {
+                            if (canFinish) {
+                                onSaveAndExit()
+                            }
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "סיום עריכה",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "סיום עריכה",
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "שמירה וחזרה למסך הבית",
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
                 }
                 
                 // Validation messages

@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -28,9 +29,12 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.ZoomOut
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -139,12 +143,21 @@ fun ManualCreationScreen(
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    // App Logo
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
+                    // App Logo with white background for visibility
+                    Surface(
+                        modifier = Modifier.size(28.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(2.dp)
+                        )
+                    }
                 }
             }
             
@@ -252,20 +265,54 @@ fun ManualCreationScreen(
                 }
             }
             
-            // Complete Manual Schedule Button - הוסר הכפתור הצהוב, רק הכפתור הראשי
-                Button(
-                    onClick = onGenerateManualSchedule,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                    text = "שמירה והצגה סופית של הסידור",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
+            // Complete Manual Schedule Button - Premium style
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                        )
                     )
+                    .clickable(onClick = onGenerateManualSchedule),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = "שמירה והצגה סופית",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "סיום יצירת הסידור",
+                            fontSize = 12.sp,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
                 }
+            }
         }
         
         // Blocking Warning Dialog

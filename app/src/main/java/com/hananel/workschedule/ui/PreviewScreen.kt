@@ -3,11 +3,16 @@ package com.hananel.workschedule.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.window.Dialog
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -59,6 +64,9 @@ fun PreviewScreen(
         mutableStateOf(schedule.mapValues { it.value.joinToString(", ") })
     }
     
+    // State for statistics popup
+    var showStatisticsPopup by remember { mutableStateOf(false) }
+    
     // Update editable schedule when schedule changes
     LaunchedEffect(schedule) {
         editableSchedule = schedule.mapValues { it.value.joinToString(", ") }
@@ -107,44 +115,20 @@ fun PreviewScreen(
                         textAlign = TextAlign.Center
                     )
                     
-                    // App Logo
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            
-            
-            
-            // Return to Blocking Button - Show only when editing (makes sense to return to edit blocks)
-            if (isEditingExistingSchedule) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
+                    // App Logo with white background for visibility
+                    Surface(
+                        modifier = Modifier.size(28.dp),
+                        shape = CircleShape,
+                        color = Color.White,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                     ) {
-                        Button(
-                            onClick = onReturnToBlocking,
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
-                            modifier = Modifier.width(180.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "עריכת חסימות",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                        }
+                        Image(
+                            painter = painterResource(id = R.drawable.logo),
+                            contentDescription = "Logo",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(2.dp)
+                        )
                     }
                 }
             }
@@ -206,81 +190,215 @@ fun PreviewScreen(
                 )
             }
             
-            // Share Buttons - Two separate buttons as requested
+            // Action Buttons Row - Premium style, side by side
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Download to Gallery Button
-                    Button(
-                        onClick = { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                    // Download to Gallery Button - Premium style
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                )
+                            )
+                            .clickable { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Download,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "הורד לגלריה",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Download,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "הורד",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "לגלריה",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                     
-                    // Share on WhatsApp Button  
-                    Button(
-                        onClick = { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)), // WhatsApp green
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                    // Share on WhatsApp Button - Premium style
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF25D366), Color(0xFF128C7E))
+                                )
+                            )
+                            .clickable { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Chat,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "שתף",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "בווצאפ",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Statistics Button - Premium style
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryBlue, Color(0xFF1565C0))
+                                )
+                            )
+                            .clickable { showStatisticsPopup = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.BarChart,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = "סטטיסטיקה",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "שעות",
+                                    fontSize = 10.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Return to Blocking Button - Always show (not just when editing)
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                            )
+                        )
+                        .clickable(onClick = onReturnToBlocking),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Chat,
+                                imageVector = Icons.Default.Edit,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                text = "עריכת חסימות",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
                             )
                             Text(
-                                text = "שתף בווצאפ",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                textAlign = TextAlign.Center
+                                text = "חזור למסך החסימות",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.8f)
                             )
                         }
                     }
                 }
             }
             
-            // Statistics - moved to bottom as requested
-            // Statistics will recompose automatically when schedule map changes
+            // Bottom spacing
             item {
-                // Force recomposition by using the schedule as a key in LaunchedEffect
-                val scheduleKey = remember(schedule) { schedule.hashCode() }
-                key(scheduleKey) {
-                    EmployeeStatistics(
-                        employees = employees, 
-                        schedule = schedule,
-                        savingMode = savingMode,
-                        templateData = templateData
-                    )
-                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
         
@@ -290,6 +408,78 @@ fun PreviewScreen(
                 message = errorMessage,
                 onDismiss = onDismissError
             )
+        }
+        
+        // Statistics Popup Dialog
+        if (showStatisticsPopup) {
+            Dialog(onDismissRequest = { showStatisticsPopup = false }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp)
+                    ) {
+                        // Header with close button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Surface(
+                                    color = PrimaryBlue.copy(alpha = 0.15f),
+                                    shape = RoundedCornerShape(10.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.BarChart,
+                                        contentDescription = null,
+                                        tint = PrimaryBlue,
+                                        modifier = Modifier.size(32.dp).padding(6.dp)
+                                    )
+                                }
+                                Text(
+                                    text = "📊 סטטיסטיקה שבועית",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PrimaryBlue
+                                )
+                            }
+                            
+                            IconButton(
+                                onClick = { showStatisticsPopup = false }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "סגור",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // Statistics content
+                        val scheduleKey = remember(schedule) { schedule.hashCode() }
+                        key(scheduleKey) {
+                            EmployeeStatistics(
+                                employees = employees, 
+                                schedule = schedule,
+                                savingMode = savingMode,
+                                templateData = templateData
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

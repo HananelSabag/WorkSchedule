@@ -3,12 +3,16 @@ package com.hananel.workschedule.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -78,12 +82,21 @@ fun EmployeeManagementScreen(
                     textAlign = TextAlign.Center
                 )
                 
-                // App Logo
-                Image(
-                    painter = painterResource(id = R.drawable.logo),
-                    contentDescription = "Logo",
-                    modifier = Modifier.size(24.dp)
-                )
+                // App Logo with white background for visibility
+                Surface(
+                    modifier = Modifier.size(28.dp),
+                    shape = CircleShape,
+                    color = Color.White,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.logo),
+                        contentDescription = "Logo",
+                        modifier = Modifier
+                            .size(20.dp)
+                            .padding(2.dp)
+                    )
+                }
             }
             
             // Add Employee Section
@@ -173,29 +186,63 @@ fun EmployeeManagementScreen(
                         )
                     }
                     
-                    Button(
-                        onClick = {
-                            if (newEmployeeName.trim().isNotEmpty()) {
-                                onAddEmployee(newEmployeeName.trim(), newEmployeeShabbatObserver, newEmployeeIsMitgaber)
-                                newEmployeeName = ""
-                                newEmployeeShabbatObserver = false
-                                newEmployeeIsMitgaber = false
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                        modifier = Modifier.fillMaxWidth()
+                    // Premium style Add Employee button
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = if (newEmployeeName.trim().isNotEmpty()) 
+                                        listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                    else 
+                                        listOf(Color.Gray, Color.DarkGray)
+                                )
+                            )
+                            .clickable(enabled = newEmployeeName.trim().isNotEmpty()) {
+                                if (newEmployeeName.trim().isNotEmpty()) {
+                                    onAddEmployee(newEmployeeName.trim(), newEmployeeShabbatObserver, newEmployeeIsMitgaber)
+                                    newEmployeeName = ""
+                                    newEmployeeShabbatObserver = false
+                                    newEmployeeIsMitgaber = false
+                                }
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "הוסף עובד",
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "הוסף עובד",
-                            color = Color.White,
-                            fontSize = 16.sp
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.PersonAdd,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = "הוסף עובד",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "לחץ לאחר הזנת פרטים",
+                                    fontSize = 11.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -253,28 +300,8 @@ fun EmployeeManagementScreen(
                 )
             }
             
+            // Bottom spacing only - back button removed (already have one at top + system gestures)
             Spacer(modifier = Modifier.height(24.dp))
-            
-            // Back Button
-            Button(
-                onClick = onBackClick,
-                colors = ButtonDefaults.buttonColors(containerColor = GrayMedium),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "חזור למסך הבית",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
         }
     }
 }
