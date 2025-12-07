@@ -2,10 +2,15 @@ package com.hananel.workschedule.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -139,29 +144,53 @@ fun HistoryScreen(
                     
                     Spacer(modifier = Modifier.height(32.dp))
                     
-                    // CTA Button
-                    Button(
-                        onClick = onBackClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                    // CTA Button - Premium style
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth(0.7f)
-                            .height(56.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp) // No shadow!
+                            .fillMaxWidth(0.8f)
+                            .height(64.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                )
+                            )
+                            .clickable(onClick = onBackClick),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "צור סידור חדש",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Row(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(14.dp))
+                            Column {
+                                Text(
+                                    text = "צור סידור חדש",
+                                    fontSize = 17.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = "התחל לתכנן",
+                                    fontSize = 12.sp,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
+                        }
                     }
                 }
             } else {
@@ -183,28 +212,8 @@ fun HistoryScreen(
                 }
             }
             
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // Back Button
-            Button(
-                onClick = onBackClick,
-                colors = ButtonDefaults.buttonColors(containerColor = GrayMedium),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "חזור למסך הבית",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
+            // Bottom spacing - back button removed (already have one at top + system gestures)
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -299,69 +308,85 @@ private fun ScheduleHistoryCard(
                 thickness = 1.dp
             )
             
-            // Action Buttons
+            // Action Buttons - Premium style
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Open Button - Primary
-                Button(
-                    onClick = onScheduleClick,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                // Open Button - Premium gradient style
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp) // No shadow!
+                        .height(48.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                            )
+                        )
+                        .clickable(onClick = onScheduleClick),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.FolderOpen,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "פתח סידור",
-                        color = Color.White,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FolderOpen,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "פתח סידור",
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 
-                // Rename Button (if callback provided)
+                // Rename Button (if callback provided) - Tonal style
                 if (onRenameClick != null) {
-                    OutlinedButton(
+                    FilledTonalIconButton(
                         onClick = { 
                             newName = schedule.weekStart
                             showRenameDialog = true 
                         },
                         modifier = Modifier.size(48.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(1.5.dp, PrimaryTeal),
-                        contentPadding = PaddingValues(0.dp)
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = PrimaryTeal.copy(alpha = 0.15f),
+                            contentColor = PrimaryTeal
+                        )
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "ערוך",
-                            tint = PrimaryTeal,
                             modifier = Modifier.size(22.dp)
                         )
                     }
                 }
                 
-                // Delete Button
-                OutlinedButton(
+                // Delete Button - Tonal danger style
+                FilledTonalIconButton(
                     onClick = { showDeleteConfirm = true },
                     modifier = Modifier.size(48.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.5.dp, BlockedRed.copy(alpha = 0.6f)),
-                    contentPadding = PaddingValues(0.dp)
+                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                        containerColor = BlockedRed.copy(alpha = 0.1f),
+                        contentColor = BlockedRed
+                    )
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "מחק",
-                        tint = BlockedRed,
                         modifier = Modifier.size(22.dp)
                     )
                 }
