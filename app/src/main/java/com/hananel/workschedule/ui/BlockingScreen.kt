@@ -196,7 +196,7 @@ fun BlockingScreen(
                         text = if (isEditingScheduleBlocks && editedScheduleName != null) {
                             "עריכת סידור $editedScheduleName"
                         } else {
-                            "חסימות משמרות"
+                            "חסימת משמרות"
                         },
                         fontSize = if (isEditingScheduleBlocks && editedScheduleName != null) 16.sp else 20.sp,
                         fontWeight = FontWeight.Bold,
@@ -260,7 +260,7 @@ fun BlockingScreen(
                 onCellClick = { employee, day, shift ->
                     onToggleBlock(employee, day, shift)
                 },
-                modifier = Modifier.fillMaxWidth().height(420.dp) // Restored height for 100% zoom visibility
+                modifier = Modifier.fillMaxWidth().height(450.dp) // Same height as ManualCreationScreen
             )
             
             // Employee Selection Panel (moved to BOTTOM so it won't push table down)
