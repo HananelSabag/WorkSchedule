@@ -137,7 +137,7 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.surface,
                                     border = BorderStroke(
                                         2.dp,
-                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryGreen.copy(alpha = 0.6f)))
+                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTeal.copy(alpha = 0.6f)))
                                     )
                                 ) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -210,7 +210,7 @@ fun HomeScreen(
                                 label = "סידור חדש",
                                 description = "צור סידור שבועי חדש",
                                 gradient = if (canCreate)
-                                    listOf(PrimaryGreen, Color(0xFF1B5E20))
+                                    listOf(PrimaryTeal, Color(0xFF00796B))
                                 else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
                                 enabled = canCreate,
                                 badge = if (hasTempDraft) "!" else null,
@@ -226,7 +226,7 @@ fun HomeScreen(
                                 label = "היסטוריה",
                                 description = "סידורים שמורים",
                                 gradient = if (canHistory)
-                                    listOf(PrimaryBlue, Color(0xFF0D47A1))
+                                    listOf(PrimaryTeal, Color(0xFF00796B))
                                 else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
                                 enabled = canHistory,
                                 badge = if (scheduleCount > 0) scheduleCount.toString() else null,
@@ -246,7 +246,7 @@ fun HomeScreen(
                                 icon = Icons.Default.People,
                                 label = "עובדים",
                                 description = "הוסף ונהל עובדים",
-                                gradient = listOf(Color(0xFF607D8B), Color(0xFF37474F)),
+                                gradient = listOf(PrimaryTeal, Color(0xFF00796B)),
                                 badge = if (employeeCount > 0) employeeCount.toString() else null,
                                 onClick = onEmployeeManagementClick
                             )
@@ -256,7 +256,7 @@ fun HomeScreen(
                                 icon = Icons.Default.TableChart,
                                 label = "הגדרות טבלה",
                                 description = "משמרות וימים",
-                                gradient = listOf(PrimaryTeal, Color(0xFF1A4744)),
+                                gradient = listOf(PrimaryTeal, Color(0xFF00796B)),
                                 badge = if (!hasTemplate) "!" else null,
                                 onClick = onTemplateSetupClick
                             )
@@ -430,7 +430,7 @@ private fun DraftBanner(onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(14.dp))
             .background(
-                Brush.horizontalGradient(listOf(Color(0xFFFF9800), Color(0xFFFF5722)))
+                Brush.horizontalGradient(listOf(Orange, Color(0xFFFF5722)))
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 12.dp),

@@ -88,14 +88,18 @@ fun WorkScheduleApp() {
     
     // Handle system back button - natural navigation like other Android apps
     BackHandler(enabled = currentScreen != Screen.HOME && currentScreen != Screen.SPLASH) {
-        currentScreen = when (currentScreen) {
-            Screen.EMPLOYEE_MANAGEMENT -> Screen.HOME
-            Screen.TEMPLATE_SETUP -> Screen.HOME
-            Screen.BLOCKING -> Screen.HOME
-            Screen.MANUAL_CREATION -> Screen.BLOCKING // Manual creation goes back to blocking
-            Screen.PREVIEW -> Screen.HOME
-            Screen.HISTORY -> Screen.HOME
-            else -> Screen.HOME // fallback
+        when (currentScreen) {
+            Screen.EMPLOYEE_MANAGEMENT -> currentScreen = Screen.HOME
+            Screen.TEMPLATE_SETUP -> currentScreen = Screen.HOME
+            Screen.BLOCKING -> currentScreen = Screen.HOME
+            Screen.MANUAL_CREATION -> currentScreen = Screen.BLOCKING
+            Screen.PREVIEW -> {
+                // Must reset session so stale in-memory state isn't mistaken for a new draft
+                viewModel.resetSessionOnReturnHome()
+                currentScreen = Screen.HOME
+            }
+            Screen.HISTORY -> currentScreen = Screen.HOME
+            else -> currentScreen = Screen.HOME
         }
     }
     

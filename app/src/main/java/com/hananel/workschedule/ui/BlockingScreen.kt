@@ -120,7 +120,7 @@ fun BlockingScreen(
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = null,
-                        tint = Color(0xFFFF9800),
+                        tint = Orange,
                         modifier = Modifier.size(64.dp)
                     )
                     
@@ -221,19 +221,6 @@ fun BlockingScreen(
                                         textAlign = TextAlign.Center,
                                         maxLines = 1
                                     )
-                                } else {
-                                    Surface(
-                                        shape = RoundedCornerShape(20.dp),
-                                        color = PrimaryTeal.copy(alpha = 0.1f)
-                                    ) {
-                                        Text(
-                                            text = "שלב 1 מתוך 3",
-                                            fontSize = 10.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = PrimaryTeal,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                        )
-                                    }
                                 }
                             }
 
@@ -249,7 +236,7 @@ fun BlockingScreen(
                                     Icon(
                                         imageVector = Icons.Default.Refresh,
                                         contentDescription = "איפוס חסימות",
-                                        tint = Color(0xFFE53935),
+                                        tint = BlockedRed,
                                         modifier = Modifier.size(20.dp)
                                     )
                                 }
@@ -403,7 +390,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
                                 )
                             )
                             .clickable(onClick = onCreateScheduleCopy),
@@ -551,7 +538,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
                                 )
                             )
                             .clickable(onClick = onGenerateAutomaticSchedule),
@@ -811,8 +798,8 @@ private fun EmployeeSelectionPanel(
                 Button(
                     onClick = { onSetBlockingMode(ScheduleViewModel.BlockingMode.CANNOT) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CANNOT) 
-                            BlockedRed else MaterialTheme.colorScheme.surfaceVariant,
+                        containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CANNOT)
+                            BlockedRed else MaterialTheme.colorScheme.surface,
                         contentColor = if (blockingMode == ScheduleViewModel.BlockingMode.CANNOT)
                             Color.White else BlockedRed
                     ),
@@ -828,8 +815,8 @@ private fun EmployeeSelectionPanel(
                 Button(
                     onClick = { onSetBlockingMode(ScheduleViewModel.BlockingMode.CAN_ONLY) },
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CAN_ONLY) 
-                            CanOnlyBlue else MaterialTheme.colorScheme.surfaceVariant,
+                        containerColor = if (blockingMode == ScheduleViewModel.BlockingMode.CAN_ONLY)
+                            CanOnlyBlue else MaterialTheme.colorScheme.surface,
                         contentColor = if (blockingMode == ScheduleViewModel.BlockingMode.CAN_ONLY)
                             Color.White else CanOnlyBlue
                     ),
@@ -866,7 +853,7 @@ private fun MobileOptimizedTable(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryGreen)
+                    .background(PrimaryTeal)
             ) {
                 // Empty cell for shift names column
                 Box(
@@ -929,7 +916,7 @@ private fun MobileOptimizedTable(
                         modifier = Modifier
                             .width(if (isCompact) 70.dp else 100.dp)
                             .height(if (isCompact) 35.dp else 45.dp)
-                            .background(PrimaryGreen)
+                            .background(PrimaryTeal)
                             .border(1.dp, Color.Black),
                         contentAlignment = Alignment.Center
                     ) {

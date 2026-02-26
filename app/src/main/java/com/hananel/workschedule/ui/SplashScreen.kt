@@ -269,7 +269,7 @@ fun SplashScreen(
                             brush = Brush.linearGradient(
                                 colors = listOf(
                                     PrimaryTeal,
-                                    PrimaryGreen.copy(alpha = 0.8f),
+                                    Color(0xFF00796B),
                                     PrimaryTeal
                                 )
                             )

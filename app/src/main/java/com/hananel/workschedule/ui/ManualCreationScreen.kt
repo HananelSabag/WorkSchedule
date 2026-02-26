@@ -104,18 +104,6 @@ fun ManualCreationScreen(
                             color = PrimaryTeal,
                             textAlign = TextAlign.Center
                         )
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = PrimaryGreen.copy(alpha = 0.1f)
-                        ) {
-                            Text(
-                                text = "שלב 2 מתוך 3",
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = PrimaryGreen,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

@@ -251,8 +251,8 @@ private fun ScheduleTableContent(
         Color(0xFFB6D7A8) // NEW light green for normal cells (#B6D7A8)
     }
     // תיקון: כל הגבולות באדום במסך חסימות
-    val borderColor = if (isBlockingMode) Color(0xFFE53935) else Color.Black
-    val cellBorderColor = if (isBlockingMode) Color(0xFFE53935) else Color.Black
+    val borderColor = if (isBlockingMode) BlockedRed else Color.Black
+    val cellBorderColor = if (isBlockingMode) BlockedRed else Color.Black
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!

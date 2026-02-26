@@ -171,7 +171,7 @@ fun ShiftTemplateSetupScreen(
                                 onClick = { showAddDialog = true },
                                 enabled = shiftRows.size < 8,
                                 colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = if (shiftRows.size < 8) PrimaryGreen else Color.Gray,
+                                    containerColor = if (shiftRows.size < 8) PrimaryTeal else Color.Gray,
                                     contentColor = Color.White
                                 )
                             ) {
@@ -216,7 +216,7 @@ fun ShiftTemplateSetupScreen(
                             Text(
                                 text = "הגעת למקסימום משמרות (8)",
                                 fontSize = 12.sp,
-                                color = Color(0xFFFF9800),
+                                color = Orange,
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
@@ -229,7 +229,7 @@ fun ShiftTemplateSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.25f))
+                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -290,7 +290,7 @@ fun ShiftTemplateSetupScreen(
                             Text(
                                 text = "דרושים לפחות 4 ימים",
                                 fontSize = 12.sp,
-                                color = Color(0xFFFF9800),
+                                color = Orange,
                                 modifier = Modifier.fillMaxWidth(),
                                 textAlign = TextAlign.Center
                             )
@@ -406,7 +406,7 @@ fun ShiftTemplateSetupScreen(
                     Text(
                         text = "נדרשות לפחות 2 משמרות תקינות (עם שם ושעות)",
                         fontSize = 13.sp,
-                        color = Color.Red,
+                        color = BlockedRed,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
@@ -416,7 +416,7 @@ fun ShiftTemplateSetupScreen(
                     Text(
                         text = "⚠️ שורות ריקות לא יישמרו",
                         fontSize = 12.sp,
-                        color = Color(0xFFFF9800),
+                        color = Orange,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
                     )
@@ -929,7 +929,7 @@ private fun ShiftRowItemDraggable(
                     Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "מחק",
-                        tint = if (canDelete) Color.Red else Color.Gray,
+                        tint = if (canDelete) BlockedRed else MaterialTheme.colorScheme.outlineVariant,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -1104,8 +1104,8 @@ private fun TablePreview(
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        PrimaryGreen.copy(alpha = 0.9f),
-                                        PrimaryGreen.copy(alpha = 0.7f)
+                                        PrimaryTeal.copy(alpha = 0.9f),
+                                        PrimaryTeal.copy(alpha = 0.7f)
                                     )
                                 ),
                                 RoundedCornerShape(6.dp)
@@ -1188,7 +1188,7 @@ private fun TablePreview(
         Text(
             text = "כך תיראה הטבלה שלך",
             fontSize = 11.sp,
-            color = Color(0xFFF57C00),
+            color = Orange,
             textAlign = TextAlign.Center,
             fontWeight = FontWeight.Medium
         )

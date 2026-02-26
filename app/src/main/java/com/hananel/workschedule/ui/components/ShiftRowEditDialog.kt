@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.data.ShiftRow
-import com.hananel.workschedule.ui.theme.PrimaryGreen
+import com.hananel.workschedule.ui.theme.PrimaryTeal
 import com.hananel.workschedule.ui.theme.PrimaryTeal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -127,19 +127,19 @@ fun ShiftRowEditDialog(
                 if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PrimaryGreen.copy(alpha = 0.1f)
+                        color = PrimaryTeal.copy(alpha = 0.1f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.AccessTime, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.AccessTime, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
                             Text(
                                 "$shiftName · $shiftHours",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = PrimaryGreen
+                                color = PrimaryTeal
                             )
                         }
                     }

@@ -126,20 +126,6 @@ fun PreviewScreen(
                                 color = PrimaryTeal,
                                 textAlign = TextAlign.Center
                             )
-                            if (!isEditingExistingSchedule) {
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = PrimaryGreen.copy(alpha = 0.12f)
-                                ) {
-                                    Text(
-                                        text = "שלב 3 מתוך 3 ✓",
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = PrimaryGreen,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
                         }
 
                         // Logo — bigger, themed
@@ -170,8 +156,8 @@ fun PreviewScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.08f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.25f))
+                    colors = CardDefaults.cardColors(containerColor = PrimaryTeal.copy(alpha = 0.08f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -182,7 +168,7 @@ fun PreviewScreen(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = PrimaryBlue,
+                            tint = PrimaryTeal,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -241,7 +227,7 @@ fun PreviewScreen(
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(
                                     Brush.horizontalGradient(
-                                        colors = listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                        colors = listOf(PrimaryTeal, Color(0xFF00796B))
                                     )
                                 )
                                 .clickable { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
@@ -344,7 +330,7 @@ fun PreviewScreen(
                             .clip(RoundedCornerShape(16.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryBlue, Color(0xFF1565C0))
+                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
                                 )
                             )
                             .clickable { showStatisticsSheet = true; scope.launch { statsSheetState.show() } },
@@ -482,12 +468,12 @@ fun PreviewScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(Icons.Default.BarChart, null, tint = PrimaryBlue, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.BarChart, null, tint = PrimaryTeal, modifier = Modifier.size(24.dp))
                             Text(
                                 "סטטיסטיקה שבועית",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
+                                color = PrimaryTeal
                             )
                         }
                         Spacer(Modifier.height(16.dp))
@@ -623,7 +609,7 @@ private fun EmployeeStatistics(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryBlue.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .background(PrimaryTeal.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                     .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -631,14 +617,14 @@ private fun EmployeeStatistics(
                     text = "שם עובד",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
+                    color = PrimaryTeal,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = "משמרות",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
+                    color = PrimaryTeal,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(70.dp)
                 )
@@ -646,7 +632,7 @@ private fun EmployeeStatistics(
                     text = "שעות",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryBlue,
+                    color = PrimaryTeal,
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(70.dp)
                 )
@@ -687,7 +673,7 @@ private fun EmployeeStatistics(
                     
                     // Shift count badge
                     Surface(
-                        color = if (shiftCount > 0) PrimaryGreen.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (shiftCount > 0) PrimaryTeal.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.width(70.dp)
                     ) {
@@ -695,7 +681,7 @@ private fun EmployeeStatistics(
                             text = shiftCount.toString(),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (shiftCount > 0) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (shiftCount > 0) PrimaryTeal else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             textAlign = TextAlign.Center
                         )
@@ -754,7 +740,7 @@ private fun SchedulePreviewTable(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryGreen)
+                    .background(PrimaryTeal)
             ) {
                 // Empty cell for shift names column
                 Box(
@@ -816,7 +802,7 @@ private fun SchedulePreviewTable(
                         modifier = Modifier
                             .width(120.dp)
                             .height(50.dp)
-                            .background(PrimaryGreen)
+                            .background(PrimaryTeal)
                             .border(1.dp, Color.Black),
                         contentAlignment = Alignment.Center
                     ) {
@@ -991,7 +977,7 @@ private fun ShareMenuItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = PrimaryBlue
+                tint = PrimaryTeal
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
@@ -1061,7 +1047,7 @@ private fun ErrorPopup(
                 // OK Button
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {
