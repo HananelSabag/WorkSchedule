@@ -84,6 +84,7 @@ fun BlockingScreen(
     onClearAllBlocks: () -> Unit,
     onDismissSnackbar: () -> Unit,
     onBackClick: () -> Unit,
+    onEnterLandscape: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     // Snackbar host state
@@ -224,11 +225,22 @@ fun BlockingScreen(
                                 }
                             }
 
-                            // Reset + Logo
+                            // Landscape + Reset + Logo
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                IconButton(
+                                    onClick = onEnterLandscape,
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ScreenRotation,
+                                        contentDescription = "מצב אופקי",
+                                        tint = PrimaryTeal,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                                 IconButton(
                                     onClick = { showResetConfirmation = true; scope.launch { resetSheetState.show() } },
                                     modifier = Modifier.size(36.dp)

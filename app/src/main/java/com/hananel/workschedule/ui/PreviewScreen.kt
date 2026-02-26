@@ -21,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -58,6 +59,7 @@ fun PreviewScreen(
     onBackClick: () -> Unit,
     onReturnToBlocking: () -> Unit, // New callback for returning to blocking
     onDismissError: () -> Unit, // New callback for dismissing error popup
+    onEnterLandscape: () -> Unit = {}, // New: open full-screen landscape table view
     isEditingExistingSchedule: Boolean = false, // Smart save system - indicates if editing existing schedule
     modifier: Modifier = Modifier
 ) {
@@ -67,8 +69,10 @@ fun PreviewScreen(
 
     // Statistics bottom sheet
     val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val actionsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var showStatisticsSheet by remember { mutableStateOf(false) }
+    var showActionsSheet by remember { mutableStateOf(false) }
 
     // Update editable schedule when schedule changes
     LaunchedEffect(schedule) {
@@ -128,30 +132,46 @@ fun PreviewScreen(
                             )
                         }
 
-                        // Logo — bigger, themed
-                        Surface(
-                            modifier = Modifier.size(36.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface,
-                            border = androidx.compose.foundation.BorderStroke(
-                                1.5.dp, PrimaryTeal.copy(alpha = 0.45f)
-                            )
+                        // Landscape + Logo row
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                            IconButton(
+                                onClick = onEnterLandscape,
+                                modifier = Modifier.size(36.dp)
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_app_logo_new),
-                                    contentDescription = "Logo",
-                                    modifier = Modifier.size(24.dp)
+                                Icon(
+                                    imageVector = Icons.Default.ScreenRotation,
+                                    contentDescription = "מצב אופקי",
+                                    tint = PrimaryTeal,
+                                    modifier = Modifier.size(20.dp)
                                 )
+                            }
+                            Surface(
+                                modifier = Modifier.size(36.dp),
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surface,
+                                border = androidx.compose.foundation.BorderStroke(
+                                    1.5.dp, PrimaryTeal.copy(alpha = 0.45f)
+                                )
+                            ) {
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.ic_app_logo_new),
+                                        contentDescription = "Logo",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-            
+
             // Info Box - Compact explanation about editing
             item {
                 Card(
@@ -209,167 +229,57 @@ fun PreviewScreen(
                 )
             }
             
-            // Action Buttons - Two rows for better layout
+            // Actions button — opens ActionsBottomSheet
             item {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                            )
+                        )
+                        .clickable {
+                            showActionsSheet = true
+                            scope.launch { actionsSheetState.show() }
+                        },
+                    contentAlignment = Alignment.Center
                 ) {
-                    // First row: Download + WhatsApp
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        // Download to Gallery Button - Right aligned text
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(60.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(PrimaryTeal, Color(0xFF00796B))
-                                    )
-                                )
-                                .clickable { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Download,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = "הורד לגלריה",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "שמור בטלפון",
-                                        fontSize = 10.sp,
-                                        color = Color.White.copy(alpha = 0.8f)
-                                    )
-                                }
-                            }
-                        }
-                        
-                        // Share on WhatsApp Button - Right aligned text
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(60.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    Brush.horizontalGradient(
-                                        colors = listOf(Color(0xFF25D366), Color(0xFF128C7E))
-                                    )
-                                )
-                                .clickable { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 12.dp),
-                                horizontalArrangement = Arrangement.Start,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.Chat,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column {
-                                    Text(
-                                        text = "שתף בווצאפ",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White
-                                    )
-                                    Text(
-                                        text = "שלח לקבוצה",
-                                        fontSize = 10.sp,
-                                        color = Color.White.copy(alpha = 0.8f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Second row: Statistics - full width, right aligned
-                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
-                                )
-                            )
-                            .clickable { showStatisticsSheet = true; scope.launch { statsSheetState.show() } },
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
+                        Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
+                                .size(42.dp)
+                                .background(Color.White.copy(alpha = 0.2f), CircleShape),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BarChart,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column {
-                                Text(
-                                    text = "סטטיסטיקה שבועית",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "משמרות ושעות לעובד",
-                                    fontSize = 11.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                text = "פעולות ושיתוף",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "גלריה • ווצאפ • סטטיסטיקה",
+                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
                         }
                     }
                 }
@@ -440,6 +350,92 @@ fun PreviewScreen(
             )
         }
         
+        // Actions BottomSheet (share + stats)
+        if (showActionsSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showActionsSheet = false },
+                sheetState = actionsSheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        // Handle
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                    RoundedCornerShape(2.dp)
+                                )
+                                .align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "פעולות ושיתוף",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = PrimaryTeal
+                        )
+                        Spacer(Modifier.height(16.dp))
+
+                        // Download
+                        ActionSheetItem(
+                            icon = Icons.Default.Download,
+                            color = PrimaryTeal,
+                            title = "הורד לגלריה",
+                            subtitle = "שמור תמונה של הסידור בטלפון",
+                            onClick = {
+                                showActionsSheet = false
+                                onShareSchedule(ShareType.DOWNLOAD_IMAGE)
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // WhatsApp
+                        ActionSheetItem(
+                            icon = Icons.AutoMirrored.Filled.Chat,
+                            color = Color(0xFF25D366),
+                            title = "שתף בווצאפ",
+                            subtitle = "שלח לקבוצה או לאיש קשר",
+                            onClick = {
+                                showActionsSheet = false
+                                onShareSchedule(ShareType.WHATSAPP_IMAGE)
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Statistics
+                        ActionSheetItem(
+                            icon = Icons.Default.BarChart,
+                            color = PrimaryTeal,
+                            title = "סטטיסטיקה שבועית",
+                            subtitle = "משמרות ושעות לכל עובד",
+                            onClick = {
+                                showActionsSheet = false
+                                scope.launch { actionsSheetState.hide() }
+                                showStatisticsSheet = true
+                                scope.launch { statsSheetState.show() }
+                            }
+                        )
+                    }
+                }
+            }
+        }
+
         // Statistics - BottomSheet
         if (showStatisticsSheet) {
             ModalBottomSheet(
@@ -494,7 +490,7 @@ fun PreviewScreen(
 }
 
 @Composable
-private fun EmployeeStatistics(
+internal fun EmployeeStatistics(
     employees: List<Employee>,
     schedule: Map<String, List<String>>,
     savingMode: Map<String, Boolean> = emptyMap(),
@@ -1059,6 +1055,46 @@ private fun ErrorPopup(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ActionSheetItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Surface(
+            modifier = Modifier.size(48.dp),
+            shape = CircleShape,
+            color = color.copy(alpha = 0.12f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(icon, null, tint = color, modifier = Modifier.size(24.dp))
+            }
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface)
+            Text(subtitle, fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.ArrowBack,
+            null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }
 

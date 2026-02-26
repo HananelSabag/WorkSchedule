@@ -99,6 +99,9 @@ fun WorkScheduleApp() {
                 currentScreen = Screen.HOME
             }
             Screen.HISTORY -> currentScreen = Screen.HOME
+            Screen.LANDSCAPE_BLOCKING -> currentScreen = Screen.BLOCKING
+            Screen.LANDSCAPE_MANUAL -> currentScreen = Screen.MANUAL_CREATION
+            Screen.LANDSCAPE_PREVIEW -> currentScreen = Screen.PREVIEW
             else -> currentScreen = Screen.HOME
         }
     }
@@ -274,7 +277,8 @@ fun WorkScheduleApp() {
                 },
                 onClearAllBlocks = { viewModel.clearAllBlocks() },
                 onDismissSnackbar = { viewModel.clearSnackbarMessage() },
-                onBackClick = { currentScreen = Screen.HOME }
+                onBackClick = { currentScreen = Screen.HOME },
+                onEnterLandscape = { currentScreen = Screen.LANDSCAPE_BLOCKING }
             )
         }
         
@@ -320,18 +324,19 @@ fun WorkScheduleApp() {
                     viewModel.generateManualSchedule()
                     shouldNavigate = true // Trigger navigation check
                 },
-                onReturnToBlocking = { 
+                onReturnToBlocking = {
                     // Simply return to blocking (no saving needed - auto-saved by tempDraft system)
-                    currentScreen = Screen.BLOCKING 
+                    currentScreen = Screen.BLOCKING
                 },
-                onClearManualSchedule = { 
+                onClearManualSchedule = {
                     // Clear only manual assignments, keep blocks intact
-                    viewModel.clearManualSchedule() 
+                    viewModel.clearManualSchedule()
                 },
-                onBackClick = { 
+                onBackClick = {
                     // Simple back navigation (data is auto-saved by tempDraft system)
-                    currentScreen = Screen.HOME 
-                }
+                    currentScreen = Screen.HOME
+                },
+                onEnterLandscape = { currentScreen = Screen.LANDSCAPE_MANUAL }
             )
         }
         
@@ -412,6 +417,7 @@ fun WorkScheduleApp() {
                 onDismissError = {
                     viewModel.clearErrorMessage()
                 },
+                onEnterLandscape = { currentScreen = Screen.LANDSCAPE_PREVIEW },
                 isEditingExistingSchedule = isEditingExistingSchedule
             )
         }
@@ -431,6 +437,108 @@ fun WorkScheduleApp() {
                     viewModel.updateScheduleName(schedule, newName)
                 },
                 onBackClick = { currentScreen = Screen.HOME }
+            )
+        }
+
+        Screen.LANDSCAPE_BLOCKING -> {
+            val selectedEmployee by viewModel.selectedEmployee.collectAsState()
+            val blockingMode by viewModel.blockingMode.collectAsState()
+            val blocks by viewModel.blocks.collectAsState()
+            val canOnlyBlocks by viewModel.canOnlyBlocks.collectAsState()
+            val savingMode by viewModel.savingMode.collectAsState()
+            val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
+
+            LandscapeBlockingScreen(
+                employees = employees,
+                selectedEmployee = selectedEmployee,
+                blockingMode = blockingMode,
+                blocks = blocks,
+                canOnlyBlocks = canOnlyBlocks,
+                savingMode = savingMode,
+                weekStartDate = weekStartDate,
+                templateData = templateData,
+                onSelectEmployee = { employee -> viewModel.selectEmployee(employee) },
+                onSetBlockingMode = { mode -> viewModel.setBlockingMode(mode) },
+                onToggleBlock = { employee, day, shift ->
+                    viewModel.toggleBlock(employee, day, shift)
+                },
+                onBlockAllShiftsForDay = { employee, day ->
+                    viewModel.blockAllShiftsForDay(employee, day)
+                },
+                onSetWeekStartDate = { date -> viewModel.setWeekStartDate(date) },
+                onClose = { currentScreen = Screen.BLOCKING }
+            )
+        }
+
+        Screen.LANDSCAPE_MANUAL -> {
+            val selectedEmployee by viewModel.selectedEmployee.collectAsState()
+            val currentSchedule by viewModel.currentSchedule.collectAsState()
+            val blocks by viewModel.blocks.collectAsState()
+            val canOnlyBlocks by viewModel.canOnlyBlocks.collectAsState()
+            val savingMode by viewModel.savingMode.collectAsState()
+            val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
+
+            LandscapeManualScreen(
+                employees = employees,
+                selectedEmployee = selectedEmployee,
+                schedule = currentSchedule,
+                blocks = blocks,
+                canOnlyBlocks = canOnlyBlocks,
+                savingMode = savingMode,
+                weekStartDate = weekStartDate,
+                templateData = templateData,
+                onSelectEmployee = { employee -> viewModel.selectEmployee(employee) },
+                onToggleEmployeeInShift = { employee, day, shift ->
+                    viewModel.toggleEmployeeInManualSchedule(employee, day, shift)
+                },
+                onClose = { currentScreen = Screen.MANUAL_CREATION }
+            )
+        }
+
+        Screen.LANDSCAPE_PREVIEW -> {
+            val currentSchedule by viewModel.currentSchedule.collectAsState()
+            val savingMode by viewModel.savingMode.collectAsState()
+            val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
+
+            LandscapePreviewScreen(
+                employees = employees,
+                schedule = currentSchedule,
+                savingMode = savingMode,
+                weekStartDate = weekStartDate,
+                templateData = templateData,
+                onUpdateCell = { key, value ->
+                    viewModel.updateScheduleCell(key, value)
+                },
+                onShareSchedule = { shareType ->
+                    when (shareType) {
+                        ShareType.WHATSAPP_IMAGE -> {
+                            val weekStartString = weekStartDate.format(
+                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                            )
+                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
+                                context, currentSchedule, savingMode, weekStartString, templateData
+                            )
+                            com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(context, bitmap)
+                        }
+                        ShareType.DOWNLOAD_IMAGE -> {
+                            val weekStartString = weekStartDate.format(
+                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                            )
+                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
+                                context, currentSchedule, savingMode, weekStartString, templateData
+                            )
+                            com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(context, bitmap)
+                        }
+                    }
+                },
+                onReturnToBlocking = {
+                    viewModel.navigateToBlocksEditingFromPreview()
+                    currentScreen = Screen.BLOCKING
+                },
+                onClose = { currentScreen = Screen.PREVIEW }
             )
         }
     }
@@ -504,5 +612,6 @@ fun WorkScheduleApp() {
 }
 
 enum class Screen {
-    SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION, PREVIEW, HISTORY
+    SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION, PREVIEW, HISTORY,
+    LANDSCAPE_BLOCKING, LANDSCAPE_MANUAL, LANDSCAPE_PREVIEW
 }

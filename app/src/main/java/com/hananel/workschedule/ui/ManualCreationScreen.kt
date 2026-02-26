@@ -50,6 +50,7 @@ fun ManualCreationScreen(
     onReturnToBlocking: () -> Unit,
     onClearManualSchedule: () -> Unit,
     onBackClick: () -> Unit,
+    onEnterLandscape: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showBlockingWarning by remember { mutableStateOf(false) }
@@ -109,6 +110,17 @@ fun ManualCreationScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        IconButton(
+                            onClick = onEnterLandscape,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ScreenRotation,
+                                contentDescription = "מצב אופקי",
+                                tint = PrimaryTeal,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                         IconButton(
                             onClick = { showResetSheet = true },
                             modifier = Modifier.size(36.dp)
