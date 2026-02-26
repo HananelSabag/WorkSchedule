@@ -36,6 +36,37 @@ import com.hananel.workschedule.ui.theme.PrimaryGreen
 import com.hananel.workschedule.ui.theme.PrimaryBlue
 import kotlinx.coroutines.delay
 
+// Animated loading dot composable
+@Composable
+private fun LoadingDot(delayMs: Int) {
+    val infiniteTransition = rememberInfiniteTransition(label = "dot")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(600, delayMillis = delayMs, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "dotAlpha"
+    )
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            tween(600, delayMillis = delayMs, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "dotScale"
+    )
+    Box(
+        modifier = Modifier
+            .size(8.dp)
+            .scale(scale)
+            .alpha(alpha)
+            .background(PrimaryTeal.copy(alpha = 0.9f), CircleShape)
+    )
+}
+
 @Composable
 fun SplashScreen(
     onTimeout: () -> Unit,
@@ -225,14 +256,14 @@ fun SplashScreen(
                             .background(PrimaryTeal, CircleShape)
                     )
                     
-                    // Logo container with gradient border - clean circle only
+                    // Logo container with gradient border - dark teal background
                     Surface(
                         modifier = Modifier
                             .size(130.dp)
                             .scale(logoScale)
                             .alpha(logoAlpha),
                         shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.95f),
+                        color = Color(0xFF0D1F1E), // dark teal-tinted, not white
                         border = BorderStroke(
                             width = 3.dp,
                             brush = Brush.linearGradient(
@@ -252,7 +283,7 @@ fun SplashScreen(
                                 painter = painterResource(id = R.drawable.ic_app_logo_new),
                                 contentDescription = "Work Schedule Logo",
                                 modifier = Modifier
-                                    .size(80.dp)
+                                    .size(85.dp)
                                     .clip(CircleShape)
                             )
                         }
@@ -339,7 +370,32 @@ fun SplashScreen(
                         letterSpacing = 0.5.sp
                     )
                 }
+
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // Loading dots
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.alpha(creditAlpha)
+                ) {
+                    LoadingDot(delayMs = 0)
+                    LoadingDot(delayMs = 200)
+                    LoadingDot(delayMs = 400)
+                }
             }
+
+            // Version tag - bottom of screen
+            Text(
+                text = "v1.0",
+                fontSize = 11.sp,
+                color = PrimaryTeal.copy(alpha = 0.35f),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 20.dp)
+                    .alpha(creditAlpha),
+                letterSpacing = 1.sp
+            )
         }
     }
 }

@@ -172,74 +172,108 @@ fun BlockingScreen(
                 ) {
                     // Status bar spacer
                     Spacer(modifier = Modifier.statusBarsPadding())
-                    
-                    // Title with Logo and Back Button
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                // Back Button
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "חזור",
-                        tint = PrimaryTeal
-                    )
-                }
-                
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = if (isEditingScheduleBlocks && editedScheduleName != null) {
-                            "עריכת סידור $editedScheduleName"
-                        } else {
-                            "חסימת משמרות"
-                        },
-                        fontSize = if (isEditingScheduleBlocks && editedScheduleName != null) 16.sp else 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2
-                    )
-                }
-                
-                // Reset button + Logo
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Small reset button
-                    IconButton(
-                        onClick = { showResetConfirmation = true; scope.launch { resetSheetState.show() } },
-                        modifier = Modifier.size(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "איפוס חסימות",
-                            tint = Color(0xFFE53935), // Red color
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    // App Logo with white background for visibility
+
+                    // ── Themed Header ──────────────────────────────────────────
                     Surface(
-                        modifier = Modifier.size(28.dp),
-                        shape = CircleShape,
-                        color = Color.White,
-                        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.background,
+                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                        shadowElevation = 2.dp
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_app_logo_new),
-                            contentDescription = "Logo",
+                        Row(
                             modifier = Modifier
-                                .size(20.dp)
-                                .padding(2.dp)
-                        )
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Back Button
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "חזור",
+                                    tint = PrimaryTeal
+                                )
+                            }
+
+                            // Title + step chip
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(3.dp)
+                            ) {
+                                Text(
+                                    text = if (isEditingScheduleBlocks && editedScheduleName != null)
+                                        "עריכת סידור"
+                                    else "חסימת משמרות",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = PrimaryTeal,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
+                                if (isEditingScheduleBlocks && editedScheduleName != null) {
+                                    Text(
+                                        text = editedScheduleName,
+                                        fontSize = 12.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        textAlign = TextAlign.Center,
+                                        maxLines = 1
+                                    )
+                                } else {
+                                    Surface(
+                                        shape = RoundedCornerShape(20.dp),
+                                        color = PrimaryTeal.copy(alpha = 0.1f)
+                                    ) {
+                                        Text(
+                                            text = "שלב 1 מתוך 3",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = PrimaryTeal,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+
+                            // Reset + Logo
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                IconButton(
+                                    onClick = { showResetConfirmation = true; scope.launch { resetSheetState.show() } },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "איפוס חסימות",
+                                        tint = Color(0xFFE53935),
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                                // Logo — dark teal background, bigger
+                                Surface(
+                                    modifier = Modifier.size(36.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f))
+                                ) {
+                                    Box(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_app_logo_new),
+                                            contentDescription = "Logo",
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
-            }
             
             // Simple and Stable Schedule Table (moved to TOP to avoid cutting)
             SimpleScheduleTable(

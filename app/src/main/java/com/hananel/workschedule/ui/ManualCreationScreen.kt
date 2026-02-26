@@ -71,54 +71,85 @@ fun ManualCreationScreen(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // ─── Header ────────────────────────────────────────────────────
-            Row(
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                color = MaterialTheme.colorScheme.background,
+                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                shadowElevation = 2.dp
             ) {
-                IconButton(onClick = onReturnToBlocking) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "חזור לחסימות",
-                        tint = PrimaryTeal
-                    )
-                }
-                Text(
-                    text = "יצירת סידור ידני",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { showResetSheet = true },
-                        modifier = Modifier.size(36.dp)
-                    ) {
+                    IconButton(onClick = onReturnToBlocking) {
                         Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = "איפוס",
-                            tint = PrimaryGreen,
-                            modifier = Modifier.size(20.dp)
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "חזור לחסימות",
+                            tint = PrimaryTeal
                         )
                     }
-                    Surface(
-                        modifier = Modifier.size(28.dp),
-                        shape = CircleShape,
-                        color = Color.White,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_app_logo_new),
-                            contentDescription = "Logo",
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(2.dp)
+                        Text(
+                            text = "יצירת סידור ידני",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = PrimaryTeal,
+                            textAlign = TextAlign.Center
                         )
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = PrimaryGreen.copy(alpha = 0.1f)
+                        ) {
+                            Text(
+                                text = "שלב 2 מתוך 3",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PrimaryGreen,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        IconButton(
+                            onClick = { showResetSheet = true },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "איפוס",
+                                tint = BlockedRed,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        // Logo — themed, bigger
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f))
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_app_logo_new),
+                                    contentDescription = "Logo",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -83,55 +83,85 @@ fun PreviewScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Add space from status bar
+            // Status bar spacer
             item {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.statusBarsPadding())
             }
-            
-            // Title with Logo and Back Button
+
+            // ── Themed Header ────────────────────────────────────────────────
             item {
-                Row(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    color = MaterialTheme.colorScheme.background,
+                    shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                    shadowElevation = 2.dp
                 ) {
-                    // Back Button
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "חזור",
-                            tint = PrimaryTeal
-                        )
-                    }
-                    
-                    // Dynamic title based on context
-                    Text(
-                        text = if (isEditingExistingSchedule) {
-                            "צפייה בסידור"
-                        } else {
-                            "סידור עבודה"
-                        },
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    // App Logo with white background for visibility
-                    Surface(
-                        modifier = Modifier.size(28.dp),
-                        shape = CircleShape,
-                        color = Color.White,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_app_logo_new),
-                            contentDescription = "Logo",
-                            modifier = Modifier
-                                .size(20.dp)
-                                .padding(2.dp)
-                        )
+                        // Back
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "חזור",
+                                tint = PrimaryTeal
+                            )
+                        }
+
+                        // Title + badge
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = if (isEditingExistingSchedule) "צפייה בסידור" else "סידור עבודה",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = PrimaryTeal,
+                                textAlign = TextAlign.Center
+                            )
+                            if (!isEditingExistingSchedule) {
+                                Surface(
+                                    shape = RoundedCornerShape(20.dp),
+                                    color = PrimaryGreen.copy(alpha = 0.12f)
+                                ) {
+                                    Text(
+                                        text = "שלב 3 מתוך 3 ✓",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = PrimaryGreen,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        // Logo — bigger, themed
+                        Surface(
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surface,
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.5.dp, PrimaryTeal.copy(alpha = 0.45f)
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_app_logo_new),
+                                    contentDescription = "Logo",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -140,8 +170,8 @@ fun PreviewScreen(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.1f)),
-                    border = CardDefaults.outlinedCardBorder()
+                    colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.08f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryBlue.copy(alpha = 0.25f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

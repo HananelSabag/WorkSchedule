@@ -396,11 +396,14 @@ fun WorkScheduleApp() {
                         }
                     }
                 },
-                onBackClick = { currentScreen = Screen.HOME },
-                onReturnToBlocking = { 
+                onBackClick = {
+                    viewModel.resetSessionOnReturnHome()
+                    currentScreen = Screen.HOME
+                },
+                onReturnToBlocking = {
                     // Navigate to blocking - enable editing mode if this is existing schedule
                     viewModel.navigateToBlocksEditingFromPreview()
-                    currentScreen = Screen.BLOCKING 
+                    currentScreen = Screen.BLOCKING
                 },
                 onDismissError = {
                     viewModel.clearErrorMessage()

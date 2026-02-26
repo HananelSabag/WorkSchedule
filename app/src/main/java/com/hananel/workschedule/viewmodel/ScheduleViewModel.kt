@@ -1193,6 +1193,22 @@ class ScheduleViewModel(
         _currentScheduleId.value = null
         _isEditingExistingSchedule.value = false
     }
+
+    // Called when navigating back to HOME from PREVIEW.
+    // Clears leftover in-memory session data so checkTempDraftOnStart()
+    // doesn't mistake stale schedule state for an active draft.
+    fun resetSessionOnReturnHome() {
+        if (!_isEditingExistingSchedule.value) {
+            // Was a new schedule flow — wipe in-memory state
+            _currentSchedule.value = emptyMap()
+            _blocks.value = emptyMap()
+            _canOnlyBlocks.value = emptyMap()
+            _hasTempDraft.value = false
+            _currentScheduleId.value = null
+        }
+        _isEditingExistingSchedule.value = false
+        _isEditingScheduleBlocks.value = false
+    }
     
     // Save draft when app closes - persist temp work to database
     fun saveDraftOnAppClose() {

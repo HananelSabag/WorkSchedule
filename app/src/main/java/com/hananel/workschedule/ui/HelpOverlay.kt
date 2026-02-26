@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,96 +28,235 @@ import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.ui.theme.*
 import kotlinx.coroutines.launch
 
-// ─── Data model for help pages ──────────────────────────────────────────────
+// ─── Data model ─────────────────────────────────────────────────────────────
 
 private data class HelpPage(
     val icon: ImageVector,
-    val iconColor: Color,
+    val gradientColors: List<Color>,
     val title: String,
     val subtitle: String,
-    val steps: List<HelpStep>
+    val steps: List<HelpStep>,
+    val tip: String
 )
 
 private data class HelpStep(
     val icon: ImageVector,
     val text: String,
+    val detail: String,
     val color: Color
 )
 
 private val helpPages = listOf(
+
+    // ── Page 1: Setup ────────────────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.Settings,
-        iconColor = PrimaryTeal,
+        gradientColors = listOf(PrimaryTeal, Color(0xFF1A4744)),
         title = "הגדרה ראשונית",
-        subtitle = "עשה זאת פעם אחת בלבד",
+        subtitle = "פעם אחת — ואתה מוכן לתמיד",
         steps = listOf(
-            HelpStep(Icons.Default.PersonAdd, "הוסף עובדים בניהול עובדים", PrimaryTeal),
-            HelpStep(Icons.Default.TableChart, "הגדר טבלת משמרות וימים", PrimaryTeal),
-            HelpStep(Icons.Default.Check, "מוכן! אפשר ליצור סידורים", PrimaryGreen)
-        )
+            HelpStep(
+                Icons.Default.PersonAdd,
+                "הוסף עובדים",
+                "שם + סוג חוזה (מלא / חלקי)",
+                PrimaryTeal
+            ),
+            HelpStep(
+                Icons.Default.TableChart,
+                "הגדר ימים פעילים",
+                "בחר אילו ימים בשבוע יש משמרות",
+                PrimaryBlue
+            ),
+            HelpStep(
+                Icons.Default.Schedule,
+                "הגדר משמרות ושעות",
+                "שמות כמו 'בוקר / ערב / לילה' + שעות",
+                Orange
+            ),
+            HelpStep(
+                Icons.Default.Check,
+                "שמור תבנית",
+                "מוכן! אפשר ליצור סידורים כבר עכשיו",
+                PrimaryGreen
+            )
+        ),
+        tip = "ניתן לשנות את התבנית בכל עת — ללא השפעה על סידורים שמורים"
     ),
+
+    // ── Page 2: Blocking ────────────────────────────────────────────────────
+    HelpPage(
+        icon = Icons.Default.Block,
+        gradientColors = listOf(BlockedRed, Color(0xFF8B0000)),
+        title = "חסימת משמרות",
+        subtitle = "הגדר מי יכול / לא יכול",
+        steps = listOf(
+            HelpStep(
+                Icons.Default.Person,
+                "בחר עובד",
+                "לחץ על שמו ברשימה התחתונה",
+                PrimaryTeal
+            ),
+            HelpStep(
+                Icons.Default.Block,
+                "חסום תא = 'לא יכול'",
+                "לחץ שוב על אותו תא → 'יכול רק' (כחול)",
+                BlockedRed
+            ),
+            HelpStep(
+                Icons.Default.CalendarMonth,
+                "חסום יום שלם",
+                "לחץ על כותרת היום → כל המשמרות נחסמות",
+                Orange
+            ),
+            HelpStep(
+                Icons.Default.AutoAwesome,
+                "בחר אוטומטי או ידני",
+                "אוטומטי = מהיר | ידני = שליטה מלאה",
+                PrimaryGreen
+            )
+        ),
+        tip = "'יכול רק' עדיף על חסימה מלאה — מאפשר לאלגוריתם גמישות"
+    ),
+
+    // ── Page 3: Creation ────────────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.EditCalendar,
-        iconColor = PrimaryBlue,
-        title = "יצירת סידור חדש",
-        subtitle = "תהליך מהתחלה ועד הסוף",
+        gradientColors = listOf(PrimaryGreen, Color(0xFF1B5E20)),
+        title = "יצירת הסידור",
+        subtitle = "שיבוץ חכם עם כמה לחיצות",
         steps = listOf(
-            HelpStep(Icons.Default.Block, "חסום משמרות: לא יכול / יכול רק", BlockedRed),
-            HelpStep(Icons.Default.AutoAwesome, "בחר: אוטומטי מהיר או ידני מלא", PrimaryGreen),
-            HelpStep(Icons.Default.Share, "שתף בווצאפ או הורד לגלריה", Color(0xFF25D366))
-        )
+            HelpStep(
+                Icons.Default.TouchApp,
+                "לחץ תא לשיבוץ",
+                "בחר עובד → לחץ משמרת לשיבוצו",
+                PrimaryTeal
+            ),
+            HelpStep(
+                Icons.Default.Edit,
+                "לחיצה ארוכה = טקסט חופשי",
+                "הוסף הערה לתא — 'חג / חולה / חצי יום'",
+                Orange
+            ),
+            HelpStep(
+                Icons.Default.ZoomIn,
+                "גרור לזום על הטבלה",
+                "צבוט פנימה/החוצה לשינוי גודל התצוגה",
+                PrimaryBlue
+            ),
+            HelpStep(
+                Icons.Default.Save,
+                "שמור ← הסידור נשמר בהיסטוריה",
+                "הסידור מתווסף אוטומטית, שתף מיד",
+                PrimaryGreen
+            )
+        ),
+        tip = "האלגוריתם מחשב חלוקה הוגנת של שעות בין כל העובדים"
     ),
+
+    // ── Page 4: History & Tips ───────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.History,
-        iconColor = Orange,
-        title = "היסטוריה וניהול",
-        subtitle = "גישה מהירה לכל הסידורים",
+        gradientColors = listOf(Orange, Color(0xFFE65100)),
+        title = "היסטוריה וטיפים",
+        subtitle = "כל הסידורים — תמיד בהישג יד",
         steps = listOf(
-            HelpStep(Icons.Default.FolderOpen, "פתח סידור ישן לצפייה ועריכה", PrimaryTeal),
-            HelpStep(Icons.Default.Edit, "ערוך תאים ישירות — נשמר מיד", Orange),
-            HelpStep(Icons.Default.Restore, "טיוטה: ממשיך מהנקודה שעצרת", Color(0xFFFF9800))
-        )
+            HelpStep(
+                Icons.Default.FolderOpen,
+                "לחיצה ארוכה → תפריט אפשרויות",
+                "שנה שם | ערוך חסימות | מחק | העתק",
+                PrimaryTeal
+            ),
+            HelpStep(
+                Icons.Default.Edit,
+                "ערוך תאים ישירות בסידור",
+                "שינויים נשמרים אוטומטית בזמן אמת",
+                Orange
+            ),
+            HelpStep(
+                Icons.Default.Share,
+                "שתף לווצאפ / הורד לגלריה",
+                "הסידור מיוצא כתמונה בצבעים מלאים",
+                Color(0xFF25D366)
+            ),
+            HelpStep(
+                Icons.Default.Restore,
+                "טיוטה שמורה אוטומטית",
+                "עצרת באמצע? הכל שמור — המשך מהנקודה שעצרת",
+                PrimaryBlue
+            )
+        ),
+        tip = "סידורים לא נמחקים בטעות — תמיד מוצג חלון אישור לפני מחיקה"
     )
 )
 
-// ─── Help Button (floating ? icon for HomeScreen) ────────────────────────────
+// ─── Help Button ──────────────────────────────────────────────────────────────
 
 @Composable
 fun HelpButton(onClick: () -> Unit) {
-    val pulse = rememberInfiniteTransition(label = "help")
-    val scale by pulse.animateFloat(
-        initialValue = 1f, targetValue = 1.12f,
-        animationSpec = infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "hp"
+    val pulse = rememberInfiniteTransition(label = "help_pulse")
+    val ringScale by pulse.animateFloat(
+        initialValue = 1f, targetValue = 1.35f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "ring"
+    )
+    val ringAlpha by pulse.animateFloat(
+        initialValue = 0.5f, targetValue = 0f,
+        animationSpec = infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "ringAlpha"
     )
 
-    Box(
-        modifier = Modifier
-            .size(44.dp)
-            .background(
-                Brush.linearGradient(listOf(PrimaryTeal.copy(alpha = 0.9f), PrimaryBlue.copy(alpha = 0.8f))),
-                CircleShape
-            )
-            .clip(CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
+        Box(
+            modifier = Modifier.size(46.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            // Pulsing ring
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .scale(ringScale)
+                    .background(
+                        PrimaryTeal.copy(alpha = ringAlpha),
+                        CircleShape
+                    )
+            )
+            // Main button
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryBlue.copy(alpha = 0.85f))),
+                        CircleShape
+                    )
+                    .clip(CircleShape)
+                    .clickable(onClick = onClick),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "?",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
+            }
+        }
         Text(
-            "?",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White
+            "עזרה",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Medium,
+            color = PrimaryTeal.copy(alpha = 0.8f)
         )
     }
 }
 
-// ─── Full Help BottomSheet ───────────────────────────────────────────────────
+// ─── Help BottomSheet ──────────────────────────────────────────────────────────
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun HelpBottomSheet(
-    onDismiss: () -> Unit
-) {
+fun HelpBottomSheet(onDismiss: () -> Unit) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val pagerState = rememberPagerState(pageCount = { helpPages.size })
     val scope = rememberCoroutineScope()
@@ -135,35 +275,45 @@ fun HelpBottomSheet(
                     .padding(bottom = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Handle + close button row
+                // ── Top bar ──────────────────────────────────────────────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 16.dp)
+                        .padding(top = 14.dp, bottom = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // Close
                     IconButton(onClick = onDismiss, modifier = Modifier.size(36.dp)) {
-                        Icon(Icons.Default.Close, "סגור", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(
+                            Icons.Default.Close, "סגור",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    // Handle
+                    // Handle bar
                     Box(
                         modifier = Modifier
-                            .width(40.dp)
+                            .width(44.dp)
                             .height(4.dp)
                             .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
                     )
-                    // Page indicator text
-                    Text(
-                        "${pagerState.currentPage + 1}/${helpPages.size}",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
+                    // Page counter
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = PrimaryTeal.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            "${pagerState.currentPage + 1} / ${helpPages.size}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryTeal,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
-                // Pager
+                // ── Pager ────────────────────────────────────────────────────
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxWidth()
@@ -171,67 +321,124 @@ fun HelpBottomSheet(
                     HelpPageContent(helpPages[page])
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Dot indicators
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    repeat(helpPages.size) { idx ->
-                        val selected = pagerState.currentPage == idx
+                // ── Segmented progress dots ──────────────────────────────────
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    helpPages.forEachIndexed { idx, page ->
+                        val isSelected = pagerState.currentPage == idx
+                        val color = if (isSelected) page.gradientColors.first()
+                                    else MaterialTheme.colorScheme.outlineVariant
                         Box(
                             modifier = Modifier
-                                .width(if (selected) 24.dp else 8.dp)
-                                .height(8.dp)
+                                .weight(1f)
+                                .height(4.dp)
                                 .clip(CircleShape)
-                                .background(if (selected) PrimaryTeal else MaterialTheme.colorScheme.outlineVariant)
+                                .background(color)
                                 .clickable { scope.launch { pagerState.animateScrollToPage(idx) } }
                         )
                     }
                 }
 
-                Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(18.dp))
 
-                // Navigation row
+                // ── Navigation ───────────────────────────────────────────────
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .padding(horizontal = 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (pagerState.currentPage > 0) {
                         OutlinedButton(
-                            onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage - 1) } },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(14.dp)
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                                }
+                            },
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp, PrimaryTeal.copy(0.4f)
+                            )
                         ) {
-                            Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(18.dp))
+                            Icon(
+                                Icons.Default.ChevronRight, null,
+                                modifier = Modifier.size(18.dp),
+                                tint = PrimaryTeal
+                            )
                             Spacer(Modifier.width(4.dp))
-                            Text("הקודם")
+                            Text("הקודם", color = PrimaryTeal, fontWeight = FontWeight.SemiBold)
                         }
                     } else {
                         Spacer(Modifier.weight(1f))
                     }
 
                     if (pagerState.currentPage < helpPages.size - 1) {
-                        Button(
-                            onClick = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        helpPages[pagerState.currentPage].gradientColors
+                                    )
+                                )
+                                .clickable {
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text("הבא", fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.width(4.dp))
-                            Icon(Icons.Default.ChevronLeft, null, modifier = Modifier.size(18.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text("הבא", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Icon(
+                                    Icons.Default.ChevronLeft, null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
                     } else {
-                        Button(
-                            onClick = onDismiss,
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(14.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen)
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(
+                                    Brush.horizontalGradient(listOf(PrimaryGreen, Color(0xFF2E7D32)))
+                                )
+                                .clickable(onClick = onDismiss),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("הבנתי!", fontWeight = FontWeight.Bold)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Check, null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "הבנתי, בואנו!",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -240,89 +447,158 @@ fun HelpBottomSheet(
     }
 }
 
+// ─── Help page content ────────────────────────────────────────────────────────
+
 @Composable
 private fun HelpPageContent(page: HelpPage) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 28.dp),
+            .padding(horizontal = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Big icon
-        Surface(
-            modifier = Modifier.size(80.dp),
-            shape = CircleShape,
-            color = page.iconColor.copy(alpha = 0.1f)
-        ) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Icon(
-                    page.icon,
-                    null,
-                    tint = page.iconColor,
-                    modifier = Modifier.size(42.dp)
+        // ── Icon ─────────────────────────────────────────────────────────────
+        Box(contentAlignment = Alignment.Center) {
+            Box(
+                modifier = Modifier
+                    .size(90.dp)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                page.gradientColors.first().copy(alpha = 0.25f),
+                                Color.Transparent
+                            )
+                        ),
+                        CircleShape
+                    )
+            )
+            Surface(
+                modifier = Modifier.size(72.dp),
+                shape = CircleShape,
+                color = page.gradientColors.first().copy(alpha = 0.12f),
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp, page.gradientColors.first().copy(alpha = 0.35f)
                 )
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(
+                        page.icon, null,
+                        tint = page.gradientColors.first(),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
             }
         }
 
-        // Title + subtitle
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // ── Title ─────────────────────────────────────────────────────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             Text(
                 page.title,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.ExtraBold,
+                color = page.gradientColors.first(),
                 textAlign = TextAlign.Center
             )
-            Spacer(Modifier.height(4.dp))
             Text(
                 page.subtitle,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Medium
             )
         }
 
-        // Steps
+        // ── Steps ─────────────────────────────────────────────────────────────
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             page.steps.forEachIndexed { idx, step ->
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = step.color.copy(alpha = 0.07f)
+                    color = step.color.copy(alpha = 0.07f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp, step.color.copy(alpha = 0.15f)
+                    )
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Step number
+                        // Step number circle
                         Box(
                             modifier = Modifier
-                                .size(28.dp)
+                                .size(26.dp)
                                 .background(step.color, CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 "${idx + 1}",
-                                fontSize = 13.sp,
+                                fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                         }
-                        Icon(step.icon, null, tint = step.color, modifier = Modifier.size(20.dp))
-                        Text(
-                            step.text,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(1f)
+                        // Icon
+                        Icon(
+                            step.icon, null,
+                            tint = step.color,
+                            modifier = Modifier.size(18.dp)
                         )
+                        // Text block
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                step.text,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 16.sp
+                            )
+                            Text(
+                                step.detail,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                lineHeight = 14.sp
+                            )
+                        }
                     }
                 }
+            }
+        }
+
+        // ── Pro Tip ───────────────────────────────────────────────────────────
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = page.gradientColors.first().copy(alpha = 0.08f),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp, page.gradientColors.first().copy(alpha = 0.2f)
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    Icons.Default.Lightbulb, null,
+                    tint = page.gradientColors.first(),
+                    modifier = Modifier.size(16.dp).padding(top = 1.dp)
+                )
+                Text(
+                    page.tip,
+                    fontSize = 11.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 15.sp,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }

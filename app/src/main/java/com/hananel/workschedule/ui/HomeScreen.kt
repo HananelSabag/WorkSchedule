@@ -65,23 +65,32 @@ fun HomeScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier = modifier.fillMaxSize()) {
 
-            // Soft background orb
+            // Background orbs — atmospheric depth
             Box(
                 modifier = Modifier
-                    .size(360.dp)
-                    .offset(x = 180.dp, y = (-80).dp)
+                    .size(380.dp)
+                    .offset(x = 160.dp, y = (-90).dp)
                     .scale(pulseScale)
-                    .blur(90.dp)
-                    .alpha(0.07f)
+                    .blur(85.dp)
+                    .alpha(0.11f)
                     .background(Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)), CircleShape)
             )
             Box(
                 modifier = Modifier
-                    .size(260.dp)
-                    .offset(x = (-60).dp, y = 500.dp)
-                    .blur(80.dp)
-                    .alpha(0.05f)
+                    .size(280.dp)
+                    .offset(x = (-70).dp, y = 480.dp)
+                    .blur(75.dp)
+                    .alpha(0.09f)
                     .background(Brush.radialGradient(listOf(PrimaryGreen, Color.Transparent)), CircleShape)
+            )
+            // Third accent orb — center bottom
+            Box(
+                modifier = Modifier
+                    .size(200.dp)
+                    .offset(x = 60.dp, y = 620.dp)
+                    .blur(70.dp)
+                    .alpha(0.06f)
+                    .background(Brush.radialGradient(listOf(PrimaryBlue, Color.Transparent)), CircleShape)
             )
 
             AnimatedVisibility(
@@ -110,18 +119,34 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.weight(1f)
                         ) {
-                            Surface(
-                                modifier = Modifier.size(44.dp),
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surface,
-                                border = BorderStroke(1.5.dp, Brush.linearGradient(listOf(PrimaryTeal, PrimaryGreen.copy(alpha = 0.5f))))
-                            ) {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Image(
-                                        painter = painterResource(R.drawable.ic_app_logo_new),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(28.dp).clip(CircleShape)
+                            // Bigger logo with gradient border glow
+                            Box(contentAlignment = Alignment.Center) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(58.dp)
+                                        .scale(pulseScale)
+                                        .alpha(0.18f)
+                                        .background(
+                                            Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)),
+                                            CircleShape
+                                        )
+                                )
+                                Surface(
+                                    modifier = Modifier.size(48.dp),
+                                    shape = CircleShape,
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = BorderStroke(
+                                        2.dp,
+                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryGreen.copy(alpha = 0.6f)))
                                     )
+                                ) {
+                                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Image(
+                                            painter = painterResource(R.drawable.ic_app_logo_new),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                                        )
+                                    }
                                 }
                             }
                             Spacer(Modifier.width(12.dp))
@@ -129,7 +154,7 @@ fun HomeScreen(
                                 Text(
                                     "סידור עבודה",
                                     fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
+                                    fontWeight = FontWeight.ExtraBold,
                                     color = PrimaryTeal
                                 )
                                 Text(
@@ -141,8 +166,8 @@ fun HomeScreen(
                             }
                         }
 
-                        // Balance spacer — same width as HelpButton
-                        Spacer(Modifier.size(44.dp))
+                        // Balance spacer — matches HelpButton width (with label)
+                        Spacer(Modifier.width(52.dp))
                     }
 
                     Spacer(Modifier.height(28.dp))
@@ -164,16 +189,18 @@ fun HomeScreen(
                         Spacer(Modifier.height(16.dp))
                     }
 
-                    // ─── Main action grid — fills all remaining space ──────────
+                    // ─── Main action grid — fixed card heights ────────────────
                     val canCreate = employeeCount > 0 && hasTemplate
                     val canHistory = employeeCount > 0
 
                     Column(
-                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(152.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             // New Schedule
@@ -208,7 +235,9 @@ fun HomeScreen(
                         }
 
                         Row(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(152.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             // Employees
@@ -233,6 +262,8 @@ fun HomeScreen(
                             )
                         }
                     }
+
+                    Spacer(Modifier.weight(1f))
 
                     // ─── Footer ────────────────────────────────────────────────
                     Text(
@@ -309,27 +340,49 @@ private fun MainActionCard(
                 .background(Brush.linearGradient(gradient))
                 .then(
                     if (enabled) Modifier.clickable(interactionSource, null, onClick = onClick)
-                    else Modifier.alpha(0.55f)
+                    else Modifier.alpha(0.50f)
                 ),
             contentAlignment = Alignment.Center
         ) {
+            // Subtle top shine highlight
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.45f)
+                    .align(Alignment.TopCenter)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color.White.copy(alpha = 0.12f), Color.Transparent)
+                        )
+                    )
+            )
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.padding(14.dp)
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = Color.White,
-                    modifier = Modifier.size(40.dp)
-                )
+                // Icon with soft halo
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(Color.White.copy(alpha = 0.15f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = label,
+                        tint = Color.White,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = label,
                     color = Color.White,
                     fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,
                     lineHeight = 18.sp
                 )
@@ -337,7 +390,7 @@ private fun MainActionCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = description,
-                        color = Color.White.copy(alpha = 0.72f),
+                        color = Color.White.copy(alpha = 0.75f),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Normal,
                         textAlign = TextAlign.Center,

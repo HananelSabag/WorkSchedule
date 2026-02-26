@@ -1,0 +1,133 @@
+# Session Handoff - Full UI Overhaul Complete
+
+## What Was Done (Two Sessions)
+
+### 1. Bug Fix - Draft System
+**File:** `MainActivity.kt`
+- `LaunchedEffect(Unit) { viewModel.clearDraft() }` was deleting the real draft when opening from History
+- Fixed to: `LaunchedEffect(isEditingExistingSchedule) { if (!isEditingExistingSchedule) viewModel.clearDraft() }`
+
+---
+
+### 2. HomeScreen.kt — Full Rewrite
+- 2×2 grid of `MainActionCard` composables (New Schedule, History, Employees, Template Settings)
+- Cards have gradient backgrounds, badges (count / "!" warning)
+- Compact `SetupBanner` + `SetupChip` when employees/template missing
+- `DraftBanner` clickable row at top when draft exists
+- Header: HelpButton (left RTL) + centered logo+title + balance spacer
+- `HelpBottomSheet` triggered from `showHelp` state
+- Footer credit text
+
+---
+
+### 3. HelpOverlay.kt — New File Created
+**Path:** `ui/HelpOverlay.kt`
+- `HelpButton`: animated gradient circle "?" button (pulse animation)
+- `HelpBottomSheet`: `ModalBottomSheet` with `HorizontalPager` (3 pages)
+- 3 help pages: Setup (initial config), New Schedule (create flow), History (manage)
+- Dot indicators + prev/next navigation + "הבנתי!" close button
+- Uses `@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)`
+
+---
+
+### 4. HistoryScreen.kt — Full Rewrite
+- `Scaffold` with custom topBar (back button + title + count badge)
+- `LazyColumn` of compact `ScheduleCard` rows
+- Each card: calendar icon + week info + "פתח" gradient button + "⋮" more icon
+- `ModalBottomSheet` with enum `SheetMode { OPTIONS, RENAME, DELETE }`
+- `OptionsSheet`: open / rename / delete action rows
+- `RenameSheet`: text field + save/cancel
+- `DeleteSheet`: icon + warning text + confirm/cancel buttons
+
+---
+
+### 5. BlockingScreen.kt — Targeted Edits
+- Removed `verticalScroll` from main Column
+- Table changed from `height(450.dp)` → `weight(1f)` (fills available space)
+- Reset `AlertDialog` → `ModalBottomSheet` with icon + confirm/cancel
+- Added `scope = rememberCoroutineScope()` + `resetSheetState`
+- Import: removed scroll imports, added `kotlinx.coroutines.launch`
+
+---
+
+### 6. SimpleTable.kt — Pinch-to-Zoom Added
+- Added `var scale by remember { mutableFloatStateOf(1f) }`
+- `rememberTransformableState { zoomChange, _, _ -> scale = (scale * zoomChange).coerceIn(0.5f, 2.5f) }`
+- Outer Box gets `.transformable(state = transformableState)`
+- Inner Box keeps `.verticalScroll()` + `.horizontalScroll()`
+- Innermost Box: `.graphicsLayer(scaleX = scale, scaleY = scale)`
+- Coexists with single-touch scroll (only fires on multi-finger gestures)
+
+---
+
+### 7. PreviewScreen.kt — Targeted Edits
+- Added `@OptIn(ExperimentalMaterial3Api::class)` annotation
+- Statistics `Dialog` → `ModalBottomSheet` (`statsSheetState` + `scope`)
+- Added `kotlinx.coroutines.launch` import
+
+---
+
+### 8. ShiftRowEditDialog.kt — Full Rewrite
+- Was `AlertDialog` with basic fields
+- Now `ModalBottomSheet` with:
+  - Handle bar + icon+title row
+  - Two `OutlinedTextField`s (shift name + hours)
+  - Live preview chip showing `"$name · $hours"` when both filled
+  - Cancel + Save buttons
+
+---
+
+### 9. ShiftTemplateSetupScreen.kt — Multiple Edits
+- Large instructions `Card` (4 bullet points) → compact `Surface` chip:
+  `"הוסף משמרות + סמן ימים. מינימום: 2 משמרות, 4 ימים"` (12sp, PrimaryTeal)
+- Delete confirmation `AlertDialog` → `ModalBottomSheet` (icon + red delete button)
+- `ShiftInputDialog` `AlertDialog` → `ModalBottomSheet` (keeps structured HH:MM time fields)
+- Added `@OptIn(ExperimentalMaterial3Api::class)` to `ShiftInputDialog`
+
+---
+
+### 10. ManualCreationScreen.kt — Full Rewrite
+- Table `height(450.dp)` → `weight(1f)` (no-scroll layout)
+- Removed all duplicate/unused imports
+- 3 AlertDialogs → ModalBottomSheets:
+  - Blocking warning sheet (with employee + shift info)
+  - Free text editor sheet (OutlinedTextField + save/cancel)
+  - Reset confirmation sheet (orange icon + confirm)
+- Save button simplified (icon + single text, smaller height 56dp vs 64dp)
+- Legend row simplified (uses `LegendDot` private composable)
+- `EmployeeSelectionPanel` redesigned with `Surface` instead of `Card`
+
+---
+
+### 11. EmployeeManagementScreen.kt — Full Rewrite
+- Color consistency: `PrimaryBlue` info box → compact `PrimaryTeal` chip
+- `verticalScroll + forEach` → `Scaffold` + `LazyColumn`
+- Header → Scaffold topBar with count badge (matches HistoryScreen style)
+- Add employee form: toggles redesigned as interactive `Surface` panels (show state visually)
+- Employee cards redesigned: avatar circle + name + attribute chips + icon toggles + delete icon
+- Delete `AlertDialog` → `ModalBottomSheet`
+- Empty state added (icon + text when no employees)
+- Added `@OptIn(ExperimentalMaterial3Api::class)` to both `EmployeeManagementScreen` and `EmployeeCard`
+
+---
+
+## Files NOT Changed (intentional)
+- `SplashScreen.kt` — Already premium dark design, no changes needed
+- `ScheduleViewModel.kt` — User said leave algorithm for later
+- `MainActivity.kt` — Only the one draft bug fix
+
+## Remaining AlertDialogs (intentional — leave them)
+- `HomeScreen.kt:258` — Draft confirmation (new vs continue draft, 2 buttons)
+- `MainActivity.kt:444` — Duplicate schedule detection (overwrite vs create copy)
+
+## Next Session: What's Left
+- **Algorithm improvements** (user explicitly deferred to last)
+- **Swipe gesture improvements** if needed
+- **Build & test** — ready to build in Android Studio
+
+## Important Architecture Notes
+- All screens use `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl)`
+- `ModalBottomSheet` requires `@OptIn(ExperimentalMaterial3Api::class)` on the composable
+- `HorizontalPager` requires `@OptIn(ExperimentalFoundationApi::class)`
+- Draft system: `weekStart = "__TEMP_DRAFT__"` in Room DB
+- `isEditingExistingSchedule = true` means viewing from History (smart save, no draft involvement)
