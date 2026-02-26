@@ -1,63 +1,36 @@
 package com.hananel.workschedule.ui
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.gestures.detectTransformGestures
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.ZoomOut
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
 import com.hananel.workschedule.data.Employee
-import com.hananel.workschedule.data.ShiftDefinitions
 import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
-import com.hananel.workschedule.viewmodel.ScheduleViewModel
-import java.time.format.DateTimeFormatter
-import kotlin.math.max
-import kotlin.math.min
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,49 +40,42 @@ fun ManualCreationScreen(
     schedule: Map<String, List<String>>,
     blocks: Map<String, Boolean>,
     canOnlyBlocks: Map<String, Boolean>,
-    savingMode: Map<String, Boolean>, 
-    weekStartDate: java.time.LocalDate, // Keep for display only, no editing
-    templateData: TemplateData? = null, // Dynamic template
+    savingMode: Map<String, Boolean>,
+    weekStartDate: java.time.LocalDate,
+    templateData: TemplateData? = null,
     onSelectEmployee: (Employee?) -> Unit,
     onToggleEmployeeInShift: (Employee, String, String) -> Unit,
-    onAddFreeTextToCell: (String, String) -> Unit, // New callback for free text
+    onAddFreeTextToCell: (String, String) -> Unit,
     onGenerateManualSchedule: () -> Unit,
-    onReturnToBlocking: () -> Unit, // New callback for returning to blocking
-    onClearManualSchedule: () -> Unit, // New callback for reset manual assignments
+    onReturnToBlocking: () -> Unit,
+    onClearManualSchedule: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // State for blocking warning dialog
     var showBlockingWarning by remember { mutableStateOf(false) }
     var pendingAssignment by remember { mutableStateOf<Triple<Employee, String, String>?>(null) }
-    
-    // State for free text editing
-    var showFreeTextDialog by remember { mutableStateOf(false) }
+
+    var showFreeTextSheet by remember { mutableStateOf(false) }
     var freeTextCellKey by remember { mutableStateOf("") }
     var freeTextValue by remember { mutableStateOf("") }
-    
-    // State for reset confirmation
-    var showResetConfirmation by remember { mutableStateOf(false) }
-    
-    // הוסר: State for reset previous schedule dialog - זה אמור להיות רק במסך הבית!
-    
-    // RTL Layout
+
+    var showResetSheet by remember { mutableStateOf(false) }
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Status bar padding
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Title with Logo and Back Button
+            // ─── Header ────────────────────────────────────────────────────
             Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 IconButton(onClick = onReturnToBlocking) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -119,31 +85,27 @@ fun ManualCreationScreen(
                 }
                 Text(
                     text = "יצירת סידור ידני",
-                    fontSize = 22.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center
                 )
-                
-                // Reset button + App Logo
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Small reset button for manual assignments only - GREEN color (visible in both themes)
                     IconButton(
-                        onClick = { showResetConfirmation = true },
+                        onClick = { showResetSheet = true },
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Refresh,
-                            contentDescription = "איפוס שיבוצים ידניים",
-                            tint = PrimaryGreen, // Green like table cells - visible in both light/dark modes
+                            contentDescription = "איפוס",
+                            tint = PrimaryGreen,
                             modifier = Modifier.size(20.dp)
                         )
                     }
-                    // App Logo with white background for visibility
                     Surface(
                         modifier = Modifier.size(28.dp),
                         shape = CircleShape,
@@ -151,7 +113,7 @@ fun ManualCreationScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo),
+                            painter = painterResource(id = R.drawable.ic_app_logo_new),
                             contentDescription = "Logo",
                             modifier = Modifier
                                 .size(20.dp)
@@ -160,69 +122,56 @@ fun ManualCreationScreen(
                     }
                 }
             }
-            
-            // השתמש בטבלה הסטנדרטית - אותו עיצוב בדיוק כמו חסימות
+
+            // ─── Schedule Table ─────────────────────────────────────────────
             SimpleScheduleTable(
                 employees = employees,
                 selectedEmployee = selectedEmployee,
                 blocks = blocks,
                 canOnlyBlocks = canOnlyBlocks,
                 savingMode = savingMode,
-                schedule = schedule, // הצגת הסידור הנוכחי
-                templateData = templateData, // Dynamic template support
-                isEditMode = false, // לא במצב עריכת טקסט
+                schedule = schedule,
+                templateData = templateData,
+                isEditMode = false,
                 weekStartDate = weekStartDate,
-                onSetWeekStartDate = null, // ללא עריכת תאריך
+                onSetWeekStartDate = null,
                 onCellClick = { _, day, shift ->
-                    // השתמש בעובד הנבחר (לא בעובד מהתא)
                     selectedEmployee?.let { emp ->
                         val blockKey = "${emp.name}-$day-$shift"
                         val isBlocked = blocks[blockKey] == true
                         val isCanOnly = canOnlyBlocks[blockKey] == true
-                        
-                        // Check if employee has ANY can-only restrictions
                         val hasCanOnlyRestrictions = canOnlyBlocks.any { (key, value) ->
                             value && key.startsWith("${emp.name}-")
                         }
-                        
-                        // Check if this is a restricted cell
-                        val isRestricted = if (hasCanOnlyRestrictions) {
-                            // Employee has can-only cells - this cell is restricted if NOT in can-only list
-                            !isCanOnly
-                        } else {
-                            // Employee has no can-only cells - check regular blocks
-                            isBlocked
-                        }
-                        
+                        val isRestricted = if (hasCanOnlyRestrictions) !isCanOnly else isBlocked
                         if (isRestricted) {
-                            // Show warning
                             pendingAssignment = Triple(emp, day, shift)
                             showBlockingWarning = true
                         } else {
-                            // No restriction - continue with assignment
                             onToggleEmployeeInShift(emp, day, shift)
                         }
                     }
                 },
                 onLongPress = { day, shift ->
-                    // לחיצה ארוכה לעריכת טקסט חופשי
                     freeTextCellKey = "$day-$shift"
                     freeTextValue = schedule[freeTextCellKey]?.joinToString(", ") ?: ""
-                    showFreeTextDialog = true
+                    showFreeTextSheet = true
                 },
-                onDayHeaderClick = null, // ללא פונקציונליות חסימת יום שלם
-                isBlockingMode = false, // גבולות שחורים (לא אדומים כמו חסימות)
-                modifier = Modifier.fillMaxWidth().height(450.dp)
+                onDayHeaderClick = null,
+                isBlockingMode = false,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             )
-            
-            // Employee Selection Panel (moved to BOTTOM so expanding won't cut table)
+
+            // ─── Employee Selection Panel ────────────────────────────────────
             EmployeeSelectionPanel(
                 employees = employees,
                 selectedEmployee = selectedEmployee,
                 onSelectEmployee = onSelectEmployee
             )
-            
-            // Instructions with color legend - Modern design
+
+            // ─── Legend ─────────────────────────────────────────────────────
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
@@ -231,253 +180,271 @@ fun ManualCreationScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(10.dp),
-                            color = BlockedRed,
-                            shape = RoundedCornerShape(3.dp)
-                        ) {}
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("חסום", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BlockedRed)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(10.dp),
-                            color = CanOnlyBlue,
-                            shape = RoundedCornerShape(3.dp)
-                        ) {}
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("יכול", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CanOnlyBlue)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Surface(
-                            modifier = Modifier.size(10.dp),
-                            color = Color.Black,
-                            shape = RoundedCornerShape(3.dp)
-                        ) {}
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("משובץ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    }
-                    Text("👆 לחץ ארוך", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    LegendDot("חסום", BlockedRed)
+                    LegendDot("יכול", CanOnlyBlue)
+                    LegendDot("משובץ", MaterialTheme.colorScheme.onSurface)
+                    Text("לחץ ארוך לטקסט", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            
-            // Complete Manual Schedule Button - Premium style
+
+            // ─── Save Button ─────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(PrimaryTeal, Color(0xFF00796B))
-                        )
-                    )
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, Color(0xFF00796B))))
                     .clickable(onClick = onGenerateManualSchedule),
                 contentAlignment = Alignment.Center
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Box(
+                    Icon(Icons.Default.Save, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    Text(
+                        text = "שמירה והצגה סופית",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+        }
+
+        // ─── Blocking Warning Sheet ──────────────────────────────────────────
+        if (showBlockingWarning) {
+            val isCanOnlyRestriction = pendingAssignment?.let { (employee, day, shift) ->
+                val hasCanOnly = canOnlyBlocks.any { (key, value) ->
+                    value && key.startsWith("${employee.name}-")
+                }
+                hasCanOnly && canOnlyBlocks["${employee.name}-$day-$shift"] != true
+            } ?: false
+
+            ModalBottomSheet(
+                onDismissRequest = { showBlockingWarning = false; pendingAssignment = null },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
                         modifier = Modifier
-                            .size(44.dp)
-                            .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
                         )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = "שמירה והצגה סופית",
-                            fontSize = 17.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "סיום יצירת הסידור",
-                            fontSize = 12.sp,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
+                        Surface(
+                            modifier = Modifier.size(60.dp),
+                            shape = CircleShape,
+                            color = (if (isCanOnlyRestriction) CanOnlyBlue else BlockedRed).copy(alpha = 0.1f)
+                        ) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(
+                                    Icons.Default.Warning,
+                                    null,
+                                    tint = if (isCanOnlyRestriction) CanOnlyBlue else BlockedRed,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+                        }
+                        pendingAssignment?.let { (employee, day, shift) ->
+                            Text(
+                                text = if (isCanOnlyRestriction) "תא מחוץ לאיזורים מותרים" else "תא חסום",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = if (isCanOnlyRestriction)
+                                    "${employee.name} סומן 'יכול רק' בתאים ספציפיים. $shift ביום $day לא ברשימה."
+                                else
+                                    "${employee.name} חסום ב-$shift ביום $day.",
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { showBlockingWarning = false; pendingAssignment = null },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול", fontWeight = FontWeight.SemiBold) }
+                            Button(
+                                onClick = {
+                                    pendingAssignment?.let { (emp, day, shift) ->
+                                        onToggleEmployeeInShift(emp, day, shift)
+                                    }
+                                    showBlockingWarning = false
+                                    pendingAssignment = null
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
+                            ) { Text("שבץ בכל זאת", fontWeight = FontWeight.Bold) }
+                        }
                     }
                 }
             }
         }
-        
-        // Blocking Warning Dialog
-        if (showBlockingWarning) {
-            // Check if it's a can-only restriction or regular block
-            val isCanOnlyRestriction = pendingAssignment?.let { (employee, day, shift) ->
-                val blockKey = "${employee.name}-$day-$shift"
-                val hasCanOnly = canOnlyBlocks.any { (key, value) ->
-                    value && key.startsWith("${employee.name}-")
-                }
-                hasCanOnly && canOnlyBlocks[blockKey] != true
-            } ?: false
-            
-            AlertDialog(
-                onDismissRequest = { 
-                    showBlockingWarning = false
-                    pendingAssignment = null
-                },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = if (isCanOnlyRestriction) CanOnlyBlue else BlockedRed
-                    )
-                },
-                title = {
-                    Text(
-                        text = if (isCanOnlyRestriction) "תא מחוץ לאיזורים מותרים" else "תא חסום",
-                        fontWeight = FontWeight.Bold
-                    )
-                },
-                text = {
-                    pendingAssignment?.let { (employee, day, shift) ->
-                        val message = if (isCanOnlyRestriction) {
-                            "העובד ${employee.name} סומן כ'יכול רק' בתאים ספציפיים.\n\nהתא הזה ($shift ביום $day) לא נמצא ברשימת התאים המותרים.\n\nהאם אתה בטוח שברצונך לשבץ אותו בכל זאת?"
-                        } else {
-                            "העובד ${employee.name} חסום במשמרת $shift ביום $day.\n\nהאם אתה בטוח שברצונך לשבץ אותו בכל זאת?"
-                        }
-                        Text(
-                            text = message,
-                            textAlign = TextAlign.Center
+
+        // ─── Free Text Sheet ─────────────────────────────────────────────────
+        if (showFreeTextSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showFreeTextSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                .align(Alignment.CenterHorizontally)
                         )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            pendingAssignment?.let { (employee, day, shift) ->
-                                onToggleEmployeeInShift(employee, day, shift)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = PrimaryTeal.copy(alpha = 0.12f)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                }
                             }
-                            showBlockingWarning = false
-                            pendingAssignment = null
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
-                    ) {
-                        Text("אשר", color = Color.White)
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = {
-                            showBlockingWarning = false
-                            pendingAssignment = null
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = GrayMedium)
-                    ) {
-                        Text("ביטול", color = Color.White)
-                    }
-                }
-            )
-        }
-        
-        // Free Text Dialog
-        if (showFreeTextDialog) {
-            AlertDialog(
-                onDismissRequest = { showFreeTextDialog = false },
-                title = { Text("עריכת טקסט חופשי", fontWeight = FontWeight.Bold) },
-                text = {
-                    Column {
-                        Text("הזן טקסט מותאם אישית עבור התא:", fontSize = 14.sp)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextField(
+                            Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedTextField(
                             value = freeTextValue,
                             onValueChange = { freeTextValue = it },
-                            placeholder = { Text("הזן טקסט...") },
-                            modifier = Modifier.fillMaxWidth()
+                            label = { Text("טקסט חופשי") },
+                            placeholder = { Text("שם עובד, הערה...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryTeal,
+                                focusedLabelColor = PrimaryTeal
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         )
-                    }
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            onAddFreeTextToCell(freeTextCellKey, freeTextValue)
-                            showFreeTextDialog = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
-                    ) {
-                        Text("שמור", color = Color.White)
-                    }
-                },
-                dismissButton = {
-                    Button(
-                        onClick = { showFreeTextDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = GrayMedium)
-                    ) {
-                        Text("ביטול", color = Color.White)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { showFreeTextSheet = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול") }
+                            Button(
+                                onClick = {
+                                    onAddFreeTextToCell(freeTextCellKey, freeTextValue)
+                                    showFreeTextSheet = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                            ) { Text("שמור", fontWeight = FontWeight.Bold) }
+                        }
                     }
                 }
-            )
+            }
         }
-        
-        // Reset Confirmation Dialog
-        if (showResetConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showResetConfirmation = false },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = Orange
-                    )
-                },
-                title = {
-                    Text(
-                        text = "איפוס שיבוצים ידניים",
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                text = {
-                    Text(
-                        text = "האם אתה בטוח שברצונך לאפס את כל השיבוצים הידניים?\n\nפעולה זו תמחק רק את השיבוצים שביצעת, לא את החסימות.",
-                        textAlign = TextAlign.Center
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            onClearManualSchedule()
-                            showResetConfirmation = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Orange)
+
+        // ─── Reset Confirmation Sheet ────────────────────────────────────────
+        if (showResetSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showResetSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("אפס", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showResetConfirmation = false }
-                    ) {
-                        Text("ביטול")
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        )
+                        Surface(
+                            modifier = Modifier.size(64.dp),
+                            shape = CircleShape,
+                            color = Orange.copy(alpha = 0.1f)
+                        ) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Refresh, null, tint = Orange, modifier = Modifier.size(32.dp))
+                            }
+                        }
+                        Text("איפוס שיבוצים ידניים", fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                        Text(
+                            "כל השיבוצים הידניים יימחקו. החסימות לא יושפעו.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { showResetSheet = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול", fontWeight = FontWeight.SemiBold) }
+                            Button(
+                                onClick = {
+                                    onClearManualSchedule()
+                                    showResetSheet = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                            ) { Text("אפס", fontWeight = FontWeight.Bold) }
+                        }
                     }
                 }
-            )
+            }
         }
     }
-    
-    // הוסר: Reset Previous Schedule Dialog - זה צריך להיות רק במסך הבית!
 }
 
-// הקוד הישן של ManualCreationTable הוסר - השתמש ב-SimpleScheduleTable במקום
-
-// הקוד הישן של ManualCreationTableContent הוסר - השתמש ב-SimpleScheduleTable במקום
-
-// הקוד הישן הוסר - SimpleScheduleTable מטפל בכל הפונקציונליות
+@Composable
+private fun LegendDot(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Surface(modifier = Modifier.size(10.dp), color = color, shape = RoundedCornerShape(3.dp)) {}
+        Text(label, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = color)
+    }
+}
 
 @Composable
 private fun EmployeeSelectionPanel(
@@ -486,122 +453,79 @@ private fun EmployeeSelectionPanel(
     onSelectEmployee: (Employee?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
         shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Selected employee indicator - Modern design (matches BlockingScreen)
             if (selectedEmployee != null) {
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PrimaryTeal.copy(alpha = 0.15f)
-                    ),
                     shape = RoundedCornerShape(12.dp),
+                    color = PrimaryTeal.copy(alpha = 0.15f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        // Person icon with background
-                        Surface(
-                            color = PrimaryTeal.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
+                        Surface(color = PrimaryTeal.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) {
                             Icon(
-                                Icons.Default.Person, 
-                                contentDescription = null, 
-                                modifier = Modifier.size(32.dp).padding(4.dp),
+                                Icons.Default.Person,
+                                null,
+                                modifier = Modifier.size(28.dp).padding(4.dp),
                                 tint = PrimaryTeal
                             )
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = "עובד נבחר",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = selectedEmployee.name,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = "👆 לחץ על תא",
-                            fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text(selectedEmployee.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal, modifier = Modifier.weight(1f))
+                        Text("לחץ על תא לשיבוץ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-            
-            // Employee selection buttons - Modern chips style (matches BlockingScreen)
-            Column(
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "👥 בחר עובד:",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "${employees.size} עובדים",
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(employees) { employee ->
-                        val isSelected = selectedEmployee?.id == employee.id
-                        FilterChip(
-                            onClick = { 
-                                if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee)
-                            },
-                            label = {
-                                Text(
-                                    text = employee.name,
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                                )
-                            },
-                            selected = isSelected,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryTeal,
-                                selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surface,
-                                labelColor = MaterialTheme.colorScheme.onSurface
-                            ),
-                            border = FilterChipDefaults.filterChipBorder(
-                                borderColor = PrimaryTeal.copy(alpha = 0.3f),
-                                selectedBorderColor = PrimaryTeal,
-                                enabled = true,
-                                selected = isSelected
+                Text("בחר עובד:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text("${employees.size} עובדים", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(employees) { employee ->
+                    val isSelected = selectedEmployee?.id == employee.id
+                    FilterChip(
+                        onClick = { if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee) },
+                        label = {
+                            Text(
+                                text = employee.name,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
+                        },
+                        selected = isSelected,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = PrimaryTeal,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            labelColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = PrimaryTeal.copy(alpha = 0.3f),
+                            selectedBorderColor = PrimaryTeal,
+                            enabled = true,
+                            selected = isSelected
                         )
-                    }
+                    )
                 }
             }
         }

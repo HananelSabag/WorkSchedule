@@ -1,6 +1,7 @@
 package com.hananel.workschedule.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,32 +70,46 @@ fun ShiftTemplateSetupScreen(
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Text(
-                            text = if (hasExistingTemplate) {
-                                "עריכת טבלת סידור עבודה"
-                            } else {
-                                "יצירת טבלה - פעם ראשונה"
-                            },
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    },
-                    navigationIcon = {
+                Surface(
+                    shadowElevation = 0.dp,
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .statusBarsPadding()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         IconButton(onClick = onSaveAndExit) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "חזור",
-                                tint = Color.White
-                            )
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = PrimaryTeal)
                         }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = PrimaryTeal
-                    )
-                )
+                        Text(
+                            text = if (hasExistingTemplate) "עריכת תבנית סידור" else "הגדרת תבנית - ראשונה",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center
+                        )
+                        if (shiftRows.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = PrimaryTeal.copy(alpha = 0.12f)
+                            ) {
+                                Text(
+                                    "${shiftRows.size}",
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PrimaryTeal
+                                )
+                            }
+                        } else {
+                            Spacer(Modifier.size(48.dp))
+                        }
+                    }
+                }
             },
             modifier = modifier.fillMaxSize()
         ) { paddingValues ->
@@ -106,58 +121,32 @@ fun ShiftTemplateSetupScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Instructions Card
-                Card(
+                // Compact info chip
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = PrimaryBlue.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    color = PrimaryTeal.copy(alpha = 0.08f)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Info,
-                                contentDescription = null,
-                                tint = PrimaryBlue,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Text(
-                                text = "כיצד להגדיר את הטבלה?",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = PrimaryBlue
-                            )
-                        }
-                        
+                        Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
                         Text(
-                            text = "• הוסף משמרות (שורות) עם שם ושעות פעילות\n" +
-                                    "• סמן/בטל ימים (עמודות) לפי צורך\n" +
-                                    "• לפחות 2 משמרות ו-4 ימים נדרשים\n" +
-                                    "• לחץ על משמרת לעריכה",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                            lineHeight = 20.sp
+                            text = "הוסף משמרות + סמן ימים. מינימום: 2 משמרות, 4 ימים",
+                            fontSize = 12.sp,
+                            color = PrimaryTeal
                         )
                     }
                 }
                 
                 // Shift Rows Section
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -236,13 +225,11 @@ fun ShiftTemplateSetupScreen(
                 }
                 
                 // Day Columns Section
-                Card(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -314,12 +301,11 @@ fun ShiftTemplateSetupScreen(
                 // Table Preview Section
                 val enabledDaysForPreview = dayColumns.filter { it.isEnabled }
                 if (shiftRows.isNotEmpty() && enabledDaysForPreview.isNotEmpty()) {
-                    Card(
+                    Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Orange.copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = BorderStroke(1.dp, Orange.copy(alpha = 0.35f))
                     ) {
                         Column(
                             modifier = Modifier
@@ -476,55 +462,74 @@ fun ShiftTemplateSetupScreen(
         )
     }
     
-    // Delete confirmation dialog
+    // Delete confirmation sheet
     if (showDeleteConfirm && deletingRowIndex >= 0) {
-        AlertDialog(
+        val shiftName = shiftRows.getOrNull(deletingRowIndex)?.shiftName ?: ""
+        ModalBottomSheet(
             onDismissRequest = { showDeleteConfirm = false },
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = Color.Red
-                )
-            },
-            title = {
-                Text(
-                    text = "מחיקת משמרת",
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            text = {
-                Text(
-                    text = "האם למחוק את המשמרת \"${shiftRows.getOrNull(deletingRowIndex)?.shiftName}\"?",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDeleteShiftRow(deletingRowIndex)
-                        onAutoSave() // Auto-save after deletion
-                        showDeleteConfirm = false
-                        deletingRowIndex = -1
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("מחק")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("ביטול")
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape)
+                    )
+                    Surface(
+                        modifier = Modifier.size(60.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = BlockedRed.copy(alpha = 0.1f)
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Delete, null, tint = BlockedRed, modifier = Modifier.size(28.dp))
+                        }
+                    }
+                    Text("מחיקת משמרת", fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text(
+                        "האם למחוק את \"$shiftName\"?",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showDeleteConfirm = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("ביטול", fontWeight = FontWeight.SemiBold) }
+                        Button(
+                            onClick = {
+                                onDeleteShiftRow(deletingRowIndex)
+                                onAutoSave()
+                                showDeleteConfirm = false
+                                deletingRowIndex = -1
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
+                        ) { Text("מחק", fontWeight = FontWeight.Bold) }
+                    }
                 }
             }
-        )
+        }
     }
 }
 
-// Shift input dialog with structured time fields
+// Shift input bottom sheet with structured time fields
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ShiftInputDialog(
     title: String,
@@ -534,164 +539,154 @@ private fun ShiftInputDialog(
     onDismiss: () -> Unit
 ) {
     var shiftName by remember { mutableStateOf(initialName) }
-    
-    // Parse existing hours or use empty strings for new shifts
+
     val hoursParts = if (initialHours.isNotBlank()) initialHours.split("-") else emptyList()
     val startParts = if (hoursParts.isNotEmpty()) hoursParts[0].split(":") else emptyList()
     val endParts = if (hoursParts.size > 1) hoursParts[1].split(":") else emptyList()
-    
+
     var startHour by remember { mutableStateOf(startParts.getOrNull(0)?.trim() ?: "") }
     var startMinute by remember { mutableStateOf(startParts.getOrNull(1)?.trim() ?: "") }
     var endHour by remember { mutableStateOf(endParts.getOrNull(0)?.trim() ?: "") }
     var endMinute by remember { mutableStateOf(endParts.getOrNull(1)?.trim() ?: "") }
-    
-    AlertDialog(
+
+    val isValid = shiftName.isNotBlank() &&
+            startHour.isNotBlank() && startMinute.isNotBlank() &&
+            endHour.isNotBlank() && endMinute.isNotBlank()
+
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        icon = {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = null,
-                tint = PrimaryTeal
-            )
-        },
-        title = {
-            Text(
-                text = title,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Shift name field
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(4.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape)
+                        .align(Alignment.CenterHorizontally)
+                )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = PrimaryTeal.copy(alpha = 0.12f)
+                    ) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                    Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // Shift name
                 OutlinedTextField(
                     value = shiftName,
                     onValueChange = { shiftName = it },
                     label = { Text("שם המשמרת") },
-                    placeholder = { Text("למשל: בוקר, צהריים, לילה") },
+                    placeholder = { Text("בוקר, צהריים, לילה...") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = PrimaryTeal,
                         focusedLabelColor = PrimaryTeal
-                    )
+                    ),
+                    shape = RoundedCornerShape(12.dp)
                 )
-                
-                // Time fields section
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+
+                // Time section
+                Text("שעות פעילות", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryTeal)
+
+                // Start + End time rows
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "שעות פעילות",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryTeal
+                    Text("התחלה:", fontSize = 13.sp, modifier = Modifier.width(52.dp))
+                    OutlinedTextField(
+                        value = startHour,
+                        onValueChange = { if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) startHour = it },
+                        label = { Text("שע") },
+                        placeholder = { Text("07") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        shape = RoundedCornerShape(10.dp)
                     )
-                    
-                    // Start time
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("התחלה:", fontSize = 14.sp, modifier = Modifier.width(60.dp))
-                        OutlinedTextField(
-                            value = startHour,
-                            onValueChange = { 
-                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) {
-                                    startHour = it
-                                }
-                            },
-                            label = { Text("שעה") },
-                            placeholder = { Text("07", color = Color.Gray) },
-                            modifier = Modifier.width(70.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal
-                            )
-                        )
-                        Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        OutlinedTextField(
-                            value = startMinute,
-                            onValueChange = { 
-                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) {
-                                    startMinute = it
-                                }
-                            },
-                            label = { Text("דקות") },
-                            placeholder = { Text("00", color = Color.Gray) },
-                            modifier = Modifier.width(70.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal
-                            )
-                        )
-                    }
-                    
-                    // End time
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("סיום:", fontSize = 14.sp, modifier = Modifier.width(60.dp))
-                        OutlinedTextField(
-                            value = endHour,
-                            onValueChange = { 
-                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) {
-                                    endHour = it
-                                }
-                            },
-                            label = { Text("שעה") },
-                            placeholder = { Text("15", color = Color.Gray) },
-                            modifier = Modifier.width(70.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal
-                            )
-                        )
-                        Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        OutlinedTextField(
-                            value = endMinute,
-                            onValueChange = { 
-                                if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) {
-                                    endMinute = it
-                                }
-                            },
-                            label = { Text("דקות") },
-                            placeholder = { Text("00", color = Color.Gray) },
-                            modifier = Modifier.width(70.dp),
-                            singleLine = true,
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal
-                            )
-                        )
-                    }
+                    Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = startMinute,
+                        onValueChange = { if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) startMinute = it },
+                        label = { Text("דק") },
+                        placeholder = { Text("00") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("סיום:", fontSize = 13.sp, modifier = Modifier.width(52.dp))
+                    OutlinedTextField(
+                        value = endHour,
+                        onValueChange = { if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..23)) endHour = it },
+                        label = { Text("שע") },
+                        placeholder = { Text("15") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                    Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    OutlinedTextField(
+                        value = endMinute,
+                        onValueChange = { if (it.isEmpty() || (it.length <= 2 && (it.toIntOrNull() ?: -1) in 0..59)) endMinute = it },
+                        label = { Text("דק") },
+                        placeholder = { Text("00") },
+                        modifier = Modifier.weight(1f),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { Text("ביטול") }
+                    Button(
+                        onClick = {
+                            val formattedHours = "${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}-${endHour.padStart(2, '0')}:${endMinute.padStart(2, '0')}"
+                            onConfirm(shiftName, formattedHours)
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        enabled = isValid
+                    ) { Text("שמור", fontWeight = FontWeight.Bold) }
                 }
             }
-        },
-        confirmButton = {
-            val isValid = shiftName.isNotBlank() && 
-                          startHour.isNotBlank() && startMinute.isNotBlank() &&
-                          endHour.isNotBlank() && endMinute.isNotBlank()
-            Button(
-                onClick = {
-                    val formattedHours = "${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}-${endHour.padStart(2, '0')}:${endMinute.padStart(2, '0')}"
-                    onConfirm(shiftName, formattedHours)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
-                enabled = isValid
-            ) {
-                Text("אישור")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("ביטול")
-            }
         }
-    )
+    }
 }
 
 // Draggable shift rows list with reorder capability
@@ -816,12 +811,17 @@ private fun ShiftRowItemDraggable(
             },
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDragging -> PrimaryTeal.copy(alpha = 0.3f) // Teal when dragging
-                isTarget && !isDragged -> Yellow.copy(alpha = 0.3f) // Yellow for target position
-                else -> MaterialTheme.colorScheme.surfaceVariant
+                isDragging -> PrimaryTeal.copy(alpha = 0.25f) // Teal when dragging
+                isTarget && !isDragged -> Orange.copy(alpha = 0.15f) // Orange for target position
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
             }
         ),
-        shape = RoundedCornerShape(8.dp),
+        border = when {
+            isDragging -> BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.6f))
+            isTarget && !isDragged -> BorderStroke(1.dp, Orange.copy(alpha = 0.5f))
+            else -> BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f))
+        },
+        shape = RoundedCornerShape(10.dp),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isDragging) 12.dp else 0.dp
         )
@@ -953,12 +953,16 @@ private fun DayColumnItemCompact(
                 onClick = onToggle
             ),
         colors = CardDefaults.cardColors(
-            containerColor = if (dayColumn.isEnabled) 
-                PrimaryGreen.copy(alpha = 0.15f) 
-            else 
-                MaterialTheme.colorScheme.surfaceVariant
+            containerColor = if (dayColumn.isEnabled)
+                PrimaryGreen.copy(alpha = 0.12f)
+            else
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         ),
-        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(
+            1.dp,
+            if (dayColumn.isEnabled) PrimaryGreen.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+        ),
+        shape = RoundedCornerShape(10.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
@@ -1006,10 +1010,11 @@ private fun TablePreview(
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier.padding(2.dp)
@@ -1086,7 +1091,7 @@ private fun TablePreview(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            if (isEven) Color(0xFFF8FAFA) else Color.White
+                            if (isEven) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surface.copy(alpha = 0.8f)
                         )
                         .padding(vertical = 4.dp, horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -1136,12 +1141,12 @@ private fun TablePreview(
                                 .weight(1f)
                                 .padding(horizontal = 1.dp)
                                 .background(
-                                    Color(0xFFE8F5E9),
+                                    PrimaryTeal.copy(alpha = 0.04f),
                                     RoundedCornerShape(4.dp)
                                 )
                                 .border(
                                     width = 0.5.dp,
-                                    color = PrimaryGreen.copy(alpha = 0.2f),
+                                    color = PrimaryTeal.copy(alpha = 0.12f),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .padding(vertical = 8.dp),
@@ -1150,7 +1155,7 @@ private fun TablePreview(
                             Text(
                                 text = "—",
                                 fontSize = 10.sp,
-                                color = Color(0xFFAED581),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -1163,7 +1168,7 @@ private fun TablePreview(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(4.dp)
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
             )
         }
     }

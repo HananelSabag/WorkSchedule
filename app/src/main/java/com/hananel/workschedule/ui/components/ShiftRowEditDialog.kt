@@ -1,6 +1,8 @@
 package com.hananel.workschedule.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
@@ -12,11 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.data.ShiftRow
+import com.hananel.workschedule.ui.theme.PrimaryGreen
 import com.hananel.workschedule.ui.theme.PrimaryTeal
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,182 +31,148 @@ fun ShiftRowEditDialog(
     var shiftName by remember { mutableStateOf(shiftRow?.shiftName ?: "") }
     var shiftHours by remember { mutableStateOf(shiftRow?.shiftHours ?: "") }
     var showError by remember { mutableStateOf(false) }
-    
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (shiftRow == null) Icons.Default.AccessTime else Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = PrimaryTeal,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (shiftRow == null) "הוספת משמרת חדשה" else "עריכת משמרת",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            },
-            text = {
-                Column(
+
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val isNew = shiftRow == null
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Handle
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                        .width(40.dp)
+                        .height(4.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        .align(Alignment.CenterHorizontally)
+                )
+
+                // Title
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    // Shift Name Input
-                    OutlinedTextField(
-                        value = shiftName,
-                        onValueChange = { 
-                            shiftName = it
-                            showError = false
-                        },
-                        label = { Text("שם המשמרת") },
-                        placeholder = { Text("למשל: בוקר, צהריים, לילה") },
-                        singleLine = true,
-                        isError = showError && shiftName.isBlank(),
-                        supportingText = if (showError && shiftName.isBlank()) {
-                            { Text("שדה חובה", color = Color.Red) }
-                        } else null,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryTeal,
-                            focusedLabelColor = PrimaryTeal
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    
-                    // Shift Hours Input
-                    OutlinedTextField(
-                        value = shiftHours,
-                        onValueChange = { 
-                            shiftHours = it
-                            showError = false
-                        },
-                        label = { Text("שעות פעילות") },
-                        placeholder = { Text("למשל: 06:45-15:00") },
-                        singleLine = true,
-                        isError = showError && shiftHours.isBlank(),
-                        supportingText = if (showError && shiftHours.isBlank()) {
-                            { Text("שדה חובה", color = Color.Red) }
-                        } else null,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = PrimaryTeal,
-                            focusedLabelColor = PrimaryTeal
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    
-                    // Example hint
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFFFFF3E0) // Light orange
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = PrimaryTeal.copy(alpha = 0.12f)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp)
-                        ) {
-                            Text(
-                                text = "דוגמאות:",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFE65100)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "• בוקר (06:45-15:00)\n" +
-                                        "• צהריים (14:45-23:00)\n" +
-                                        "• לילה (22:30-07:00)",
-                                fontSize = 12.sp,
-                                color = Color(0xFFE65100),
-                                lineHeight = 16.sp
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = if (isNew) Icons.Default.AccessTime else Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = PrimaryTeal,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
                     }
-                    
-                    // Preview
-                    if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFFE8F5E9) // Light green
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Text(
-                                    text = "תצוגה מקדימה:",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF2E7D32)
-                                )
-                                Text(
-                                    text = "$shiftName ($shiftHours)",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color(0xFF1B5E20)
-                                )
-                            }
-                        }
-                    }
+                    Text(
+                        text = if (isNew) "הוסף משמרת" else "ערוך משמרת",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
-                            onSave(shiftName.trim(), shiftHours.trim())
-                            onDismiss()
-                        } else {
-                            showError = true
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = PrimaryTeal
+
+                // Shift name
+                OutlinedTextField(
+                    value = shiftName,
+                    onValueChange = { shiftName = it; showError = false },
+                    label = { Text("שם המשמרת") },
+                    placeholder = { Text("בוקר, צהריים, לילה...") },
+                    singleLine = true,
+                    isError = showError && shiftName.isBlank(),
+                    supportingText = if (showError && shiftName.isBlank()) {
+                        { Text("שדה חובה", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryTeal,
+                        focusedLabelColor = PrimaryTeal
                     ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = if (shiftRow == null) "הוסף" else "שמור",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Shift hours
+                OutlinedTextField(
+                    value = shiftHours,
+                    onValueChange = { shiftHours = it; showError = false },
+                    label = { Text("שעות (HH:MM-HH:MM)") },
+                    placeholder = { Text("06:45-15:00") },
+                    singleLine = true,
+                    isError = showError && shiftHours.isBlank(),
+                    supportingText = if (showError && shiftHours.isBlank()) {
+                        { Text("שדה חובה", color = MaterialTheme.colorScheme.error) }
+                    } else null,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = PrimaryTeal,
+                        focusedLabelColor = PrimaryTeal
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Live preview chip
+                if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = PrimaryGreen.copy(alpha = 0.1f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.AccessTime, null, tint = PrimaryGreen, modifier = Modifier.size(16.dp))
+                            Text(
+                                "$shiftName · $shiftHours",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PrimaryGreen
+                            )
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = onDismiss,
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Text(
-                        text = "ביטול",
-                        fontSize = 16.sp,
-                        color = Color.Gray
-                    )
+
+                // Buttons
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp)
+                    ) { Text("ביטול") }
+
+                    Button(
+                        onClick = {
+                            if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
+                                onSave(shiftName.trim(), shiftHours.trim())
+                                onDismiss()
+                            } else {
+                                showError = true
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                    ) {
+                        Text(
+                            text = if (isNew) "הוסף" else "שמור",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-            },
-            shape = RoundedCornerShape(16.dp)
-        )
+            }
+        }
     }
 }
-
-

@@ -2,18 +2,15 @@ package com.hananel.workschedule.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -34,10 +31,11 @@ import com.hananel.workschedule.R
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmployeeManagementScreen(
     employees: List<Employee>,
-    onAddEmployee: (String, Boolean, Boolean) -> Unit, // הוספת פרמטר למתגבר
+    onAddEmployee: (String, Boolean, Boolean) -> Unit,
     onUpdateEmployee: (Employee) -> Unit,
     onDeleteEmployee: (Employee) -> Unit,
     onBackClick: () -> Unit,
@@ -46,266 +44,241 @@ fun EmployeeManagementScreen(
     var newEmployeeName by remember { mutableStateOf("") }
     var newEmployeeShabbatObserver by remember { mutableStateOf(false) }
     var newEmployeeIsMitgaber by remember { mutableStateOf(false) }
-    
-    // RTL Layout
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(24.dp)) // Add space from status bar
-            
-            // Title with Logo and Back Button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Back Button
-                IconButton(onClick = onBackClick) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "חזור",
-                        tint = PrimaryTeal
-                    )
-                }
-                
-                Text(
-                    text = "ניהול עובדים",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal, // Use logo color
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center
-                )
-                
-                // App Logo with white background for visibility
+        Scaffold(
+            topBar = {
                 Surface(
-                    modifier = Modifier.size(28.dp),
-                    shape = CircleShape,
-                    color = Color.White,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.logo),
-                        contentDescription = "Logo",
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(2.dp)
-                    )
-                }
-            }
-            
-            // Add Employee Section
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    shadowElevation = 0.dp,
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PersonAdd,
-                            contentDescription = null,
-                            tint = PrimaryTeal,
-                            modifier = Modifier.size(22.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "הוסף עובד חדש",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryTeal
-                        )
-                    }
-                    
-                    OutlinedTextField(
-                        value = newEmployeeName,
-                        onValueChange = { newEmployeeName = it },
-                        label = { Text("שם עובד חדש") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
-                    )
-                    
-                    // שומר שבת
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "שומר שבת",
-                            fontSize = 16.sp
-                        )
-                        Switch(
-                            checked = newEmployeeShabbatObserver,
-                            onCheckedChange = { newEmployeeShabbatObserver = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = PrimaryGreen,
-                                checkedTrackColor = PrimaryGreen.copy(alpha = 0.5f)
-                            )
-                        )
-                    }
-                    
-                    // מתגבר
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            Text(
-                                text = "מתגבר",
-                                fontSize = 16.sp
-                            )
-                            Text(
-                                text = "גמיש יותר בשיבוץ",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Switch(
-                            checked = newEmployeeIsMitgaber,
-                            onCheckedChange = { newEmployeeIsMitgaber = it },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Orange,
-                                checkedTrackColor = Orange.copy(alpha = 0.5f)
-                            )
-                        )
-                    }
-                    
-                    // Premium style Add Employee button
-                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = if (newEmployeeName.trim().isNotEmpty()) 
-                                        listOf(PrimaryGreen, Color(0xFF2E7D32))
-                                    else 
-                                        listOf(Color.Gray, Color.DarkGray)
-                                )
-                            )
-                            .clickable(enabled = newEmployeeName.trim().isNotEmpty()) {
-                                if (newEmployeeName.trim().isNotEmpty()) {
-                                    onAddEmployee(newEmployeeName.trim(), newEmployeeShabbatObserver, newEmployeeIsMitgaber)
-                                    newEmployeeName = ""
-                                    newEmployeeShabbatObserver = false
-                                    newEmployeeIsMitgaber = false
-                                }
-                            },
-                        contentAlignment = Alignment.Center
+                            .statusBarsPadding()
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            horizontalArrangement = Arrangement.Start,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .background(Color.White.copy(alpha = 0.2f), CircleShape),
-                                contentAlignment = Alignment.Center
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = PrimaryTeal)
+                        }
+                        Text(
+                            text = "ניהול עובדים",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center
+                        )
+                        if (employees.isNotEmpty()) {
+                            Surface(
+                                shape = RoundedCornerShape(20.dp),
+                                color = PrimaryTeal.copy(alpha = 0.12f)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.PersonAdd,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(22.dp)
+                                Text(
+                                    "${employees.size}",
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = PrimaryTeal
                                 )
                             }
-                            Spacer(modifier = Modifier.width(14.dp))
-                            Column {
-                                Text(
-                                    text = "הוסף עובד",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                                Text(
-                                    text = "לחץ לאחר הזנת פרטים",
-                                    fontSize = 11.sp,
-                                    color = Color.White.copy(alpha = 0.8f)
-                                )
+                        } else {
+                            Spacer(Modifier.size(48.dp))
+                        }
+                    }
+                }
+            },
+            modifier = modifier
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)
+            ) {
+                // ─── Add Employee Card ────────────────────────────────────────
+                item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Icon(Icons.Default.PersonAdd, null, tint = PrimaryTeal, modifier = Modifier.size(20.dp))
+                                Text("הוסף עובד חדש", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal)
+                            }
+
+                            OutlinedTextField(
+                                value = newEmployeeName,
+                                onValueChange = { newEmployeeName = it },
+                                label = { Text("שם עובד") },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryTeal,
+                                    focusedLabelColor = PrimaryTeal
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Shabbat toggle
+                                Surface(
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (newEmployeeShabbatObserver) BlockedRed.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (newEmployeeShabbatObserver) BlockedRed.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { newEmployeeShabbatObserver = !newEmployeeShabbatObserver }
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("שומר שבת", fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                                            color = if (newEmployeeShabbatObserver) BlockedRed else MaterialTheme.colorScheme.onSurface)
+                                        Switch(
+                                            checked = newEmployeeShabbatObserver,
+                                            onCheckedChange = { newEmployeeShabbatObserver = it },
+                                            colors = SwitchDefaults.colors(checkedThumbColor = BlockedRed, checkedTrackColor = BlockedRed.copy(alpha = 0.4f))
+                                        )
+                                    }
+                                }
+                                // Mitgaber toggle
+                                Surface(
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = if (newEmployeeIsMitgaber) Orange.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(
+                                        1.dp,
+                                        if (newEmployeeIsMitgaber) Orange.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outlineVariant
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { newEmployeeIsMitgaber = !newEmployeeIsMitgaber }
+                                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text("מתגבר", fontSize = 13.sp, fontWeight = FontWeight.Medium,
+                                            color = if (newEmployeeIsMitgaber) Orange else MaterialTheme.colorScheme.onSurface)
+                                        Switch(
+                                            checked = newEmployeeIsMitgaber,
+                                            onCheckedChange = { newEmployeeIsMitgaber = it },
+                                            colors = SwitchDefaults.colors(checkedThumbColor = Orange, checkedTrackColor = Orange.copy(alpha = 0.4f))
+                                        )
+                                    }
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            if (newEmployeeName.trim().isNotEmpty())
+                                                listOf(PrimaryGreen, Color(0xFF2E7D32))
+                                            else listOf(Color(0xFF9E9E9E), Color(0xFF616161))
+                                        )
+                                    )
+                                    .clickable(enabled = newEmployeeName.trim().isNotEmpty()) {
+                                        onAddEmployee(newEmployeeName.trim(), newEmployeeShabbatObserver, newEmployeeIsMitgaber)
+                                        newEmployeeName = ""
+                                        newEmployeeShabbatObserver = false
+                                        newEmployeeIsMitgaber = false
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.PersonAdd, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                                    Text("הוסף עובד", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
                             }
                         }
                     }
                 }
-            }
-            
-            // Info Box
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = PrimaryBlue.copy(alpha = 0.1f)),
-                border = CardDefaults.outlinedCardBorder()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+
+                // ─── Compact info chip ────────────────────────────────────────
+                item {
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = PrimaryTeal.copy(alpha = 0.07f)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            tint = PrimaryBlue,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "הסבר:",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryBlue
+                        Row(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
+                            Text(
+                                "שומר שבת: חסום שישי-שבת אוטומטית  •  מתגבר: גמיש בשיבוץ",
+                                fontSize = 12.sp,
+                                color = PrimaryTeal,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+
+                // ─── Employee List ────────────────────────────────────────────
+                if (employees.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 40.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Surface(modifier = Modifier.size(72.dp), shape = CircleShape, color = PrimaryTeal.copy(alpha = 0.08f)) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.People, null, tint = PrimaryTeal.copy(alpha = 0.4f), modifier = Modifier.size(36.dp))
+                                }
+                            }
+                            Text("אין עובדים עדיין", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                            Text("הוסף עובדים מהטופס למעלה", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                } else {
+                    items(employees) { employee ->
+                        EmployeeCard(
+                            employee = employee,
+                            onToggleShabbatObserver = { onUpdateEmployee(it) },
+                            onDelete = { onDeleteEmployee(employee) }
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "• סמן \"שומר שבת\" לעובדים שלא יכולים לעבוד:\n" +
-                                "  - שישי צהריים, שישי לילה\n" +
-                                "  - שבת בוקר, שבת צהריים\n" +
-                                "• סמן \"מתגבר\" לעובדים גמישים שיכולים למלא חורים\n" +
-                                "• החסימות מתעדכנות אוטומטית בכל סידור חדש",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
-                    )
                 }
             }
-            
-            // Employee List - כל העובדים ברשימה רגילה
-            employees.forEach { employee ->
-                EmployeeCard(
-                    employee = employee,
-                    onToggleShabbatObserver = { updatedEmployee ->
-                        onUpdateEmployee(updatedEmployee)
-                    },
-                    onDelete = { onDeleteEmployee(employee) }
-                )
-            }
-            
-            // Bottom spacing only - back button removed (already have one at top + system gestures)
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EmployeeCard(
     employee: Employee,
@@ -313,173 +286,204 @@ private fun EmployeeCard(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showDeleteConfirm by remember { mutableStateOf(false) }
-    
-    Card(
+    var showDeleteSheet by remember { mutableStateOf(false) }
+
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
-            1.dp, 
-            if (employee.shabbatObserver) BlockedRed.copy(alpha = 0.3f)
-            else if (employee.isMitgaber) Orange.copy(alpha = 0.3f)
-            else MaterialTheme.colorScheme.outlineVariant
+            1.dp,
+            when {
+                employee.shabbatObserver -> BlockedRed.copy(alpha = 0.25f)
+                employee.isMitgaber -> Orange.copy(alpha = 0.25f)
+                else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+            }
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Employee Info
-            Column(
-                modifier = Modifier.weight(1f)
+            // Avatar
+            Surface(
+                modifier = Modifier.size(44.dp),
+                shape = CircleShape,
+                color = PrimaryTeal.copy(alpha = 0.1f)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Person,
-                        contentDescription = null,
-                        tint = PrimaryTeal,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = employee.name,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Person, null, tint = PrimaryTeal, modifier = Modifier.size(24.dp))
                 }
-                
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 8.dp)
-                ) {
-                    Checkbox(
-                        checked = employee.shabbatObserver,
-                        onCheckedChange = { isChecked ->
-                            onToggleShabbatObserver(employee.copy(shabbatObserver = isChecked))
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = BlockedRed,
-                            checkmarkColor = Color.White
-                        )
-                    )
-                    Text(
-                        text = "שומר שבת",
-                        fontSize = 14.sp,
-                        color = if (employee.shabbatObserver) BlockedRed else MaterialTheme.colorScheme.onSurface
-                    )
-                    
-                    Spacer(modifier = Modifier.width(12.dp))
-                    
-                    Checkbox(
-                        checked = employee.isMitgaber,
-                        onCheckedChange = { isChecked ->
-                            onToggleShabbatObserver(employee.copy(isMitgaber = isChecked))
-                        },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = Orange,
-                            checkmarkColor = Color.White
-                        )
-                    )
-                    Text(
-                        text = "מתגבר",
-                        fontSize = 14.sp,
-                        color = if (employee.isMitgaber) Orange else MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                // Employee status text - as chips
-                Row(
-                    modifier = Modifier.padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+            }
+
+            // Info
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(employee.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (employee.shabbatObserver) {
-                        Surface(
-                            color = BlockedRed.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "🔴 חסום בשישי-שבת",
-                                fontSize = 11.sp,
-                                color = BlockedRed,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                        Surface(color = BlockedRed.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
+                            Text("שומר שבת", fontSize = 11.sp, color = BlockedRed, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                         }
                     }
                     if (employee.isMitgaber) {
-                        Surface(
-                            color = Orange.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(6.dp)
-                        ) {
-                            Text(
-                                text = "⭐ גמיש בשיבוץ",
-                                fontSize = 11.sp,
-                                color = Orange,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
+                        Surface(color = Orange.copy(alpha = 0.12f), shape = RoundedCornerShape(6.dp)) {
+                            Text("מתגבר", fontSize = 11.sp, color = Orange, fontWeight = FontWeight.SemiBold,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp))
                         }
+                    }
+                    if (!employee.shabbatObserver && !employee.isMitgaber) {
+                        Text("עובד רגיל", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
-            
-            // Delete Button
-            FilledTonalIconButton(
-                onClick = { showDeleteConfirm = true },
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = BlockedRed.copy(alpha = 0.1f),
-                    contentColor = BlockedRed
-                )
+
+            // Toggle buttons — labeled surfaces for clarity
+            Column(
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "מחק עובד"
-                )
+                // Shabbat toggle
+                Surface(
+                    modifier = Modifier
+                        .width(76.dp)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            onToggleShabbatObserver(employee.copy(shabbatObserver = !employee.shabbatObserver))
+                        },
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (employee.shabbatObserver) BlockedRed.copy(alpha = 0.12f)
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (employee.shabbatObserver) BlockedRed.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.outlineVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Block, null,
+                            tint = if (employee.shabbatObserver) BlockedRed
+                                   else MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            "שבת", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                            color = if (employee.shabbatObserver) BlockedRed
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                // Mitgaber toggle
+                Surface(
+                    modifier = Modifier
+                        .width(76.dp)
+                        .height(38.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable {
+                            onToggleShabbatObserver(employee.copy(isMitgaber = !employee.isMitgaber))
+                        },
+                    shape = RoundedCornerShape(10.dp),
+                    color = if (employee.isMitgaber) Orange.copy(alpha = 0.12f)
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (employee.isMitgaber) Orange.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.outlineVariant
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            Icons.Default.Star, null,
+                            tint = if (employee.isMitgaber) Orange
+                                   else MaterialTheme.colorScheme.outlineVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(Modifier.width(3.dp))
+                        Text(
+                            "גמיש", fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
+                            color = if (employee.isMitgaber) Orange
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Delete
+            IconButton(
+                onClick = { showDeleteSheet = true },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(Icons.Default.Delete, "מחק", tint = BlockedRed.copy(alpha = 0.7f), modifier = Modifier.size(20.dp))
             }
         }
     }
-    
-    // Delete Confirmation Dialog
-    if (showDeleteConfirm) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirm = false },
-            title = {
-                Text(
-                    text = "מחק עובד",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            text = {
-                Text(
-                    text = "האם אתה בטוח שברצונך למחוק את ${employee.name}?",
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDelete()
-                        showDeleteConfirm = false
+
+    // ─── Delete Confirmation Sheet ────────────────────────────────────────────
+    if (showDeleteSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showDeleteSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp)
+                            .height(4.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                    )
+                    Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = BlockedRed.copy(alpha = 0.1f)) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Delete, null, tint = BlockedRed, modifier = Modifier.size(28.dp))
+                        }
                     }
-                ) {
-                    Text("מחק", color = BlockedRed)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeleteConfirm = false }
-                ) {
-                    Text("ביטול")
+                    Text("מחק עובד?", fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text(
+                        "האם למחוק את ${employee.name}?\nהפעולה אינה ניתנת לביטול.",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedButton(
+                            onClick = { showDeleteSheet = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("ביטול", fontWeight = FontWeight.SemiBold) }
+                        Button(
+                            onClick = { onDelete(); showDeleteSheet = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
+                        ) { Text("מחק", fontWeight = FontWeight.Bold) }
+                    }
                 }
             }
-        )
+        }
     }
 }
-

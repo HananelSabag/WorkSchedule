@@ -12,7 +12,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -43,6 +43,7 @@ import com.hananel.workschedule.data.ShiftDefinitions
 import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreviewScreen(
     employees: List<Employee>,
@@ -60,13 +61,15 @@ fun PreviewScreen(
     isEditingExistingSchedule: Boolean = false, // Smart save system - indicates if editing existing schedule
     modifier: Modifier = Modifier
 ) {
-    var editableSchedule by remember { 
+    var editableSchedule by remember {
         mutableStateOf(schedule.mapValues { it.value.joinToString(", ") })
     }
-    
-    // State for statistics popup
-    var showStatisticsPopup by remember { mutableStateOf(false) }
-    
+
+    // Statistics bottom sheet
+    val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    var showStatisticsSheet by remember { mutableStateOf(false) }
+
     // Update editable schedule when schedule changes
     LaunchedEffect(schedule) {
         editableSchedule = schedule.mapValues { it.value.joinToString(", ") }
@@ -110,7 +113,7 @@ fun PreviewScreen(
                         },
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryTeal,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center
                     )
@@ -123,7 +126,7 @@ fun PreviewScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.logo),
+                            painter = painterResource(id = R.drawable.ic_app_logo_new),
                             contentDescription = "Logo",
                             modifier = Modifier
                                 .size(20.dp)
@@ -314,7 +317,7 @@ fun PreviewScreen(
                                     colors = listOf(PrimaryBlue, Color(0xFF1565C0))
                                 )
                             )
-                            .clickable { showStatisticsPopup = true },
+                            .clickable { showStatisticsSheet = true; scope.launch { statsSheetState.show() } },
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
@@ -421,80 +424,50 @@ fun PreviewScreen(
             )
         }
         
-        // Statistics Popup Dialog
-        if (showStatisticsPopup) {
-            Dialog(onDismissRequest = { showStatisticsPopup = false }) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(20.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(20.dp)
-                        ) {
-                            // Header
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.BarChart,
-                                    contentDescription = null,
-                                    tint = PrimaryBlue,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "📊 סטטיסטיקה שבועית",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = PrimaryBlue
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
-                            // Statistics content
-                            val scheduleKey = remember(schedule) { schedule.hashCode() }
-                            key(scheduleKey) {
-                                EmployeeStatistics(
-                                    employees = employees, 
-                                    schedule = schedule,
-                                    savingMode = savingMode,
-                                    templateData = templateData
-                                )
-                            }
-                        }
-                    }
-                    
-                    // Close button - top right corner, outside the card
-                    Surface(
+        // Statistics - BottomSheet
+        if (showStatisticsSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showStatisticsSheet = false },
+                sheetState = statsSheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .offset(x = 8.dp, y = (-8).dp)
-                            .size(36.dp)
-                            .clickable { showStatisticsPopup = false },
-                        shape = CircleShape,
-                        color = BlockedRed,
-                        shadowElevation = 4.dp
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp)
+                            .padding(bottom = 32.dp)
                     ) {
+                        // Handle
                         Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))
+                                .align(Alignment.CenterHorizontally)
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "סגור",
-                                tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                            Icon(Icons.Default.BarChart, null, tint = PrimaryBlue, modifier = Modifier.size(24.dp))
+                            Text(
+                                "סטטיסטיקה שבועית",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = PrimaryBlue
+                            )
+                        }
+                        Spacer(Modifier.height(16.dp))
+                        val scheduleKey = remember(schedule) { schedule.hashCode() }
+                        key(scheduleKey) {
+                            EmployeeStatistics(
+                                employees = employees,
+                                schedule = schedule,
+                                savingMode = savingMode,
+                                templateData = templateData
                             )
                         }
                     }

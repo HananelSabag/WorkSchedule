@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +65,7 @@ fun SimpleScheduleTable(
     }
     
     var scale by remember { mutableFloatStateOf(1f) }
-    
+
     // RTL Layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -162,14 +163,32 @@ fun SimpleScheduleTable(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Scrollable Table - Both Horizontal and Vertical  
-            // Scrollable container for both horizontal AND vertical scrolling
+            // Scrollable Table - pinch-to-zoom + button zoom + scroll
+            // Uses PointerEventPass.Initial so the outer Box intercepts pinch BEFORE
+            // the inner scroll containers consume the touch events.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .horizontalScroll(rememberScrollState())
+                    .pointerInput(Unit) {
+                        awaitEachGesture {
+                            awaitFirstDown(requireUnconsumed = false)
+                            do {
+                                val event = awaitPointerEvent(PointerEventPass.Initial)
+                                val zoomChange = event.calculateZoom()
+                                if (zoomChange != 1f) {
+                                    scale = (scale * zoomChange).coerceIn(0.5f, 2.5f)
+                                    event.changes.forEach { it.consume() }
+                                }
+                            } while (event.changes.any { it.pressed })
+                        }
+                    }
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState())
+                ) {
                 Box(
                     modifier = Modifier.graphicsLayer(
                         scaleX = scale,
@@ -195,7 +214,8 @@ fun SimpleScheduleTable(
                         isBlockingMode = isBlockingMode
                     )
                 }
-            }
+                } // inner scroll Box
+            } // transformable outer Box
         }
     }
 }

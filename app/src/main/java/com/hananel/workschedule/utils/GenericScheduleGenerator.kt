@@ -56,23 +56,29 @@ object GenericScheduleGenerator {
         // Parse all shifts from template
         val parsedShifts = parseAllShifts(templateData)
         
-        // Sort by difficulty (fewer available employees first)
-        val sortedShifts = parsedShifts.sortedBy { (day, dayIndex, shift) ->
-            getAvailableEmployees(
-                day, dayIndex, shift, employees, blocks, canOnlyBlocks, 
-                employeeShifts, templateData
-            ).size
-        }
-        
-        // Assign each shift
-        sortedShifts.forEach { (day, dayIndex, shift) ->
+        // MRV (Minimum Remaining Values): always pick the hardest unassigned shift next.
+        // Re-evaluate difficulty after each assignment so that changes in availability
+        // propagate correctly throughout the greedy search.
+        val unassignedShifts = parsedShifts.toMutableList()
+
+        while (unassignedShifts.isNotEmpty()) {
+            // Find the most constrained shift (fewest available employees right now)
+            val current = unassignedShifts.minByOrNull { (day, dayIndex, shift) ->
+                getAvailableEmployees(
+                    day, dayIndex, shift, employees, blocks, canOnlyBlocks,
+                    employeeShifts, templateData
+                ).size
+            }!!
+            unassignedShifts.remove(current)
+
+            val (day, dayIndex, shift) = current
             val key = "${day}-${shift.shiftName}"
-            
+
             val availableEmployees = getAvailableEmployees(
                 day, dayIndex, shift, employees, blocks, canOnlyBlocks,
                 employeeShifts, templateData
             )
-            
+
             if (availableEmployees.isNotEmpty()) {
                 // Calculate scores and choose best employee
                 val employeeScores = availableEmployees.map { emp ->
@@ -81,7 +87,7 @@ object GenericScheduleGenerator {
                     )
                     emp to score
                 }.sortedBy { it.second }
-                
+
                 val chosenEmployee = employeeScores.first().first
                 schedule[key] = mutableListOf(chosenEmployee.name)
                 employeeShifts[chosenEmployee.name]!!.add(
@@ -261,14 +267,39 @@ object GenericScheduleGenerator {
     }
     
     /**
-     * Check if two shifts overlap in time
+     * Check if two shifts overlap in time.
+     * Handles overnight shifts correctly (e.g. 22:00-06:00 crossing midnight).
+     *
+     * Each shift is represented as a minute-interval [start, end) where an overnight
+     * shift has end < start on the clock, so we treat it as two sub-intervals:
+     *   [start, 1440)  and  [0, end)
+     * This avoids the classic bug where LocalTime comparisons treat 06:00 as "earlier
+     * than" 14:45, falsely reporting no overlap between 22:00-06:00 and 14:45-23:00.
      */
     private fun shiftsOverlap(shift1: ParsedShift, shift2: ParsedShift): Boolean {
-        // Simple overlap check: shift1 starts before shift2 ends AND shift2 starts before shift1 ends
-        return !(shift1.endTime.isBefore(shift2.startTime) || 
-                 shift1.endTime == shift2.startTime ||
-                 shift2.endTime.isBefore(shift1.startTime) ||
-                 shift2.endTime == shift1.startTime)
+        val s1 = shift1.startTime.hour * 60 + shift1.startTime.minute
+        val e1 = shift1.endTime.hour * 60 + shift1.endTime.minute
+        val s2 = shift2.startTime.hour * 60 + shift2.startTime.minute
+        val e2 = shift2.endTime.hour * 60 + shift2.endTime.minute
+
+        val overnight1 = e1 <= s1
+        val overnight2 = e2 <= s2
+
+        return when {
+            // Both overnight — they both span midnight, always overlap
+            overnight1 && overnight2 -> true
+
+            // shift1 overnight [s1,1440) ∪ [0,e1], shift2 normal [s2,e2)
+            overnight1 && !overnight2 ->
+                (s2 < 1440 && e2 > s1) || (s2 < e1 && e2 > 0)
+
+            // shift2 overnight [s2,1440) ∪ [0,e2], shift1 normal [s1,e1)
+            !overnight1 && overnight2 ->
+                (s1 < 1440 && e1 > s2) || (s1 < e2 && e1 > 0)
+
+            // Neither overnight — standard interval overlap
+            else -> s1 < e2 && s2 < e1
+        }
     }
     
     /**
@@ -331,12 +362,12 @@ object GenericScheduleGenerator {
         currentShifts: List<ShiftAssignment>
     ): Int {
         var score = currentShifts.size * 10 // Prefer employees with fewer shifts
-        
+
         // SOFT RULE: Prefer not to assign short rest periods (but allow for Mitgaber)
         if (!employee.isMitgaber) {
             val previousDayIndex = if (dayIndex == 0) 6 else dayIndex - 1
             val previousDayShifts = currentShifts.filter { it.dayIndex == previousDayIndex }
-            
+
             previousDayShifts.forEach { prevShift ->
                 val restHours = calculateRestHours(prevShift.shift.endTime, shift.startTime)
                 if (restHours < 13.0) {
@@ -344,7 +375,7 @@ object GenericScheduleGenerator {
                 }
             }
         }
-        
+
         // SOFT RULE: Prefer to give night shifts to employees who already have them (pattern)
         if (shift.isNightShift) {
             val hasNightShifts = currentShifts.any { it.shift.isNightShift }
@@ -352,8 +383,35 @@ object GenericScheduleGenerator {
                 score += 3 // Small penalty for first night shift
             }
         }
-        
+
+        // SOFT RULE: Penalise consecutive working days to spread workload evenly
+        val consecutive = getConsecutiveDaysCount(dayIndex, currentShifts)
+        score += when {
+            consecutive >= 5 -> 25 // 6+ consecutive days — heavy penalty
+            consecutive >= 3 -> 10 // 4–5 consecutive days — medium penalty
+            consecutive >= 2 -> 4  // 3 consecutive days — light penalty
+            else -> 0
+        }
+
         return score
+    }
+
+    /**
+     * Count how many days in a row (before dayIndex) this employee already works.
+     * Used to penalise overly long consecutive streaks.
+     */
+    private fun getConsecutiveDaysCount(dayIndex: Int, currentShifts: List<ShiftAssignment>): Int {
+        var consecutive = 0
+        var check = dayIndex - 1
+        while (check >= 0) {
+            if (currentShifts.any { it.dayIndex == check }) {
+                consecutive++
+                check--
+            } else {
+                break
+            }
+        }
+        return consecutive
     }
     
     /**

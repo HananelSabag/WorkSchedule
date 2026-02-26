@@ -152,51 +152,76 @@ class ScheduleViewModel(
         }
     }
     
-    private fun applyShabbatObserverBlocks(employee: Employee) {
-        val newBlocks = _blocks.value.toMutableMap()
-        
-        // Apply Shabbat Observer blocks according to specification
-        ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
-            val blockKey = "${employee.name}-$shiftKey"
-            newBlocks[blockKey] = true
-            
-            // Remove from can-only if exists
-            val newCanOnly = _canOnlyBlocks.value.toMutableMap()
-            newCanOnly.remove(blockKey)
-            _canOnlyBlocks.value = newCanOnly
+    /**
+     * Compute which (day, shiftName) pairs should be auto-blocked for a Shabbat observer,
+     * using the ACTIVE TEMPLATE's actual shift times and day names instead of hardcoded values.
+     * Falls back to ShiftDefinitions.shabbatBlockedShifts when no template is loaded yet.
+     */
+    private fun shabbatBlockKeysForEmployee(employeeName: String): List<String> {
+        val template = activeTemplate.value
+        return if (template != null) {
+            val keys = mutableListOf<String>()
+            template.dayColumns.filter { it.isEnabled }.forEach { day ->
+                val isFriday   = day.dayNameHebrew.contains("שישי")
+                val isSaturday = day.dayNameHebrew.contains("שבת")
+                when {
+                    isSaturday -> template.shiftRows.forEach { row ->
+                        keys.add("$employeeName-${day.dayNameHebrew}-${row.shiftName}")
+                    }
+                    isFriday -> template.shiftRows.forEach { row ->
+                        val startHour = row.shiftHours.split("-")
+                            .firstOrNull()?.trim()?.split(":")
+                            ?.firstOrNull()?.toIntOrNull() ?: 0
+                        if (startHour >= 15) {
+                            keys.add("$employeeName-${day.dayNameHebrew}-${row.shiftName}")
+                        }
+                    }
+                }
+            }
+            keys
+        } else {
+            // Fallback: hardcoded names (old template only)
+            ShiftDefinitions.shabbatBlockedShifts.map { shiftKey -> "$employeeName-$shiftKey" }
         }
-        
-        _blocks.value = newBlocks
     }
-    
+
+    private fun applyShabbatObserverBlocks(employee: Employee) {
+        val newBlocks  = _blocks.value.toMutableMap()
+        val newCanOnly = _canOnlyBlocks.value.toMutableMap()
+
+        shabbatBlockKeysForEmployee(employee.name).forEach { blockKey ->
+            newBlocks[blockKey] = true
+            newCanOnly.remove(blockKey)
+        }
+
+        _blocks.value     = newBlocks
+        _canOnlyBlocks.value = newCanOnly
+    }
+
     private fun removeShabbatObserverBlocks(employee: Employee) {
         val newBlocks = _blocks.value.toMutableMap()
-        
-        // Remove Shabbat Observer blocks
-        ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
-            val blockKey = "${employee.name}-$shiftKey"
+
+        shabbatBlockKeysForEmployee(employee.name).forEach { blockKey ->
             newBlocks.remove(blockKey)
         }
-        
+
         _blocks.value = newBlocks
     }
-    
+
     /**
-     * Initialize blocking session - apply automatic Shabbat Observer blocks
-     * This should be called when entering the blocking screen
+     * Initialize blocking session - apply automatic Shabbat Observer blocks.
+     * Uses the dynamic template so custom shift names are handled correctly.
      */
     fun initializeBlockingSession() {
         val currentEmployees = employees.value
         val newBlocks = _blocks.value.toMutableMap()
-        
-        // Apply automatic Shabbat Observer blocks for all Shabbat observers
+
         currentEmployees.filter { it.shabbatObserver }.forEach { employee ->
-            ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
-                val blockKey = "${employee.name}-$shiftKey"
+            shabbatBlockKeysForEmployee(employee.name).forEach { blockKey ->
                 newBlocks[blockKey] = true
             }
         }
-        
+
         _blocks.value = newBlocks
     }
     

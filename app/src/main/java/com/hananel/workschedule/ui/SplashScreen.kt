@@ -132,9 +132,9 @@ fun SplashScreen(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xFF1A3A38), // Deep teal
-                            Color(0xFF0D2D2A), // Darker teal
-                            Color(0xFF0A1F1E)  // Almost black teal
+                            Color(0xFF0E1A1A), // Very dark teal-black
+                            Color(0xFF080F0F), // Near black
+                            Color(0xFF040A0A)  // Almost pure black
                         )
                     )
                 ),
@@ -178,7 +178,7 @@ fun SplashScreen(
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(
-                                    PrimaryGreen.copy(alpha = 0.6f),
+                                    PrimaryTeal.copy(alpha = 0.5f),
                                     Color.Transparent
                                 )
                             ),
@@ -249,7 +249,7 @@ fun SplashScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
-                                painter = painterResource(id = R.drawable.logo),
+                                painter = painterResource(id = R.drawable.ic_app_logo_new),
                                 contentDescription = "Work Schedule Logo",
                                 modifier = Modifier
                                     .size(80.dp)
