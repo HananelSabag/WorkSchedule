@@ -538,7 +538,48 @@ internal fun EmployeeStatistics(
         }
     }
     
-    // SIMPLE: Calculate hours from shift hours definition in template
+    // SMART: Parse actual worked hours from free text (e.g., "נאור מ19", "אלכס עד 21", "דן מ9 עד 17")
+    fun extractActualHours(text: String, shiftHours: String): Double {
+        return try {
+            val shiftParts = shiftHours.split("-")
+            if (shiftParts.size != 2) return parseShiftHours(shiftHours)
+
+            val sP = shiftParts[0].trim().split(":")
+            val eP = shiftParts[1].trim().split(":")
+            val shiftStartMin = (sP[0].toIntOrNull() ?: 0) * 60 + (sP.getOrNull(1)?.toIntOrNull() ?: 0)
+            var shiftEndMin   = (eP[0].toIntOrNull() ?: 0) * 60 + (eP.getOrNull(1)?.toIntOrNull() ?: 0)
+            if (shiftEndMin <= shiftStartMin) shiftEndMin += 24 * 60  // overnight shift
+
+            // "מ HH" or "מHH" — custom start (e.g., "חנאל מ19")
+            val fromMatch = Regex("מ\\s*(\\d{1,2})(?::(\\d{2}))?").find(text)
+            // "עד HH" or "עדHH" — custom end (e.g., "נאור עד 19")
+            val toMatch   = Regex("עד\\s*(\\d{1,2})(?::(\\d{2}))?").find(text)
+
+            var actualStart = shiftStartMin
+            var actualEnd   = shiftEndMin
+
+            if (fromMatch != null) {
+                val h = fromMatch.groupValues[1].toIntOrNull() ?: return parseShiftHours(shiftHours)
+                val m = fromMatch.groupValues[2].toIntOrNull() ?: 0
+                actualStart = h * 60 + m
+            }
+            if (toMatch != null) {
+                val h = toMatch.groupValues[1].toIntOrNull() ?: return parseShiftHours(shiftHours)
+                val m = toMatch.groupValues[2].toIntOrNull() ?: 0
+                actualEnd = h * 60 + m
+                if (actualEnd <= actualStart) actualEnd += 24 * 60  // overnight
+            }
+            // Edge case: fromMatch caused actualStart > actualEnd (e.g., "מ19" on overnight shift)
+            if (actualStart > actualEnd) actualEnd += 24 * 60
+
+            val hours = (actualEnd - actualStart) / 60.0
+            if (hours in 0.25..24.0) hours else parseShiftHours(shiftHours)
+        } catch (e: Exception) {
+            parseShiftHours(shiftHours)
+        }
+    }
+
+    // Fallback: Calculate hours from shift definition in template (no free-text parsing)
     fun calculateHours(cellKey: String): Double {
         val parts = cellKey.split("-")
         if (parts.size < 2) return 8.0
@@ -647,8 +688,14 @@ internal fun EmployeeStatistics(
                         val extractedName = extractEmployeeName(text)
                         if (extractedName.equals(employee.name, ignoreCase = true)) {
                             shiftCount++
-                            // Calculate hours from shift definition in template
-                            totalHours += calculateHours(cellKey)
+                            // Smart: use free-text modifiers (מ/עד) if present, else full shift hours
+                            val shiftName = cellKey.split("-").drop(1).joinToString("-")
+                            val shiftHoursStr = templateData?.shiftRows?.find { it.shiftName == shiftName }?.shiftHours
+                            totalHours += if (shiftHoursStr != null) {
+                                extractActualHours(text, shiftHoursStr)
+                            } else {
+                                calculateHours(cellKey)
+                            }
                         }
                     }
                 }
