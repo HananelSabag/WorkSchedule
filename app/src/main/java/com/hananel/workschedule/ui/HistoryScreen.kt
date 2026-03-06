@@ -260,7 +260,7 @@ private fun ScheduleCard(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10.dp))
-                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, Color(0xFF00796B))))
+                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark)))
                     .clickable(onClick = onOpen)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center

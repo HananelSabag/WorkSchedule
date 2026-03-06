@@ -100,7 +100,108 @@ object GenericScheduleGenerator {
             }
         }
         
-        return schedule to impossibleShifts
+        // REPAIR PASS: try to fill impossible shifts via assignment swaps
+        val remaining = repairImpossibleShifts(
+            impossibleShifts, schedule, employeeShifts, parsedShifts,
+            employees, blocks, canOnlyBlocks, templateData
+        )
+
+        return schedule to remaining
+    }
+
+    /**
+     * REPAIR PASS: For each unfilled shift, search for a swap that makes it fillable.
+     *
+     * Strategy: for each impossible shift T, look for an employee E who is NOT hard-blocked
+     * for T but can't work it due to rest/hours conflicts caused by an existing assignment A.
+     * If another employee R can take A instead, perform the swap:  E → T, R → A.
+     *
+     * Returns the shifts that are still impossible after all swap attempts.
+     */
+    private fun repairImpossibleShifts(
+        impossibleKeys: List<String>,
+        schedule: MutableMap<String, MutableList<String>>,
+        employeeShifts: MutableMap<String, MutableList<ShiftAssignment>>,
+        parsedShifts: List<Triple<String, Int, ParsedShift>>,
+        employees: List<Employee>,
+        blocks: Map<String, Boolean>,
+        canOnlyBlocks: Map<String, Boolean>,
+        templateData: TemplateData
+    ): List<String> {
+        val stillImpossible = mutableListOf<String>()
+
+        for (impossibleKey in impossibleKeys) {
+            val target = parsedShifts.find { (day, _, shift) ->
+                "${day}-${shift.shiftName}" == impossibleKey
+            }
+            if (target == null) { stillImpossible.add(impossibleKey); continue }
+
+            val (targetDay, targetDayIndex, targetShift) = target
+            var repaired = false
+
+            outer@ for (emp in employees) {
+                // Skip employees with hard blocks for the target shift
+                val blockKey = "${emp.name}-$targetDay-${targetShift.shiftName}"
+                if (blocks[blockKey] == true) continue
+                val hasCanOnly = canOnlyBlocks.any { it.key.startsWith("${emp.name}-") && it.value }
+                if (hasCanOnly && canOnlyBlocks[blockKey] != true) continue
+                if (emp.shabbatObserver && !emp.isMitgaber) {
+                    val isShabbat = targetDay.contains("שבת") ||
+                        (targetDay.contains("שישי") && targetShift.startTime.hour >= 15)
+                    if (isShabbat) continue
+                }
+
+                // Try freeing each of emp's current assignments one at a time
+                val empAssignments = (employeeShifts[emp.name] ?: continue).toList()
+                for (toFree in empAssignments) {
+                    // Build a temporary view of the schedule with toFree removed from emp
+                    val tempShifts = employeeShifts.mapValues { (name, list) ->
+                        if (name == emp.name) list.filter { it != toFree }.toMutableList()
+                        else list.toMutableList()
+                    }
+
+                    // Would emp be available for the impossible shift now?
+                    if (getAvailableEmployees(
+                            targetDay, targetDayIndex, targetShift,
+                            listOf(emp), blocks, canOnlyBlocks, tempShifts, templateData
+                        ).isEmpty()) continue
+
+                    // Can another employee cover the freed slot?
+                    val freeKey = "${toFree.day}-${toFree.shift.shiftName}"
+                    val substitutes = getAvailableEmployees(
+                        toFree.day, toFree.dayIndex, toFree.shift,
+                        employees, blocks, canOnlyBlocks, tempShifts, templateData
+                    ).filter { it.name != emp.name }
+
+                    if (substitutes.isEmpty()) continue
+
+                    // Pick the best-scoring substitute for the freed slot
+                    val best = substitutes.minByOrNull {
+                        calculateEmployeeScore(
+                            it, toFree.day, toFree.dayIndex, toFree.shift, tempShifts[it.name]!!
+                        )
+                    }!!
+
+                    // Apply the swap
+                    employeeShifts[emp.name]!!.remove(toFree)
+                    employeeShifts[emp.name]!!.add(
+                        ShiftAssignment(emp.name, targetDay, targetDayIndex, targetShift)
+                    )
+                    employeeShifts[best.name]!!.add(
+                        ShiftAssignment(best.name, toFree.day, toFree.dayIndex, toFree.shift)
+                    )
+                    schedule[impossibleKey] = mutableListOf(emp.name)
+                    schedule[freeKey] = mutableListOf(best.name)
+
+                    repaired = true
+                    break@outer
+                }
+            }
+
+            if (!repaired) stillImpossible.add(impossibleKey)
+        }
+
+        return stillImpossible
     }
     
     /**

@@ -198,7 +198,7 @@ fun EmployeeManagementScreen(
                                     .background(
                                         Brush.horizontalGradient(
                                             if (newEmployeeName.trim().isNotEmpty())
-                                                listOf(PrimaryTeal, Color(0xFF00796B))
+                                                listOf(PrimaryTeal, PrimaryTealDark)
                                             else listOf(Color(0xFF9E9E9E), Color(0xFF616161))
                                         )
                                     )

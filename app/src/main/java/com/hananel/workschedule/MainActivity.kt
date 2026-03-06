@@ -93,6 +93,10 @@ fun WorkScheduleApp() {
             Screen.TEMPLATE_SETUP -> currentScreen = Screen.HOME
             Screen.BLOCKING -> currentScreen = Screen.HOME
             Screen.MANUAL_CREATION -> currentScreen = Screen.BLOCKING
+            Screen.AUTO_SCHEDULE_REVIEW -> {
+                viewModel.discardAutoSchedule()
+                currentScreen = Screen.BLOCKING
+            }
             Screen.PREVIEW -> {
                 // Must reset session so stale in-memory state isn't mistaken for a new draft
                 viewModel.resetSessionOnReturnHome()
@@ -102,6 +106,7 @@ fun WorkScheduleApp() {
             Screen.LANDSCAPE_BLOCKING -> currentScreen = Screen.BLOCKING
             Screen.LANDSCAPE_MANUAL -> currentScreen = Screen.MANUAL_CREATION
             Screen.LANDSCAPE_PREVIEW -> currentScreen = Screen.PREVIEW
+            Screen.LANDSCAPE_AUTO_SCHEDULE_REVIEW -> currentScreen = Screen.AUTO_SCHEDULE_REVIEW // no discard - just close landscape view
             else -> currentScreen = Screen.HOME
         }
     }
@@ -225,10 +230,10 @@ fun WorkScheduleApp() {
             val templateData by viewModel.activeTemplate.collectAsState()
             val autoGenerationComplete by viewModel.autoGenerationComplete.collectAsState()
             
-            // Navigate to preview when auto-generation completes
+            // Navigate to review screen when auto-generation completes
             LaunchedEffect(autoGenerationComplete) {
                 if (autoGenerationComplete) {
-                    currentScreen = Screen.PREVIEW
+                    currentScreen = Screen.AUTO_SCHEDULE_REVIEW
                     viewModel.resetAutoGenerationFlag()
                 }
             }
@@ -340,6 +345,44 @@ fun WorkScheduleApp() {
             )
         }
         
+        Screen.AUTO_SCHEDULE_REVIEW -> {
+            val currentSchedule by viewModel.currentSchedule.collectAsState()
+            val blocks by viewModel.blocks.collectAsState()
+            val canOnlyBlocks by viewModel.canOnlyBlocks.collectAsState()
+            val savingMode by viewModel.savingMode.collectAsState()
+            val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
+            val impossibleShifts by viewModel.lastImpossibleShifts.collectAsState()
+            val totalShifts by viewModel.totalShiftsInSchedule.collectAsState()
+            val autoConfirmComplete by viewModel.autoConfirmComplete.collectAsState()
+
+            // Navigate to PREVIEW only after confirmAutoSchedule() completes (incl. duplicate resolution)
+            LaunchedEffect(autoConfirmComplete) {
+                if (autoConfirmComplete) {
+                    currentScreen = Screen.PREVIEW
+                    viewModel.resetAutoConfirmFlag()
+                }
+            }
+
+            AutoScheduleReviewScreen(
+                employees = employees,
+                schedule = currentSchedule,
+                blocks = blocks,
+                canOnlyBlocks = canOnlyBlocks,
+                savingMode = savingMode,
+                weekStartDate = weekStartDate,
+                templateData = templateData,
+                impossibleShifts = impossibleShifts,
+                totalShifts = totalShifts,
+                onConfirm = { viewModel.confirmAutoSchedule() },
+                onBackToBlocking = {
+                    viewModel.discardAutoSchedule()
+                    currentScreen = Screen.BLOCKING
+                },
+                onEnterLandscape = { currentScreen = Screen.LANDSCAPE_AUTO_SCHEDULE_REVIEW }
+            )
+        }
+
         Screen.PREVIEW -> {
             val currentSchedule by viewModel.currentSchedule.collectAsState()
             val errorMessage by viewModel.errorMessage.collectAsState()
@@ -493,6 +536,7 @@ fun WorkScheduleApp() {
                 onToggleEmployeeInShift = { employee, day, shift ->
                     viewModel.toggleEmployeeInManualSchedule(employee, day, shift)
                 },
+                onFreeTextToCell = { key, value -> viewModel.updateScheduleCell(key, value) },
                 onClose = { currentScreen = Screen.MANUAL_CREATION }
             )
         }
@@ -541,8 +585,43 @@ fun WorkScheduleApp() {
                 onClose = { currentScreen = Screen.PREVIEW }
             )
         }
+
+        Screen.LANDSCAPE_AUTO_SCHEDULE_REVIEW -> {
+            val currentSchedule by viewModel.currentSchedule.collectAsState()
+            val blocks by viewModel.blocks.collectAsState()
+            val canOnlyBlocks by viewModel.canOnlyBlocks.collectAsState()
+            val savingMode by viewModel.savingMode.collectAsState()
+            val weekStartDate by viewModel.weekStartDate.collectAsState()
+            val templateData by viewModel.activeTemplate.collectAsState()
+            val impossibleShifts by viewModel.lastImpossibleShifts.collectAsState()
+            val autoConfirmComplete by viewModel.autoConfirmComplete.collectAsState()
+
+            LaunchedEffect(autoConfirmComplete) {
+                if (autoConfirmComplete) {
+                    currentScreen = Screen.PREVIEW
+                    viewModel.resetAutoConfirmFlag()
+                }
+            }
+
+            LandscapeAutoScheduleReviewScreen(
+                employees = employees,
+                schedule = currentSchedule,
+                blocks = blocks,
+                canOnlyBlocks = canOnlyBlocks,
+                savingMode = savingMode,
+                weekStartDate = weekStartDate,
+                templateData = templateData,
+                impossibleShifts = impossibleShifts,
+                onConfirm = { viewModel.confirmAutoSchedule() },
+                onBackToBlocking = {
+                    viewModel.discardAutoSchedule()
+                    currentScreen = Screen.BLOCKING
+                },
+                onClose = { currentScreen = Screen.AUTO_SCHEDULE_REVIEW }
+            )
+        }
     }
-    
+
     // Handle automatic navigation to preview after duplicate dialog closes
     LaunchedEffect(duplicateDialog) {
         // Only navigate if dialog was just dismissed (changed from non-null to null)
@@ -612,6 +691,7 @@ fun WorkScheduleApp() {
 }
 
 enum class Screen {
-    SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION, PREVIEW, HISTORY,
-    LANDSCAPE_BLOCKING, LANDSCAPE_MANUAL, LANDSCAPE_PREVIEW
+    SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION,
+    AUTO_SCHEDULE_REVIEW, PREVIEW, HISTORY,
+    LANDSCAPE_BLOCKING, LANDSCAPE_MANUAL, LANDSCAPE_PREVIEW, LANDSCAPE_AUTO_SCHEDULE_REVIEW
 }

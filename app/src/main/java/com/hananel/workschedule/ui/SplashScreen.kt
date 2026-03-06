@@ -1,30 +1,22 @@
 package com.hananel.workschedule.ui
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
@@ -32,370 +24,142 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.theme.PrimaryTeal
-import com.hananel.workschedule.ui.theme.PrimaryGreen
-import com.hananel.workschedule.ui.theme.PrimaryBlue
 import kotlinx.coroutines.delay
-
-// Animated loading dot composable
-@Composable
-private fun LoadingDot(delayMs: Int) {
-    val infiniteTransition = rememberInfiniteTransition(label = "dot")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(600, delayMillis = delayMs, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse
-        ),
-        label = "dotAlpha"
-    )
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.7f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(600, delayMillis = delayMs, easing = FastOutSlowInEasing),
-            RepeatMode.Reverse
-        ),
-        label = "dotScale"
-    )
-    Box(
-        modifier = Modifier
-            .size(8.dp)
-            .scale(scale)
-            .alpha(alpha)
-            .background(PrimaryTeal.copy(alpha = 0.9f), CircleShape)
-    )
-}
 
 @Composable
 fun SplashScreen(
     onTimeout: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Animation states
-    var startAnimation by remember { mutableStateOf(false) }
-    
-    // Logo animations
+    var phase by remember { mutableStateOf(0) }
+
     val logoScale by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0.3f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
+        targetValue = if (phase >= 1) 1f else 0.4f,
+        animationSpec = spring(Spring.DampingRatioMediumBouncy, Spring.StiffnessMediumLow),
         label = "logoScale"
     )
-    
     val logoAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 800),
+        targetValue = if (phase >= 1) 1f else 0f,
+        animationSpec = tween(600),
         label = "logoAlpha"
     )
-    
-    // Text animations with delays
-    val titleAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 300),
-        label = "titleAlpha"
+    val textAlpha by animateFloatAsState(
+        targetValue = if (phase >= 2) 1f else 0f,
+        animationSpec = tween(500),
+        label = "textAlpha"
     )
-    
-    val titleOffset by animateFloatAsState(
-        targetValue = if (startAnimation) 0f else 50f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 300, easing = FastOutSlowInEasing),
-        label = "titleOffset"
+    val textSlide by animateFloatAsState(
+        targetValue = if (phase >= 2) 0f else 22f,
+        animationSpec = tween(500, easing = FastOutSlowInEasing),
+        label = "textSlide"
     )
-    
-    val subtitleAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 600),
-        label = "subtitleAlpha"
+    val bottomAlpha by animateFloatAsState(
+        targetValue = if (phase >= 3) 1f else 0f,
+        animationSpec = tween(400),
+        label = "bottomAlpha"
     )
-    
-    val creditAlpha by animateFloatAsState(
-        targetValue = if (startAnimation) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, delayMillis = 900),
-        label = "creditAlpha"
-    )
-    
-    // Floating orbs animation
-    val infiniteTransition = rememberInfiniteTransition(label = "orbs")
-    val orbOffset1 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
+
+    val infinite = rememberInfiniteTransition(label = "splash")
+    val linePulse by infinite.animateFloat(
+        initialValue = 0.3f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
+            tween(900, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
         ),
-        label = "orb1"
+        label = "linePulse"
     )
-    
-    val orbOffset2 by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = -360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(15000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "orb2"
-    )
-    
-    // Pulse animation for logo glow
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.15f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1500, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "pulse"
-    )
-    
+
     LaunchedEffect(Unit) {
-        startAnimation = true
-        delay(2500) // Extended for beautiful animations
-        onTimeout()
+        delay(50);  phase = 1
+        delay(300); phase = 2
+        delay(400); phase = 3
+        delay(1250); onTimeout()
     }
-    
-    // RTL Layout
+
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF0E1A1A), // Very dark teal-black
-                            Color(0xFF080F0F), // Near black
-                            Color(0xFF040A0A)  // Almost pure black
-                        )
-                    )
-                ),
+                .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
-            // Animated background orbs (decorative floating circles)
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .alpha(0.15f)
-            ) {
-                // Orb 1 - Top right
-                Box(
-                    modifier = Modifier
-                        .size(300.dp)
-                        .offset(
-                            x = (150 + kotlin.math.sin(Math.toRadians(orbOffset1.toDouble())).toFloat() * 30).dp,
-                            y = (-50 + kotlin.math.cos(Math.toRadians(orbOffset1.toDouble())).toFloat() * 20).dp
-                        )
-                        .blur(60.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    PrimaryTeal.copy(alpha = 0.8f),
-                                    Color.Transparent
-                                )
-                            ),
-                            CircleShape
-                        )
-                )
-                
-                // Orb 2 - Bottom left
-                Box(
-                    modifier = Modifier
-                        .size(250.dp)
-                        .offset(
-                            x = (-100 + kotlin.math.cos(Math.toRadians(orbOffset2.toDouble())).toFloat() * 25).dp,
-                            y = (500 + kotlin.math.sin(Math.toRadians(orbOffset2.toDouble())).toFloat() * 30).dp
-                        )
-                        .blur(50.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    PrimaryTeal.copy(alpha = 0.5f),
-                                    Color.Transparent
-                                )
-                            ),
-                            CircleShape
-                        )
-                )
-                
-                // Orb 3 - Center accent
-                Box(
-                    modifier = Modifier
-                        .size(200.dp)
-                        .align(Alignment.Center)
-                        .offset(y = (-100).dp)
-                        .blur(80.dp)
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(
-                                    PrimaryBlue.copy(alpha = 0.4f),
-                                    Color.Transparent
-                                )
-                            ),
-                            CircleShape
-                        )
-                )
-            }
-            
-            // Main content
+            // ── Center content ─────────────────────────────────────────────
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(32.dp)
+                modifier = Modifier.padding(horizontal = 40.dp)
             ) {
-                // Logo with glow effect
+                // Logo — shown as a clean app-icon card (rounded square, drop shadow)
                 Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Glow behind logo
-                    Box(
-                        modifier = Modifier
-                            .size(140.dp)
-                            .scale(pulseScale)
-                            .alpha(0.4f * logoAlpha)
-                            .blur(30.dp)
-                            .background(PrimaryTeal, CircleShape)
-                    )
-                    
-                    // Logo container with gradient border - dark teal background
-                    Surface(
-                        modifier = Modifier
-                            .size(130.dp)
-                            .scale(logoScale)
-                            .alpha(logoAlpha),
-                        shape = CircleShape,
-                        color = Color(0xFF0D1F1E), // dark teal-tinted, not white
-                        border = BorderStroke(
-                            width = 3.dp,
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    PrimaryTeal,
-                                    Color(0xFF00796B),
-                                    PrimaryTeal
-                                )
-                            )
+                    modifier = Modifier
+                        .size(120.dp)
+                        .scale(logoScale)
+                        .alpha(logoAlpha)
+                        .shadow(
+                            elevation = 18.dp,
+                            shape = RoundedCornerShape(28.dp),
+                            ambientColor = PrimaryTeal.copy(alpha = 0.20f),
+                            spotColor = PrimaryTeal.copy(alpha = 0.30f)
                         )
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_app_logo_new),
-                                contentDescription = "Work Schedule Logo",
-                                modifier = Modifier
-                                    .size(85.dp)
-                                    .clip(CircleShape)
-                            )
-                        }
-                    }
+                        .clip(RoundedCornerShape(28.dp))
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.ic_app_logo_new),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
-                
-                Spacer(modifier = Modifier.height(40.dp))
-                
-                // App title with shadow
+
+                Spacer(Modifier.height(44.dp))
+
+                // Hebrew brand name — dark, bold
                 Text(
                     text = "סידור עבודה",
-                    style = TextStyle(
-                        fontSize = 38.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White,
-                        shadow = Shadow(
-                            color = PrimaryTeal.copy(alpha = 0.6f),
-                            offset = Offset(0f, 4f),
-                            blurRadius = 12f
-                        )
-                    ),
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF0D2B28),
                     textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .alpha(titleAlpha)
-                        .graphicsLayer { translationY = titleOffset }
+                        .alpha(textAlpha)
+                        .offset(y = textSlide.dp)
                 )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // English subtitle with gradient effect
+
+                Spacer(Modifier.height(8.dp))
+
                 Text(
                     text = "Work Schedule Manager",
-                    fontSize = 16.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = PrimaryTeal.copy(alpha = 0.9f),
+                    color = PrimaryTeal.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
-                    letterSpacing = 2.sp,
-                    modifier = Modifier.alpha(subtitleAlpha)
+                    letterSpacing = 3.sp,
+                    modifier = Modifier.alpha(textAlpha)
                 )
-                
-                Spacer(modifier = Modifier.height(80.dp))
-                
-                // Developer credit - elegant and minimal
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.alpha(creditAlpha)
-                ) {
-                    // Decorative line
-                    Box(
-                        modifier = Modifier
-                            .width(60.dp)
-                            .height(2.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        PrimaryTeal.copy(alpha = 0.6f),
-                                        Color.Transparent
-                                    )
-                                ),
-                                RoundedCornerShape(1.dp)
-                            )
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(
-                        text = "Developed by",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color.White.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center,
-                        letterSpacing = 1.5.sp
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Text(
-                        text = "Hananel Sabag",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.White.copy(alpha = 0.85f),
-                        textAlign = TextAlign.Center,
-                        letterSpacing = 0.5.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(48.dp))
-
-                // Loading dots
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.alpha(creditAlpha)
-                ) {
-                    LoadingDot(delayMs = 0)
-                    LoadingDot(delayMs = 200)
-                    LoadingDot(delayMs = 400)
-                }
             }
 
-            // Version tag - bottom of screen
-            Text(
-                text = "v1.0",
-                fontSize = 11.sp,
-                color = PrimaryTeal.copy(alpha = 0.35f),
+            // ── Bottom: pulsing teal line + version ────────────────────────
+            Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 20.dp)
-                    .alpha(creditAlpha),
-                letterSpacing = 1.sp
-            )
+                    .padding(bottom = 40.dp)
+                    .alpha(bottomAlpha),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .width(52.dp)
+                        .height(2.dp)
+                        .alpha(linePulse)
+                        .background(PrimaryTeal, RoundedCornerShape(1.dp))
+                )
+                Text(
+                    text = "v1.0",
+                    fontSize = 11.sp,
+                    color = PrimaryTeal.copy(alpha = 0.35f),
+                    letterSpacing = 1.sp
+                )
+            }
         }
     }
 }

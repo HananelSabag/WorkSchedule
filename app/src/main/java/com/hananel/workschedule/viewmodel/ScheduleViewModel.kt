@@ -95,9 +95,20 @@ class ScheduleViewModel(
     private val _draftHasManualAssignments = MutableStateFlow(false)
     val draftHasManualAssignments = _draftHasManualAssignments.asStateFlow()
     
-    // Flag to trigger navigation after auto-generation completes
+    // Flag to trigger navigation after auto-generation completes (→ review screen)
     private val _autoGenerationComplete = MutableStateFlow(false)
     val autoGenerationComplete = _autoGenerationComplete.asStateFlow()
+
+    // Flag to trigger navigation from review screen → PREVIEW after user confirms
+    private val _autoConfirmComplete = MutableStateFlow(false)
+    val autoConfirmComplete = _autoConfirmComplete.asStateFlow()
+
+    // Results of last auto-generation (exposed to review screen)
+    private val _lastImpossibleShifts = MutableStateFlow<List<String>>(emptyList())
+    val lastImpossibleShifts = _lastImpossibleShifts.asStateFlow()
+
+    private val _totalShiftsInSchedule = MutableStateFlow(0)
+    val totalShiftsInSchedule = _totalShiftsInSchedule.asStateFlow()
     
     // Unified duplicate handling system
     private val _duplicateScheduleDialog = MutableStateFlow<DuplicateDialogState?>(null)
@@ -629,15 +640,31 @@ class ScheduleViewModel(
             )
             
             _currentSchedule.value = generatedSchedule
-            _errorMessage.value = GenericScheduleGenerator.generateErrorMessage(impossibleShifts)
-            
-            // Use unified duplicate checking system (same as manual)
+            _lastImpossibleShifts.value = impossibleShifts
+            _totalShiftsInSchedule.value = generatedSchedule.size
+            _errorMessage.value = ""
+            updateTempDraftStatus()
+
+            // Signal navigation to review screen (user will confirm save from there)
+            _autoGenerationComplete.value = true
+        }
+    }
+    
+    fun resetAutoGenerationFlag() {
+        _autoGenerationComplete.value = false
+    }
+
+    fun resetAutoConfirmFlag() {
+        _autoConfirmComplete.value = false
+    }
+
+    /** User confirmed the auto-generated schedule from the review screen → save and navigate to PREVIEW. */
+    fun confirmAutoSchedule() {
+        viewModelScope.launch {
             if (!isScheduleEmpty()) {
                 val weekStart = getScheduleWeekStart()
                 val duplicates = checkDuplicateScheduleName(weekStart)
-                
                 if (duplicates.isNotEmpty()) {
-                    // Show unified duplicate dialog
                     _duplicateScheduleDialog.value = DuplicateDialogState(
                         originalName = weekStart,
                         existingCount = duplicates.size,
@@ -645,20 +672,25 @@ class ScheduleViewModel(
                         isFromManualCreation = false
                     )
                 } else {
-                    // No duplicates - save directly
                     saveSchedule(weekStart)
                     finishScheduleCreation()
+                    _autoConfirmComplete.value = true
                 }
             }
-            updateTempDraftStatus() // Update after generation
-            
-            // Signal that generation is complete and ready to navigate
-            _autoGenerationComplete.value = true
         }
     }
-    
-    fun resetAutoGenerationFlag() {
-        _autoGenerationComplete.value = false
+
+    /** User rejected the auto-generated schedule → discard and return to blocking. */
+    fun discardAutoSchedule() {
+        _currentSchedule.value = emptyMap()
+        _lastImpossibleShifts.value = emptyList()
+        _totalShiftsInSchedule.value = 0
+        // Explicitly delete any DB draft that may have been saved while on review screen
+        // (saveDraftOnAppClose could have persisted the auto-generated schedule).
+        // clearDraft() deletes from DB async; updateTempDraftStatus() then re-evaluates
+        // hasTempDraft based only on remaining blocks (which are intentionally kept).
+        clearDraft()
+        updateTempDraftStatus()
     }
     
     fun updateScheduleCell(cellKey: String, value: String) {

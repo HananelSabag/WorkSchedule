@@ -57,40 +57,26 @@ fun HomeScreen(
 
     val pulse = rememberInfiniteTransition(label = "pulse")
     val pulseScale by pulse.animateFloat(
-        initialValue = 1f, targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(tween(2500, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        initialValue = 1f, targetValue = 1.08f,
+        animationSpec = infiniteRepeatable(tween(2800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "ps"
     )
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Box(modifier = modifier.fillMaxSize()) {
 
-            // Background orbs — atmospheric depth
+            // Single subtle ambient orb — clean, not distracting
             Box(
                 modifier = Modifier
-                    .size(380.dp)
-                    .offset(x = 160.dp, y = (-90).dp)
+                    .size(400.dp)
+                    .offset(x = 140.dp, y = (-100).dp)
                     .scale(pulseScale)
-                    .blur(85.dp)
-                    .alpha(0.11f)
-                    .background(Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)), CircleShape)
-            )
-            Box(
-                modifier = Modifier
-                    .size(280.dp)
-                    .offset(x = (-70).dp, y = 480.dp)
-                    .blur(75.dp)
+                    .blur(100.dp)
                     .alpha(0.09f)
-                    .background(Brush.radialGradient(listOf(PrimaryGreen, Color.Transparent)), CircleShape)
-            )
-            // Third accent orb — center bottom
-            Box(
-                modifier = Modifier
-                    .size(200.dp)
-                    .offset(x = 60.dp, y = 620.dp)
-                    .blur(70.dp)
-                    .alpha(0.06f)
-                    .background(Brush.radialGradient(listOf(PrimaryBlue, Color.Transparent)), CircleShape)
+                    .background(
+                        Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)),
+                        CircleShape
+                    )
             )
 
             AnimatedVisibility(
@@ -110,41 +96,39 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Help button — left side (RTL)
                         HelpButton(onClick = { showHelp = true })
 
-                        // Logo + Title — centered
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
                             modifier = Modifier.weight(1f)
                         ) {
-                            // Bigger logo with gradient border glow
+                            // Logo in teal circle — subtle, not bordered like a button
                             Box(contentAlignment = Alignment.Center) {
                                 Box(
                                     modifier = Modifier
-                                        .size(58.dp)
+                                        .size(54.dp)
                                         .scale(pulseScale)
-                                        .alpha(0.18f)
+                                        .alpha(0.14f)
                                         .background(
                                             Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)),
                                             CircleShape
                                         )
                                 )
                                 Surface(
-                                    modifier = Modifier.size(48.dp),
+                                    modifier = Modifier.size(44.dp),
                                     shape = CircleShape,
                                     color = MaterialTheme.colorScheme.surface,
                                     border = BorderStroke(
-                                        2.dp,
-                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTeal.copy(alpha = 0.6f)))
+                                        1.5.dp,
+                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTeal.copy(0.5f)))
                                     )
                                 ) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Image(
                                             painter = painterResource(R.drawable.ic_app_logo_new),
                                             contentDescription = null,
-                                            modifier = Modifier.size(32.dp).clip(CircleShape)
+                                            modifier = Modifier.size(30.dp).clip(CircleShape)
                                         )
                                     }
                                 }
@@ -166,13 +150,12 @@ fun HomeScreen(
                             }
                         }
 
-                        // Balance spacer — matches HelpButton width (with label)
                         Spacer(Modifier.width(52.dp))
                     }
 
-                    Spacer(Modifier.height(28.dp))
+                    Spacer(Modifier.height(24.dp))
 
-                    // ─── Setup warnings (compact chips) ───────────────────────
+                    // ─── Setup / Draft banners ────────────────────────────────
                     if (employeeCount == 0 || !hasTemplate) {
                         SetupBanner(
                             needsEmployees = employeeCount == 0,
@@ -180,16 +163,14 @@ fun HomeScreen(
                             onAddEmployees = onEmployeeManagementClick,
                             onSetupTemplate = onGoToTemplateSetup
                         )
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(14.dp))
                     }
-
-                    // ─── Draft banner ──────────────────────────────────────────
                     if (hasTempDraft) {
                         DraftBanner(onClick = onContinueTempDraftClick)
-                        Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(14.dp))
                     }
 
-                    // ─── Main action grid — fixed card heights ────────────────
+                    // ─── Card grid — visual hierarchy ─────────────────────────
                     val canCreate = employeeCount > 0 && hasTemplate
                     val canHistory = employeeCount > 0
 
@@ -197,70 +178,68 @@ fun HomeScreen(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
+                        // ① Hero: New Schedule — full width, primary action
+                        MainActionCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(162.dp),
+                            icon = Icons.Default.Add,
+                            label = "סידור חדש",
+                            description = "צור סידור שבועי חדש",
+                            gradient = if (canCreate)
+                                listOf(PrimaryTeal, PrimaryTealDark)
+                            else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
+                            enabled = canCreate,
+                            badge = if (hasTempDraft) "!" else null,
+                            onClick = {
+                                if (hasTempDraft) showDraftConfirmDialog = true
+                                else onNewScheduleClick()
+                            }
+                        )
+
+                        // ② History + Employees — side by side, different colors
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(152.dp),
+                                .height(134.dp),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // New Schedule
-                            MainActionCard(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                icon = Icons.Default.Add,
-                                label = "סידור חדש",
-                                description = "צור סידור שבועי חדש",
-                                gradient = if (canCreate)
-                                    listOf(PrimaryTeal, Color(0xFF00796B))
-                                else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
-                                enabled = canCreate,
-                                badge = if (hasTempDraft) "!" else null,
-                                onClick = {
-                                    if (hasTempDraft) showDraftConfirmDialog = true
-                                    else onNewScheduleClick()
-                                }
-                            )
-                            // History
                             MainActionCard(
                                 modifier = Modifier.weight(1f).fillMaxHeight(),
                                 icon = Icons.Default.History,
                                 label = "היסטוריה",
                                 description = "סידורים שמורים",
                                 gradient = if (canHistory)
-                                    listOf(PrimaryTeal, Color(0xFF00796B))
+                                    listOf(CardBlue, CardBlueDark)
                                 else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
                                 enabled = canHistory,
                                 badge = if (scheduleCount > 0) scheduleCount.toString() else null,
                                 onClick = onRecentSchedulesClick
                             )
-                        }
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(152.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            // Employees
                             MainActionCard(
                                 modifier = Modifier.weight(1f).fillMaxHeight(),
                                 icon = Icons.Default.People,
                                 label = "עובדים",
                                 description = "הוסף ונהל עובדים",
-                                gradient = listOf(PrimaryTeal, Color(0xFF00796B)),
+                                gradient = listOf(CardEmerald, CardEmeraldDark),
                                 badge = if (employeeCount > 0) employeeCount.toString() else null,
                                 onClick = onEmployeeManagementClick
                             )
-                            // Template Settings
-                            MainActionCard(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                icon = Icons.Default.TableChart,
-                                label = "הגדרות טבלה",
-                                description = "משמרות וימים",
-                                gradient = listOf(PrimaryTeal, Color(0xFF00796B)),
-                                badge = if (!hasTemplate) "!" else null,
-                                onClick = onTemplateSetupClick
-                            )
                         }
+
+                        // ③ Template Settings — full width, compact row layout
+                        MainActionCard(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(72.dp),
+                            icon = Icons.Default.TableChart,
+                            label = "הגדרות טבלה",
+                            description = "משמרות וימים",
+                            gradient = listOf(CardViolet, CardVioletDark),
+                            badge = if (!hasTemplate) "!" else null,
+                            compact = true,
+                            onClick = onTemplateSetupClick
+                        )
                     }
 
                     Spacer(Modifier.weight(1f))
@@ -269,7 +248,7 @@ fun HomeScreen(
                     Text(
                         "פותח ע\"י חננאל סבג",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -277,7 +256,7 @@ fun HomeScreen(
         }
     }
 
-    // ─── Draft confirmation dialog ─────────────────────────────────────────
+    // ─── Draft confirmation (intentionally AlertDialog) ────────────────────
     if (showDraftConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showDraftConfirmDialog = false },
@@ -314,11 +293,12 @@ fun HomeScreen(
         )
     }
 
-    // ─── Help bottom sheet ─────────────────────────────────────────────────
     if (showHelp) {
         HelpBottomSheet(onDismiss = { showHelp = false })
     }
 }
+
+// ─── MainActionCard ─────────────────────────────────────────────────────────
 
 @Composable
 private fun MainActionCard(
@@ -329,7 +309,8 @@ private fun MainActionCard(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     badge: String? = null,
-    description: String? = null
+    description: String? = null,
+    compact: Boolean = false          // true = horizontal layout (for flat bottom card)
 ) {
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     Box(modifier = modifier) {
@@ -340,11 +321,11 @@ private fun MainActionCard(
                 .background(Brush.linearGradient(gradient))
                 .then(
                     if (enabled) Modifier.clickable(interactionSource, null, onClick = onClick)
-                    else Modifier.alpha(0.50f)
+                    else Modifier.alpha(0.48f)
                 ),
             contentAlignment = Alignment.Center
         ) {
-            // Subtle top shine highlight
+            // Subtle top-shine highlight on all cards
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -353,53 +334,94 @@ private fun MainActionCard(
                     .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
                     .background(
                         Brush.verticalGradient(
-                            listOf(Color.White.copy(alpha = 0.12f), Color.Transparent)
+                            listOf(Color.White.copy(alpha = 0.10f), Color.Transparent)
                         )
                     )
             )
 
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.padding(14.dp)
-            ) {
-                // Icon with soft halo
-                Box(
+            if (compact) {
+                // ── Horizontal layout (template settings) ──────────────────
+                Row(
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(Color.White.copy(alpha = 0.15f), CircleShape),
-                    contentAlignment = Alignment.Center
+                        .fillMaxSize()
+                        .padding(horizontal = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(42.dp)
+                            .background(Color.White.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(icon, null, tint = Color.White, modifier = Modifier.size(22.dp))
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            label,
+                            color = Color.White,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        if (description != null) {
+                            Text(
+                                description,
+                                color = Color.White.copy(alpha = 0.70f),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
                     Icon(
-                        imageVector = icon,
-                        contentDescription = label,
-                        tint = Color.White,
-                        modifier = Modifier.size(30.dp)
+                        Icons.Default.ChevronLeft,
+                        null,
+                        tint = Color.White.copy(alpha = 0.50f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    text = label,
-                    color = Color.White,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 18.sp
-                )
-                if (description != null) {
-                    Spacer(Modifier.height(4.dp))
+            } else {
+                // ── Vertical layout (hero + secondary cards) ────────────────
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(14.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(54.dp)
+                            .background(Color.White.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = label,
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
                     Text(
-                        text = description,
-                        color = Color.White.copy(alpha = 0.75f),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal,
+                        text = label,
+                        color = Color.White,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.ExtraBold,
                         textAlign = TextAlign.Center,
-                        lineHeight = 14.sp
+                        lineHeight = 18.sp
                     )
+                    if (description != null) {
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            text = description,
+                            color = Color.White.copy(alpha = 0.72f),
+                            fontSize = 11.sp,
+                            textAlign = TextAlign.Center,
+                            lineHeight = 14.sp
+                        )
+                    }
                 }
             }
         }
-        // Badge
+
+        // Badge (count or "!" warning)
         if (badge != null) {
             Box(
                 modifier = Modifier
@@ -407,7 +429,7 @@ private fun MainActionCard(
                     .padding(8.dp)
                     .size(22.dp)
                     .background(
-                        if (badge == "!") BlockedRed else Color.White.copy(alpha = 0.9f),
+                        if (badge == "!") BlockedRed else Color.White.copy(alpha = 0.90f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -422,6 +444,8 @@ private fun MainActionCard(
         }
     }
 }
+
+// ─── DraftBanner ─────────────────────────────────────────────────────────────
 
 @Composable
 private fun DraftBanner(onClick: () -> Unit) {
@@ -446,6 +470,8 @@ private fun DraftBanner(onClick: () -> Unit) {
     }
 }
 
+// ─── SetupBanner ─────────────────────────────────────────────────────────────
+
 @Composable
 private fun SetupBanner(
     needsEmployees: Boolean,
@@ -457,7 +483,7 @@ private fun SetupBanner(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.20f))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -467,12 +493,8 @@ private fun SetupBanner(
                 Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
                 Text("נדרשת הגדרה", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryTeal)
             }
-            if (needsEmployees) {
-                SetupChip("הוסף עובדים", Icons.Default.PersonAdd, onAddEmployees)
-            }
-            if (needsTemplate) {
-                SetupChip("הגדר מבנה טבלה", Icons.Default.TableChart, onSetupTemplate)
-            }
+            if (needsEmployees) SetupChip("הוסף עובדים", Icons.Default.PersonAdd, onAddEmployees)
+            if (needsTemplate) SetupChip("הגדר מבנה טבלה", Icons.Default.TableChart, onSetupTemplate)
         }
     }
 }
@@ -483,7 +505,7 @@ private fun SetupChip(label: String, icon: ImageVector, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(PrimaryTeal.copy(alpha = 0.1f))
+            .background(PrimaryTeal.copy(alpha = 0.10f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -228,7 +228,7 @@ fun HelpButton(onClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        Brush.linearGradient(listOf(PrimaryTeal, Color(0xFF00796B))),
+                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTealDark)),
                         CircleShape
                     )
                     .clip(CircleShape)
@@ -418,7 +418,7 @@ fun HelpBottomSheet(onDismiss: () -> Unit) {
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(
-                                    Brush.horizontalGradient(listOf(PrimaryTeal, Color(0xFF00796B)))
+                                    Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark))
                                 )
                                 .clickable(onClick = onDismiss),
                             contentAlignment = Alignment.Center

@@ -354,7 +354,7 @@ fun ShiftTemplateSetupScreen(
                         .background(
                             Brush.horizontalGradient(
                                 colors = if (canFinish) 
-                                    listOf(PrimaryTeal, Color(0xFF00796B))
+                                    listOf(PrimaryTeal, PrimaryTealDark)
                                 else 
                                     listOf(Color.Gray, Color.DarkGray)
                             )

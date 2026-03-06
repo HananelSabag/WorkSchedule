@@ -68,102 +68,10 @@ fun SimpleScheduleTable(
 
     // RTL Layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Column(
+        Box(
             modifier = modifier.fillMaxSize()
         ) {
-            // Modern Control Panel - Zoom Controls
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                ),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Zoom Controls with modern buttons
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Zoom out button
-                        FilledTonalIconButton(
-                            onClick = { 
-                                val currentPercent = (scale * 100).toInt()
-                                val newPercent = maxOf(50, currentPercent - 10)
-                                scale = newPercent / 100f
-                            },
-                            modifier = Modifier.size(36.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = PrimaryTeal.copy(alpha = 0.15f),
-                                contentColor = PrimaryTeal
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ZoomOut,
-                                contentDescription = "הקטן",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        // Zoom percentage badge
-                        Surface(
-                            color = PrimaryTeal,
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                        ) {
-                            Text(
-                                text = "${(scale * 100).toInt()}%",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                            )
-                        }
-
-                        // Zoom in button
-                        FilledTonalIconButton(
-                            onClick = { 
-                                val currentPercent = (scale * 100).toInt()
-                                val newPercent = minOf(200, currentPercent + 10)
-                                scale = newPercent / 100f
-                            },
-                            modifier = Modifier.size(36.dp),
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = PrimaryTeal.copy(alpha = 0.15f),
-                                contentColor = PrimaryTeal
-                            )
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ZoomIn,
-                                contentDescription = "הגדל",
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-
-                    // Reset View - compact button
-                    TextButton(
-                        onClick = { scale = 1f },
-                        colors = ButtonDefaults.textButtonColors(contentColor = PrimaryTeal)
-                    ) {
-                        Text(
-                            text = "⟳ איפוס",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Scrollable Table - pinch-to-zoom + button zoom + scroll
+            // Scrollable Table - pinch-to-zoom + scroll
             // Uses PointerEventPass.Initial so the outer Box intercepts pinch BEFORE
             // the inner scroll containers consume the touch events.
             Box(
@@ -216,6 +124,38 @@ fun SimpleScheduleTable(
                 }
                 } // inner scroll Box
             } // transformable outer Box
+
+            // Floating zoom-reset chip — only visible when not at 100%
+            if (scale != 1f) {
+                Surface(
+                    onClick = { scale = 1f },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.4f)),
+                    shadowElevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ZoomIn, null,
+                            tint = PrimaryTeal,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Text(
+                            "${(scale * 100).toInt()}% · ↺",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = PrimaryTeal
+                        )
+                    }
+                }
+            }
         }
     }
 }

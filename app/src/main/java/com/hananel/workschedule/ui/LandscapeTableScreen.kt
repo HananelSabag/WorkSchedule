@@ -64,10 +64,8 @@ fun LandscapeBlockingScreen(
     var showToolbar by remember { mutableStateOf(true) }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            LandscapeTopBar(title = "חסימות — תצוגה מורחבת", onClose = onClose)
-
-            Box(modifier = Modifier.weight(1f)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 SimpleScheduleTable(
                     employees = employees,
                     selectedEmployee = selectedEmployee,
@@ -82,34 +80,52 @@ fun LandscapeBlockingScreen(
                     },
                     isBlockingMode = true,
                     onCellClick = { employee, day, shift -> onToggleBlock(employee, day, shift) },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.weight(1f)
                 )
 
                 AnimatedVisibility(
-                    visible = !showToolbar,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 10.dp),
-                    enter = fadeIn() + slideInVertically { it / 2 },
-                    exit = fadeOut() + slideOutVertically { it / 2 }
+                    visible = showToolbar,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
                 ) {
-                    ShowToolbarPill(onClick = { showToolbar = true })
+                    LandscapeBlockingToolbar(
+                        employees = employees,
+                        selectedEmployee = selectedEmployee,
+                        blockingMode = blockingMode,
+                        onSelectEmployee = onSelectEmployee,
+                        onSetBlockingMode = onSetBlockingMode,
+                        onHide = { showToolbar = false }
+                    )
+                }
+            }
+
+            // Floating close button — 48dp touch target, clear of nav bar
+            Surface(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp, end = 12.dp)
+                    .size(48.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                shadowElevation = 6.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
                 }
             }
 
             AnimatedVisibility(
-                visible = showToolbar,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
+                visible = !showToolbar,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 }
             ) {
-                LandscapeBlockingToolbar(
-                    employees = employees,
-                    selectedEmployee = selectedEmployee,
-                    blockingMode = blockingMode,
-                    onSelectEmployee = onSelectEmployee,
-                    onSetBlockingMode = onSetBlockingMode,
-                    onHide = { showToolbar = false }
-                )
+                ShowToolbarPill(onClick = { showToolbar = true })
             }
         }
     }
@@ -202,6 +218,7 @@ fun LandscapeManualScreen(
     templateData: TemplateData? = null,
     onSelectEmployee: (Employee?) -> Unit,
     onToggleEmployeeInShift: (Employee, String, String) -> Unit,
+    onFreeTextToCell: (String, String) -> Unit,
     onClose: () -> Unit,
 ) {
     val activity = LocalContext.current as? Activity
@@ -217,12 +234,13 @@ fun LandscapeManualScreen(
     var pendingAssignment by remember { mutableStateOf<Triple<Employee, String, String>?>(null) }
     var pendingIsBlocked by remember { mutableStateOf(false) }
     val warningSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showFreeTextSheet by remember { mutableStateOf(false) }
+    var freeTextCellKey by remember { mutableStateOf("") }
+    var freeTextValue by remember { mutableStateOf("") }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            LandscapeTopBar(title = "סידור ידני — תצוגה מורחבת", onClose = onClose)
-
-            Box(modifier = Modifier.weight(1f)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 SimpleScheduleTable(
                     employees = employees,
                     selectedEmployee = selectedEmployee,
@@ -252,34 +270,128 @@ fun LandscapeManualScreen(
                             }
                         }
                     },
+                    onLongPress = { day, shift ->
+                        freeTextCellKey = "$day-$shift"
+                        freeTextValue = schedule[freeTextCellKey]?.joinToString(", ") ?: ""
+                        showFreeTextSheet = true
+                    },
                     onDayHeaderClick = null,
                     isBlockingMode = false,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.weight(1f)
                 )
 
                 AnimatedVisibility(
-                    visible = !showToolbar,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 10.dp),
-                    enter = fadeIn() + slideInVertically { it / 2 },
-                    exit = fadeOut() + slideOutVertically { it / 2 }
+                    visible = showToolbar,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
                 ) {
-                    ShowToolbarPill(onClick = { showToolbar = true })
+                    LandscapeManualToolbar(
+                        employees = employees,
+                        selectedEmployee = selectedEmployee,
+                        onSelectEmployee = onSelectEmployee,
+                        onHide = { showToolbar = false }
+                    )
+                }
+            }
+
+            // Floating close button — 48dp touch target, clear of nav bar
+            Surface(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp, end = 12.dp)
+                    .size(48.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                shadowElevation = 6.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
                 }
             }
 
             AnimatedVisibility(
-                visible = showToolbar,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
+                visible = !showToolbar,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 }
             ) {
-                LandscapeManualToolbar(
-                    employees = employees,
-                    selectedEmployee = selectedEmployee,
-                    onSelectEmployee = onSelectEmployee,
-                    onHide = { showToolbar = false }
-                )
+                ShowToolbarPill(onClick = { showToolbar = true })
+            }
+        }
+
+        // ─── Free Text Sheet ─────────────────────────────────────────────────
+        if (showFreeTextSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showFreeTextSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                .align(Alignment.CenterHorizontally)
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = PrimaryTeal.copy(alpha = 0.12f)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                }
+                            }
+                            Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedTextField(
+                            value = freeTextValue,
+                            onValueChange = { freeTextValue = it },
+                            label = { Text("טקסט חופשי") },
+                            placeholder = { Text("שם עובד, הערה...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryTeal,
+                                focusedLabelColor = PrimaryTeal
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { showFreeTextSheet = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול") }
+                            Button(
+                                onClick = {
+                                    onFreeTextToCell(freeTextCellKey, freeTextValue)
+                                    showFreeTextSheet = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                            ) { Text("שמור", fontWeight = FontWeight.Bold) }
+                        }
+                    }
+                }
             }
         }
 
@@ -435,6 +547,9 @@ fun LandscapePreviewScreen(
     var showStatsSheet by remember { mutableStateOf(false) }
     val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    var showFreeTextSheet by remember { mutableStateOf(false) }
+    var freeTextCellKey by remember { mutableStateOf("") }
+    var freeTextValue by remember { mutableStateOf("") }
 
     var editableSchedule by remember {
         mutableStateOf(schedule.mapValues { it.value.joinToString(", ") })
@@ -444,10 +559,8 @@ fun LandscapePreviewScreen(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            LandscapeTopBar(title = "תצוגה מקדימה — מורחבת", onClose = onClose)
-
-            Box(modifier = Modifier.weight(1f)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 SimpleScheduleTable(
                     employees = employees,
                     selectedEmployee = null,
@@ -463,36 +576,59 @@ fun LandscapePreviewScreen(
                         editableSchedule = editableSchedule.toMutableMap().apply { put(key, value) }
                         onUpdateCell(key, value)
                     },
-                    modifier = Modifier.fillMaxSize()
+                    onLongPress = { day, shift ->
+                        freeTextCellKey = "$day-$shift"
+                        freeTextValue = schedule[freeTextCellKey]?.joinToString(", ") ?: ""
+                        showFreeTextSheet = true
+                    },
+                    modifier = Modifier.weight(1f)
                 )
 
                 AnimatedVisibility(
-                    visible = !showToolbar,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 10.dp),
-                    enter = fadeIn() + slideInVertically { it / 2 },
-                    exit = fadeOut() + slideOutVertically { it / 2 }
+                    visible = showToolbar,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
                 ) {
-                    ShowToolbarPill(onClick = { showToolbar = true })
+                    LandscapePreviewToolbar(
+                        onDownload = { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
+                        onWhatsApp = { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
+                        onStats = {
+                            showStatsSheet = true
+                            scope.launch { statsSheetState.show() }
+                        },
+                        onReturnToBlocking = onReturnToBlocking,
+                        onHide = { showToolbar = false }
+                    )
+                }
+            }
+
+            // Floating close button — 48dp touch target, clear of nav bar
+            Surface(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp, end = 12.dp)
+                    .size(48.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                shadowElevation = 6.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
                 }
             }
 
             AnimatedVisibility(
-                visible = showToolbar,
-                enter = slideInVertically { it },
-                exit = slideOutVertically { it }
+                visible = !showToolbar,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 }
             ) {
-                LandscapePreviewToolbar(
-                    onDownload = { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
-                    onWhatsApp = { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
-                    onStats = {
-                        showStatsSheet = true
-                        scope.launch { statsSheetState.show() }
-                    },
-                    onReturnToBlocking = onReturnToBlocking,
-                    onHide = { showToolbar = false }
-                )
+                ShowToolbarPill(onClick = { showToolbar = true })
             }
         }
 
@@ -551,6 +687,77 @@ fun LandscapePreviewScreen(
                 }
             }
         }
+
+        // ─── Free Text Sheet ─────────────────────────────────────────────────
+        if (showFreeTextSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showFreeTextSheet = false },
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                                .align(Alignment.CenterHorizontally)
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(40.dp),
+                                shape = CircleShape,
+                                color = PrimaryTeal.copy(alpha = 0.12f)
+                            ) {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                }
+                            }
+                            Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedTextField(
+                            value = freeTextValue,
+                            onValueChange = { freeTextValue = it },
+                            label = { Text("טקסט חופשי") },
+                            placeholder = { Text("שם עובד, הערה...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryTeal,
+                                focusedLabelColor = PrimaryTeal
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { showFreeTextSheet = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול") }
+                            Button(
+                                onClick = {
+                                    onUpdateCell(freeTextCellKey, freeTextValue)
+                                    showFreeTextSheet = false
+                                },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                            ) { Text("שמור", fontWeight = FontWeight.Bold) }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -576,6 +783,139 @@ private fun LandscapePreviewToolbar(
             LandscapeActionButton(Icons.Default.BarChart, "סטטיסטיקה", PrimaryTeal, onStats)
             LandscapeActionButton(Icons.Default.Edit, "חסימות", PrimaryTeal, onReturnToBlocking)
             Spacer(Modifier.weight(1f))
+            IconButton(onClick = onHide, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    Icons.Default.KeyboardArrowDown, "הסתר",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LANDSCAPE AUTO SCHEDULE REVIEW SCREEN
+// ═══════════════════════════════════════════════════════════════════════════
+
+@Composable
+fun LandscapeAutoScheduleReviewScreen(
+    employees: List<Employee>,
+    schedule: Map<String, List<String>>,
+    blocks: Map<String, Boolean>,
+    canOnlyBlocks: Map<String, Boolean>,
+    savingMode: Map<String, Boolean>,
+    weekStartDate: java.time.LocalDate,
+    templateData: TemplateData? = null,
+    impossibleShifts: List<String>,
+    onConfirm: () -> Unit,
+    onBackToBlocking: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(Unit) {
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    var showToolbar by remember { mutableStateOf(true) }
+
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                SimpleScheduleTable(
+                    employees = employees,
+                    selectedEmployee = null,
+                    blocks = blocks,
+                    canOnlyBlocks = canOnlyBlocks,
+                    savingMode = savingMode,
+                    schedule = schedule,
+                    templateData = templateData,
+                    isEditMode = false,
+                    weekStartDate = weekStartDate,
+                    isBlockingMode = false,
+                    modifier = Modifier.weight(1f)
+                )
+
+                AnimatedVisibility(
+                    visible = showToolbar,
+                    enter = slideInVertically { it },
+                    exit = slideOutVertically { it }
+                ) {
+                    LandscapeAutoReviewToolbar(
+                        impossibleShifts = impossibleShifts,
+                        onConfirm = onConfirm,
+                        onBackToBlocking = onBackToBlocking,
+                        onHide = { showToolbar = false }
+                    )
+                }
+            }
+
+            // Floating close button — 48dp touch target, clear of nav bar
+            Surface(
+                onClick = onClose,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
+                    .padding(bottom = 12.dp, end = 12.dp)
+                    .size(48.dp),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                shadowElevation = 6.dp
+            ) {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                }
+            }
+
+            AnimatedVisibility(
+                visible = !showToolbar,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 10.dp),
+                enter = fadeIn() + slideInVertically { it / 2 },
+                exit = fadeOut() + slideOutVertically { it / 2 }
+            ) {
+                ShowToolbarPill(onClick = { showToolbar = true })
+            }
+        }
+    }
+}
+
+@Composable
+private fun LandscapeAutoReviewToolbar(
+    impossibleShifts: List<String>,
+    onConfirm: () -> Unit,
+    onBackToBlocking: () -> Unit,
+    onHide: () -> Unit,
+) {
+    val allGood = impossibleShifts.isEmpty()
+    LandscapeToolbarSurface {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status chip
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = (if (allGood) PrimaryTeal else Orange).copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, (if (allGood) PrimaryTeal else Orange).copy(alpha = 0.4f))
+            ) {
+                Text(
+                    text = if (allGood) "✓ הסידור הושלם" else "${impossibleShifts.size} משמרות פתוחות",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (allGood) PrimaryTeal else Orange
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            LandscapeActionButton(Icons.Default.Edit, "חסימות", PrimaryTeal, onBackToBlocking)
+            LandscapeActionButton(Icons.Default.Save, "שמירה והצגה", PrimaryTeal, onConfirm)
             IconButton(onClick = onHide, modifier = Modifier.size(32.dp)) {
                 Icon(
                     Icons.Default.KeyboardArrowDown, "הסתר",

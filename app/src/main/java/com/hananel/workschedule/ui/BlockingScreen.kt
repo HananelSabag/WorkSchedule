@@ -178,7 +178,7 @@ fun BlockingScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.background,
-                        shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                        shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
                         shadowElevation = 2.dp
                     ) {
@@ -230,16 +230,29 @@ fun BlockingScreen(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                IconButton(
+                                Surface(
                                     onClick = onEnterLandscape,
-                                    modifier = Modifier.size(36.dp)
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = PrimaryTeal.copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ScreenRotation,
-                                        contentDescription = "מצב אופקי",
-                                        tint = PrimaryTeal,
-                                        modifier = Modifier.size(20.dp)
-                                    )
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.ScreenRotation, null,
+                                            tint = PrimaryTeal,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                        Text(
+                                            "תצוגה אופקית",
+                                            fontSize = 10.sp,
+                                            color = PrimaryTeal,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    }
                                 }
                                 IconButton(
                                     onClick = { showResetConfirmation = true; scope.launch { resetSheetState.show() } },
@@ -251,24 +264,6 @@ fun BlockingScreen(
                                         tint = BlockedRed,
                                         modifier = Modifier.size(20.dp)
                                     )
-                                }
-                                // Logo — dark teal background, bigger
-                                Surface(
-                                    modifier = Modifier.size(36.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.surface,
-                                    border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f))
-                                ) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.ic_app_logo_new),
-                                            contentDescription = "Logo",
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -353,7 +348,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
                                 )
                             )
                             .clickable(onClick = onReturnToSavedSchedule),
@@ -402,7 +397,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
                                 )
                             )
                             .clickable(onClick = onCreateScheduleCopy),
@@ -501,7 +496,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
                                 )
                             )
                             .clickable(onClick = onGenerateManualSchedule),
@@ -550,7 +545,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, Color(0xFF00796B))
+                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
                                 )
                             )
                             .clickable(onClick = onGenerateAutomaticSchedule),

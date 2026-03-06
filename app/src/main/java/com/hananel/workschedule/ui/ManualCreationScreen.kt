@@ -75,7 +75,7 @@ fun ManualCreationScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.background,
-                shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
+                shape = RoundedCornerShape(16.dp),
                 border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
                 shadowElevation = 2.dp
             ) {
@@ -110,16 +110,20 @@ fun ManualCreationScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        IconButton(
+                        Surface(
                             onClick = onEnterLandscape,
-                            modifier = Modifier.size(36.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            color = PrimaryTeal.copy(alpha = 0.10f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.ScreenRotation,
-                                contentDescription = "מצב אופקי",
-                                tint = PrimaryTeal,
-                                modifier = Modifier.size(20.dp)
-                            )
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(Icons.Default.ScreenRotation, null, tint = PrimaryTeal, modifier = Modifier.size(13.dp))
+                                Text("תצוגה אופקית", fontSize = 10.sp, color = PrimaryTeal, fontWeight = FontWeight.Medium)
+                            }
                         }
                         IconButton(
                             onClick = { showResetSheet = true },
@@ -131,24 +135,6 @@ fun ManualCreationScreen(
                                 tint = BlockedRed,
                                 modifier = Modifier.size(20.dp)
                             )
-                        }
-                        // Logo — themed, bigger
-                        Surface(
-                            modifier = Modifier.size(36.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surface,
-                            border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f))
-                        ) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_app_logo_new),
-                                    contentDescription = "Logo",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            }
                         }
                     }
                 }
@@ -228,7 +214,7 @@ fun ManualCreationScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, Color(0xFF00796B))))
+                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark)))
                     .clickable(onClick = onGenerateManualSchedule),
                 contentAlignment = Alignment.Center
             ) {
