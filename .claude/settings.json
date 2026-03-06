@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew assembleRelease)",
-      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew assembleRelease)"
+      "Bash(JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\" ./gradlew assembleRelease)",
+      "Bash(for f in AutoScheduleReviewScreen.kt PreviewScreen.kt ManualCreationScreen.kt BlockingScreen.kt HelpOverlay.kt ShiftTemplateSetupScreen.kt EmployeeManagementScreen.kt HistoryScreen.kt)",
+      "Bash(do sed -i 's/Color\\(0xFF00796B\\)/PrimaryTealDark/g' \"$f\")",
+      "Bash(done)",
+      "Bash(perl -i -0pe 's/\\\\.align\\\\\\(Alignment\\\\.TopEnd\\\\\\)\\\\n\\(\\\\s+\\)\\\\.padding\\\\\\(8\\\\.dp\\\\\\)/\\\\.align\\(Alignment.TopStart\\)\\\\n${1}.statusBarsPadding\\(\\)\\\\n${1}.padding\\(8.dp\\)/g' \"c:/Coding Projects/WorkSchedule/app/src/main/java/com/hananel/workschedule/ui/LandscapeTableScreen.kt\")"
     ]
   }
 }
