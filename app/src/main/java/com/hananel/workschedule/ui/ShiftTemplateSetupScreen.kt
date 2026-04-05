@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,8 +46,9 @@ fun ShiftTemplateSetupScreen(
     shiftRows: List<ShiftRow>,
     dayColumns: List<DayColumn>,
     hasExistingTemplate: Boolean = false, // New: for dynamic title
-    onAddShiftRow: (String, String) -> Unit, // Changed: now requires name and hours
-    onEditShiftRow: (Int, String, String) -> Unit,
+    onAddShiftRow: (String, String, String) -> Unit, // name, hours, note
+    onEditShiftRow: (Int, String, String, String) -> Unit, // index, name, hours, note
+    onEditDayColumnNote: (Int, String) -> Unit = { _, _ -> }, // index, note
     onDeleteShiftRow: (Int) -> Unit,
     onMoveShiftRow: (Int, Int) -> Unit, // New: move row from index to new index
     onToggleDayColumn: (Int) -> Unit,
@@ -82,7 +84,7 @@ fun ShiftTemplateSetupScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = onSaveAndExit) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = PrimaryTeal)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = AccentIndigo)
                         }
                         Text(
                             text = if (hasExistingTemplate) "עריכת תבנית סידור" else "הגדרת תבנית - ראשונה",
@@ -95,14 +97,14 @@ fun ShiftTemplateSetupScreen(
                         if (shiftRows.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     "${shiftRows.size}",
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = PrimaryTeal
+                                    color = AccentIndigo
                                 )
                             }
                         } else {
@@ -125,18 +127,18 @@ fun ShiftTemplateSetupScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = PrimaryTeal.copy(alpha = 0.08f)
+                    color = AccentIndigo.copy(alpha = 0.08f)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Info, null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
                         Text(
                             text = "הוסף משמרות + סמן ימים. מינימום: 2 משמרות, 4 ימים",
                             fontSize = 12.sp,
-                            color = PrimaryTeal
+                            color = AccentIndigo
                         )
                     }
                 }
@@ -146,7 +148,7 @@ fun ShiftTemplateSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
+                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -163,7 +165,7 @@ fun ShiftTemplateSetupScreen(
                                 text = "משמרות (${shiftRows.size})",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
+                                color = AccentIndigo
                             )
                             
                             // Add button - opens dialog
@@ -171,7 +173,7 @@ fun ShiftTemplateSetupScreen(
                                 onClick = { showAddDialog = true },
                                 enabled = shiftRows.size < 8,
                                 colors = IconButtonDefaults.iconButtonColors(
-                                    containerColor = if (shiftRows.size < 8) PrimaryTeal else Color.Gray,
+                                    containerColor = if (shiftRows.size < 8) AccentIndigo else Color.Gray,
                                     contentColor = Color.White
                                 )
                             ) {
@@ -229,7 +231,7 @@ fun ShiftTemplateSetupScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
+                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
@@ -241,7 +243,7 @@ fun ShiftTemplateSetupScreen(
                             text = "ימים (${dayColumns.count { it.isEnabled }}/${dayColumns.size})",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryTeal
+                            color = AccentIndigo
                         )
                         
                         // Day columns compact grid (2 columns for space efficiency)
@@ -258,11 +260,15 @@ fun ShiftTemplateSetupScreen(
                                     val index = dayColumns.indexOf(column)
                                     DayColumnItemCompact(
                                         dayColumn = column,
-                                        onToggle = { 
+                                        onToggle = {
                                             onToggleDayColumn(index)
-                                            onAutoSave() // Auto-save after toggle
+                                            onAutoSave()
                                         },
-                                        canDisable = dayColumns.count { it.isEnabled } > 4
+                                        canDisable = dayColumns.count { it.isEnabled } > 4,
+                                        onNoteChange = { note ->
+                                            onEditDayColumnNote(index, note)
+                                            onAutoSave()
+                                        }
                                     )
                                 }
                             }
@@ -275,11 +281,15 @@ fun ShiftTemplateSetupScreen(
                                     val index = dayColumns.indexOf(column)
                                     DayColumnItemCompact(
                                         dayColumn = column,
-                                        onToggle = { 
+                                        onToggle = {
                                             onToggleDayColumn(index)
-                                            onAutoSave() // Auto-save after toggle
+                                            onAutoSave()
                                         },
-                                        canDisable = dayColumns.count { it.isEnabled } > 4
+                                        canDisable = dayColumns.count { it.isEnabled } > 4,
+                                        onNoteChange = { note ->
+                                            onEditDayColumnNote(index, note)
+                                            onAutoSave()
+                                        }
                                     )
                                 }
                             }
@@ -354,7 +364,7 @@ fun ShiftTemplateSetupScreen(
                         .background(
                             Brush.horizontalGradient(
                                 colors = if (canFinish) 
-                                    listOf(PrimaryTeal, PrimaryTealDark)
+                                    listOf(AccentIndigo, AccentIndigoDark)
                                 else 
                                     listOf(Color.Gray, Color.DarkGray)
                             )
@@ -433,15 +443,16 @@ fun ShiftTemplateSetupScreen(
             title = "הוספת משמרת חדשה",
             initialName = "",
             initialHours = "",
-                onConfirm = { name, hours ->
-                    onAddShiftRow(name, hours)
-                    onAutoSave() // Auto-save after adding
-                    showAddDialog = false
-                },
+            initialNote = "",
+            onConfirm = { name, hours, note ->
+                onAddShiftRow(name, hours, note)
+                onAutoSave()
+                showAddDialog = false
+            },
             onDismiss = { showAddDialog = false }
         )
     }
-    
+
     // Edit shift dialog
     if (showEditDialog && editingRowIndex >= 0) {
         val existingRow = shiftRows.getOrNull(editingRowIndex)
@@ -449,13 +460,14 @@ fun ShiftTemplateSetupScreen(
             title = "עריכת משמרת",
             initialName = existingRow?.shiftName ?: "",
             initialHours = existingRow?.shiftHours ?: "",
-            onConfirm = { name, hours ->
-                onEditShiftRow(editingRowIndex, name, hours)
-                onAutoSave() // Auto-save after editing
+            initialNote = existingRow?.note ?: "",
+            onConfirm = { name, hours, note ->
+                onEditShiftRow(editingRowIndex, name, hours, note)
+                onAutoSave()
                 showEditDialog = false
                 editingRowIndex = -1
             },
-            onDismiss = { 
+            onDismiss = {
                 showEditDialog = false
                 editingRowIndex = -1
             }
@@ -535,10 +547,12 @@ private fun ShiftInputDialog(
     title: String,
     initialName: String,
     initialHours: String,
-    onConfirm: (String, String) -> Unit,
+    initialNote: String = "",
+    onConfirm: (String, String, String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var shiftName by remember { mutableStateOf(initialName) }
+    var shiftNote by remember { mutableStateOf(initialNote) }
 
     val hoursParts = if (initialHours.isNotBlank()) initialHours.split("-") else emptyList()
     val startParts = if (hoursParts.isNotEmpty()) hoursParts[0].split(":") else emptyList()
@@ -581,10 +595,10 @@ private fun ShiftInputDialog(
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = androidx.compose.foundation.shape.CircleShape,
-                        color = PrimaryTeal.copy(alpha = 0.12f)
+                        color = AccentIndigo.copy(alpha = 0.12f)
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                            Icon(Icons.Default.Edit, null, tint = AccentIndigo, modifier = Modifier.size(22.dp))
                         }
                     }
                     Text(title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -599,14 +613,14 @@ private fun ShiftInputDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryTeal,
-                        focusedLabelColor = PrimaryTeal
+                        focusedBorderColor = AccentIndigo,
+                        focusedLabelColor = AccentIndigo
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
 
                 // Time section
-                Text("שעות פעילות", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryTeal)
+                Text("שעות פעילות", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentIndigo)
 
                 // Start + End time rows
                 Row(
@@ -622,7 +636,7 @@ private fun ShiftInputDialog(
                         placeholder = { Text("07") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AccentIndigo),
                         shape = RoundedCornerShape(10.dp)
                     )
                     Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -633,7 +647,7 @@ private fun ShiftInputDialog(
                         placeholder = { Text("00") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AccentIndigo),
                         shape = RoundedCornerShape(10.dp)
                     )
                 }
@@ -651,7 +665,7 @@ private fun ShiftInputDialog(
                         placeholder = { Text("15") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AccentIndigo),
                         shape = RoundedCornerShape(10.dp)
                     )
                     Text(":", fontSize = 20.sp, fontWeight = FontWeight.Bold)
@@ -662,10 +676,28 @@ private fun ShiftInputDialog(
                         placeholder = { Text("00") },
                         modifier = Modifier.weight(1f),
                         singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryTeal),
+                        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = AccentIndigo),
                         shape = RoundedCornerShape(10.dp)
                     )
                 }
+
+                // Note field (optional)
+                OutlinedTextField(
+                    value = shiftNote,
+                    onValueChange = { shiftNote = it },
+                    label = { Text("הערה קבועה (אופציונלי)") },
+                    placeholder = { Text("בוקר קצר בשישי, ערב חג...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.AutoMirrored.Filled.Notes, null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentIndigo,
+                        focusedLabelColor = AccentIndigo
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(
@@ -676,11 +708,11 @@ private fun ShiftInputDialog(
                     Button(
                         onClick = {
                             val formattedHours = "${startHour.padStart(2, '0')}:${startMinute.padStart(2, '0')}-${endHour.padStart(2, '0')}:${endMinute.padStart(2, '0')}"
-                            onConfirm(shiftName, formattedHours)
+                            onConfirm(shiftName, formattedHours, shiftNote.trim())
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                         enabled = isValid
                     ) { Text("שמור", fontWeight = FontWeight.Bold) }
                 }
@@ -811,15 +843,15 @@ private fun ShiftRowItemDraggable(
             },
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDragging -> PrimaryTeal.copy(alpha = 0.25f) // Teal when dragging
+                isDragging -> AccentIndigo.copy(alpha = 0.25f) // Teal when dragging
                 isTarget && !isDragged -> Orange.copy(alpha = 0.15f) // Orange for target position
                 else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
             }
         ),
         border = when {
-            isDragging -> BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.6f))
+            isDragging -> BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.6f))
             isTarget && !isDragged -> BorderStroke(1.dp, Orange.copy(alpha = 0.5f))
-            else -> BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f))
+            else -> BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f))
         },
         shape = RoundedCornerShape(10.dp),
         elevation = CardDefaults.cardElevation(
@@ -837,7 +869,7 @@ private fun ShiftRowItemDraggable(
             Icon(
                 imageVector = Icons.Default.Menu,
                 contentDescription = "גרור לשינוי סדר",
-                tint = PrimaryTeal,
+                tint = AccentIndigo,
                 modifier = Modifier
                     .size(24.dp)
                     .pointerInput(index, totalItems, itemHeight) {
@@ -887,7 +919,7 @@ private fun ShiftRowItemDraggable(
                 Icon(
                     imageVector = Icons.Default.AccessTime,
                     contentDescription = null,
-                    tint = PrimaryTeal,
+                    tint = AccentIndigo,
                     modifier = Modifier.size(20.dp)
                 )
                 Column {
@@ -916,7 +948,7 @@ private fun ShiftRowItemDraggable(
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = "ערוך",
-                        tint = PrimaryTeal,
+                        tint = AccentIndigo,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -939,19 +971,18 @@ private fun ShiftRowItemDraggable(
 }
 
 // Compact component for day columns - saves space with 2-column grid
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DayColumnItemCompact(
     dayColumn: DayColumn,
     onToggle: () -> Unit,
-    canDisable: Boolean
+    canDisable: Boolean,
+    onNoteChange: ((String) -> Unit)? = null
 ) {
+    var showNoteSheet by remember { mutableStateOf(false) }
+
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(
-                enabled = !dayColumn.isEnabled || canDisable,
-                onClick = onToggle
-            ),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = if (dayColumn.isEnabled)
                 PrimaryGreen.copy(alpha = 0.12f)
@@ -965,38 +996,121 @@ private fun DayColumnItemCompact(
         shape = RoundedCornerShape(10.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = dayColumn.dayNameHebrew,
-                fontSize = 14.sp,
-                fontWeight = if (dayColumn.isEnabled) FontWeight.Bold else FontWeight.Normal,
-                color = if (dayColumn.isEnabled) 
-                    MaterialTheme.colorScheme.onSurface 
-                else 
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-            
-            Switch(
-                checked = dayColumn.isEnabled,
-                onCheckedChange = { onToggle() },
-                enabled = !dayColumn.isEnabled || canDisable,
-                modifier = Modifier.height(24.dp),
-                colors = SwitchDefaults.colors(
-                    checkedThumbColor = Color.White,
-                    checkedTrackColor = PrimaryGreen,
-                    uncheckedThumbColor = Color.White,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.outline,
-                    disabledCheckedThumbColor = Color.White,
-                    disabledCheckedTrackColor = PrimaryGreen.copy(alpha = 0.5f)
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = dayColumn.dayNameHebrew,
+                        fontSize = 14.sp,
+                        fontWeight = if (dayColumn.isEnabled) FontWeight.Bold else FontWeight.Normal,
+                        color = if (dayColumn.isEnabled)
+                            MaterialTheme.colorScheme.onSurface
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (dayColumn.note.isNotBlank()) {
+                        Text(
+                            text = dayColumn.note,
+                            fontSize = 11.sp,
+                            color = Orange.copy(alpha = 0.9f),
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                // Note icon button (only if enabled and callback provided)
+                if (onNoteChange != null && dayColumn.isEnabled) {
+                    IconButton(
+                        onClick = { showNoteSheet = true },
+                        modifier = Modifier.size(30.dp)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Notes,
+                            contentDescription = "הערה",
+                            tint = if (dayColumn.note.isNotBlank()) Orange else AccentIndigo.copy(alpha = 0.5f),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+
+                Switch(
+                    checked = dayColumn.isEnabled,
+                    onCheckedChange = { if (!dayColumn.isEnabled || canDisable) onToggle() },
+                    enabled = !dayColumn.isEnabled || canDisable,
+                    modifier = Modifier.height(24.dp),
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = PrimaryGreen,
+                        uncheckedThumbColor = Color.White,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+                        disabledCheckedThumbColor = Color.White,
+                        disabledCheckedTrackColor = PrimaryGreen.copy(alpha = 0.5f)
+                    )
                 )
-            )
+            }
+        }
+    }
+
+    // Note editing bottom sheet for this day column
+    if (showNoteSheet && onNoteChange != null) {
+        var noteText by remember { mutableStateOf(dayColumn.note) }
+        ModalBottomSheet(
+            onDismissRequest = { showNoteSheet = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp).height(4.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.Notes, null, tint = Orange, modifier = Modifier.size(22.dp))
+                        Text("הערה ל${dayColumn.dayNameHebrew}", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                    OutlinedTextField(
+                        value = noteText,
+                        onValueChange = { noteText = it },
+                        label = { Text("הערה (למשל: ערב חג פסח)") },
+                        placeholder = { Text("ערב חג, יום מיוחד...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Orange,
+                            focusedLabelColor = Orange
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { showNoteSheet = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("ביטול") }
+                        Button(
+                            onClick = { onNoteChange(noteText.trim()); showNoteSheet = false },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                        ) { Text("שמור", fontWeight = FontWeight.Bold) }
+                    }
+                }
+            }
         }
     }
 }
@@ -1014,7 +1128,7 @@ private fun TablePreview(
         ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.15f))
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.15f))
     ) {
         Column(
             modifier = Modifier.padding(2.dp)
@@ -1027,8 +1141,8 @@ private fun TablePreview(
                     .background(
                         Brush.horizontalGradient(
                             colors = listOf(
-                                PrimaryTeal,
-                                Color(0xFF3D8B85)
+                                AccentIndigo,
+                                AccentIndigoDark
                             )
                         )
                     )
@@ -1104,8 +1218,8 @@ private fun TablePreview(
                             .background(
                                 Brush.horizontalGradient(
                                     colors = listOf(
-                                        PrimaryTeal.copy(alpha = 0.9f),
-                                        PrimaryTeal.copy(alpha = 0.7f)
+                                        AccentIndigo.copy(alpha = 0.9f),
+                                        AccentIndigo.copy(alpha = 0.7f)
                                     )
                                 ),
                                 RoundedCornerShape(6.dp)
@@ -1141,12 +1255,12 @@ private fun TablePreview(
                                 .weight(1f)
                                 .padding(horizontal = 1.dp)
                                 .background(
-                                    PrimaryTeal.copy(alpha = 0.04f),
+                                    AccentIndigo.copy(alpha = 0.04f),
                                     RoundedCornerShape(4.dp)
                                 )
                                 .border(
                                     width = 0.5.dp,
-                                    color = PrimaryTeal.copy(alpha = 0.12f),
+                                    color = AccentIndigo.copy(alpha = 0.12f),
                                     shape = RoundedCornerShape(4.dp)
                                 )
                                 .padding(vertical = 8.dp),

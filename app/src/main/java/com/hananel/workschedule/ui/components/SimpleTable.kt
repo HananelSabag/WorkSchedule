@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+
 package com.hananel.workschedule.ui.components
 
 import androidx.compose.foundation.background
@@ -40,6 +42,7 @@ import com.hananel.workschedule.ui.theme.*
 import kotlin.math.max
 import kotlin.math.min
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SimpleScheduleTable(
     employees: List<Employee>,
@@ -56,7 +59,9 @@ fun SimpleScheduleTable(
     weekStartDate: java.time.LocalDate? = null, // For dynamic dates
     onSetWeekStartDate: ((java.time.LocalDate) -> Unit)? = null, // For date picker
     onDayHeaderClick: ((String) -> Unit)? = null, // For blocking all shifts in a day
-    isBlockingMode: Boolean = false, // For red border in blocking screen
+    onShiftHeaderLongPress: ((String) -> Unit)? = null, // Long-press shift header → note editing
+    onDayHeaderLongPress: ((String) -> Unit)? = null,   // Long-press day header  → note editing
+    isBlockingMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     // Get days list (dynamic or hardcoded)
@@ -119,6 +124,8 @@ fun SimpleScheduleTable(
                         weekStartDate = weekStartDate,
                         onSetWeekStartDate = onSetWeekStartDate,
                         onDayHeaderClick = onDayHeaderClick,
+                        onShiftHeaderLongPress = onShiftHeaderLongPress,
+                        onDayHeaderLongPress = onDayHeaderLongPress,
                         isBlockingMode = isBlockingMode
                     )
                 }
@@ -134,7 +141,7 @@ fun SimpleScheduleTable(
                         .padding(4.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.4f)),
+                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.4f)),
                     shadowElevation = 4.dp
                 ) {
                     Row(
@@ -144,14 +151,14 @@ fun SimpleScheduleTable(
                     ) {
                         Icon(
                             Icons.Default.ZoomIn, null,
-                            tint = PrimaryTeal,
+                            tint = AccentIndigo,
                             modifier = Modifier.size(13.dp)
                         )
                         Text(
                             "${(scale * 100).toInt()}% · ↺",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Medium,
-                            color = PrimaryTeal
+                            color = AccentIndigo
                         )
                     }
                 }
@@ -177,22 +184,24 @@ private fun ScheduleTableContent(
     weekStartDate: java.time.LocalDate? = null,
     onSetWeekStartDate: ((java.time.LocalDate) -> Unit)? = null,
     onDayHeaderClick: ((String) -> Unit)? = null,
+    onShiftHeaderLongPress: ((String) -> Unit)? = null,
+    onDayHeaderLongPress: ((String) -> Unit)? = null,
     isBlockingMode: Boolean = false
 ) {
     val cellWidth = 140.dp
     val cellHeight = 70.dp
     val shiftColumnWidth = 180.dp
 
-    // Colors according to new specification - exactly matching export
-    val headerBackgroundColor = Color(0xFF3E7C3A) // NEW dark green for headers (#3E7C3A)
+    // Table colors — using named constants from Color.kt
+    val headerBackgroundColor = TableHeaderBg       // Deep indigo-navy header
     val cellBackgroundColor = if (isBlockingMode) {
-        Color(0xFFFFD6D6) // Light red for blocking mode (#FFD6D6)
+        TableCellBgBlock                             // Light red for blocking mode
     } else {
-        Color(0xFFB6D7A8) // NEW light green for normal cells (#B6D7A8)
+        TableCellBg                                  // Pale indigo-tinted white
     }
-    // תיקון: כל הגבולות באדום במסך חסימות
-    val borderColor = if (isBlockingMode) BlockedRed else Color.Black
-    val cellBorderColor = if (isBlockingMode) BlockedRed else Color.Black
+    // All borders red in blocking mode, dark navy otherwise
+    val borderColor = if (isBlockingMode) BlockedRed else TableBorderDark
+    val cellBorderColor = if (isBlockingMode) BlockedRed else TableBorderDark
 
     Card(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // No shadow!
@@ -223,47 +232,70 @@ private fun ScheduleTableContent(
                     ) {
                         Text(
                             text = "משמרות",
-                            color = Color.Black, // Black text (#000000)
+                            color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp // Larger font
+                            fontSize = 18.sp
                         )
                     }
                 }
                 
                 // Day headers - Full names always, all clickable for blocking
-                daysOfWeek.forEach { day ->
-                    // Regular day header - clickable for blocking all shifts
+                daysOfWeek.forEachIndexed { dayIndex, day ->
+                    // Resolve notes for this day
+                    val templateDayNote = templateData?.dayColumns
+                        ?.find { it.dayNameHebrew == day }?.note.orEmpty()
+                    val scheduleDayNote = schedule
+                        ?.get("__DAY_NOTE__$day")?.firstOrNull().orEmpty()
+                    val effectiveDayNote = scheduleDayNote.ifBlank { templateDayNote }
+
                     Box(
                         modifier = Modifier
                             .width(cellWidth)
-                            .height(cellHeight)
+                            .defaultMinSize(minHeight = cellHeight)
                             .background(headerBackgroundColor)
                             .border(1.dp, cellBorderColor)
-                            .clickable {
-                                if (selectedEmployee != null && onDayHeaderClick != null) {
-                                    onDayHeaderClick(day)
+                            .combinedClickable(
+                                onClick = {
+                                    if (selectedEmployee != null && onDayHeaderClick != null) {
+                                        onDayHeaderClick(day)
+                                    }
+                                },
+                                onLongClick = {
+                                    onDayHeaderLongPress?.invoke(day)
                                 }
-                            },
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 4.dp)
                         ) {
                             Text(
-                                text = day, // Full day name
-                                color = Color.Black, // Black text (#000000)
+                                text = day,
+                                color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp, // Larger headers
+                                fontSize = 15.sp,
                                 textAlign = TextAlign.Center
                             )
-                            
-                            // Date
                             Text(
-                                text = getCurrentDateForDay(daysOfWeek.indexOf(day), weekStartDate),
-                                color = Color.Black, // Black text (#000000)
-                                fontSize = 12.sp, // Larger date
+                                text = getCurrentDateForDay(dayIndex, weekStartDate),
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 12.sp,
                                 textAlign = TextAlign.Center
                             )
+                            // Show note if any
+                            if (effectiveDayNote.isNotBlank()) {
+                                Text(
+                                    text = effectiveDayNote,
+                                    color = Orange,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 2.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -287,8 +319,16 @@ private fun ScheduleTableContent(
             
             // Shifts rows
             shiftsToShow.forEach { shiftInfo ->
+                // Resolve notes for this shift row
+                val templateShiftRow = templateData?.shiftRows
+                    ?.find { it.shiftName == shiftInfo.shiftId }
+                val templateShiftNote = templateShiftRow?.note.orEmpty()
+                val scheduleShiftNote = schedule
+                    ?.get("__SHIFT_NOTE__${shiftInfo.shiftId}")?.firstOrNull().orEmpty()
+                val effectiveShiftNote = scheduleShiftNote.ifBlank { templateShiftNote }
+
                 Row(
-                    modifier = Modifier.height(IntrinsicSize.Min) // Make all cells in row have same height
+                    modifier = Modifier.height(IntrinsicSize.Min)
                 ) {
                     // Shift name column
                     Box(
@@ -297,27 +337,48 @@ private fun ScheduleTableContent(
                             .fillMaxHeight()
                             .defaultMinSize(minHeight = cellHeight)
                             .background(headerBackgroundColor)
-                            .border(1.dp, cellBorderColor),
+                            .border(1.dp, cellBorderColor)
+                            .then(
+                                if (onShiftHeaderLongPress != null)
+                                    Modifier.combinedClickable(
+                                        onClick = {},
+                                        onLongClick = { onShiftHeaderLongPress(shiftInfo.shiftId) }
+                                    )
+                                else Modifier
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(vertical = 4.dp, horizontal = 2.dp)
                         ) {
                             Text(
                                 text = shiftInfo.displayName,
-                                color = Color.Black, // Black text (#000000)
+                                color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp, // Larger shift names
+                                fontSize = 16.sp,
                                 textAlign = TextAlign.Center,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = shiftInfo.timeRange,
-                                color = Color.Black, // Black text (#000000)
-                                fontSize = 13.sp, // Larger time text
+                                color = Color.White.copy(alpha = 0.75f),
+                                fontSize = 13.sp,
                                 textAlign = TextAlign.Center
                             )
+                            // Show note if any
+                            if (effectiveShiftNote.isNotBlank()) {
+                                Text(
+                                    text = effectiveShiftNote,
+                                    color = Orange,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
                         }
                     }
                     
@@ -451,7 +512,7 @@ private fun ScheduleTableContent(
                             .width(cellWidth)
                             .fillMaxHeight()
                             .defaultMinSize(minHeight = cellHeight)
-                                            .background(Color.White)
+                                            .background(cellBackgroundColor)
                                             .border(1.dp, cellBorderColor)
                                     )
                                 }
@@ -487,7 +548,7 @@ private fun ScheduleTableContent(
                             .width(cellWidth)
                             .fillMaxHeight()
                             .defaultMinSize(minHeight = cellHeight)
-                                        .background(Color.White)
+                                        .background(cellBackgroundColor)
                                         .border(1.dp, cellBorderColor)
                                 )
                             }
@@ -557,8 +618,8 @@ private fun SchedulePreviewCell(
 ) {
     Box(
         modifier = modifier
-            .background(Color.White)
-            .border(1.dp, Color.Black) // הוחזר לצבע שחור עבור preview cells
+            .background(TableCellBg)
+            .border(1.dp, TableBorderDark)
             .combinedClickable(
                 onClick = {
                     // תמיכה בלחיצה למסך יצירה ידני
@@ -595,7 +656,7 @@ private fun SchedulePreviewCell(
                     fontSize = 11.sp,
                     textAlign = TextAlign.Center,
                     textDirection = androidx.compose.ui.text.style.TextDirection.ContentOrRtl,
-                    color = Color.Black // Force black text in both light and dark mode
+                    color = TableCellText
                 ),
                 singleLine = false,
                 placeholder = {
@@ -604,8 +665,8 @@ private fun SchedulePreviewCell(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Orange,
                     unfocusedBorderColor = Color.Transparent,
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
+                    focusedTextColor = TableCellText,
+                    unfocusedTextColor = TableCellText,
                     cursorColor = Orange
                 )
             )
@@ -649,13 +710,13 @@ private fun SchedulePreviewCell(
                     }
                 }
                 
-                // הצגת עובדים משובצים בשחור
+                // הצגת עובדים משובצים
                 if (employees.isNotEmpty()) {
                     employees.forEach { employeeName ->
                         Text(
                             text = employeeName,
                             fontSize = 10.sp,
-                            color = Color.Black,
+                            color = TableCellText,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             maxLines = 1
@@ -706,9 +767,9 @@ private fun SaturdayMorningCell(
     Box(
         modifier = modifier
             .background(
-                if (isClicked) Yellow.copy(alpha = 0.5f) else Color.White
+                if (isClicked) Yellow.copy(alpha = 0.5f) else TableCellBg
             )
-            .border(1.dp, Color.Black)
+            .border(1.dp, TableBorderDark)
             .clickable {
                 selectedEmployee?.let { employee ->
                     // Click affects both morning shifts for Saturday
@@ -769,7 +830,7 @@ private fun ScheduleBlockingCell(
     canOnlyBlocks: Map<String, Boolean>,
     onCellClick: ((Employee, String, String) -> Unit)?,
     onLongPress: ((String, String) -> Unit)? = null,
-    cellBorderColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Black,
+    cellBorderColor: androidx.compose.ui.graphics.Color = TableBorderDark,
     modifier: Modifier = Modifier
 ) {
     // Get blocked and can-only employees for this cell
@@ -793,9 +854,9 @@ private fun ScheduleBlockingCell(
     Box(
         modifier = modifier
             .background(
-                if (isClicked) Yellow.copy(alpha = 0.5f) else Color.White
+                if (isClicked) Yellow.copy(alpha = 0.5f) else TableCellBg
             )
-                            .border(1.dp, cellBorderColor)
+            .border(1.dp, cellBorderColor)
             .combinedClickable(
                 onClick = {
                     selectedEmployee?.let { employee ->
@@ -881,19 +942,19 @@ private fun ShiftHeaderWithDatePicker(
                 Icon(
                     imageVector = Icons.Default.CalendarMonth,
                     contentDescription = null,
-                    tint = Color.Black,
+                    tint = Color.White,
                     modifier = Modifier.size(14.dp)
                 )
                 Text(
                     text = "משמרות",
-                    color = Color.Black,
+                    color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
             }
             Text(
                 text = weekStartDate?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM")) ?: "בחר תאריך",
-                color = Color.Black,
+                color = Color.White.copy(alpha = 0.75f),
                 fontSize = 10.sp,
                 textAlign = TextAlign.Center
             )

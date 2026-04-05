@@ -33,6 +33,9 @@ interface ScheduleDao {
     
     @Query("SELECT COUNT(*) FROM schedules WHERE weekStart = :weekStart")
     suspend fun getScheduleCountByWeekStart(weekStart: String): Int
+
+    @Query("SELECT * FROM schedules WHERE weekStart != '__TEMP_DRAFT__'")
+    suspend fun getAllSchedulesList(): List<Schedule>
 }
 
 

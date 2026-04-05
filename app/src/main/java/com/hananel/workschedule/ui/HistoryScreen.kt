@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
@@ -65,7 +66,7 @@ fun HistoryScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = PrimaryTeal)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = AccentIndigo)
                         }
                         Text(
                             "סידורים שמורים",
@@ -79,14 +80,14 @@ fun HistoryScreen(
                         if (schedules.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     "${schedules.size}",
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = PrimaryTeal
+                                    color = AccentIndigo
                                 )
                             }
                         } else {
@@ -109,13 +110,13 @@ fun HistoryScreen(
                     Surface(
                         modifier = Modifier.size(100.dp),
                         shape = CircleShape,
-                        color = PrimaryTeal.copy(alpha = 0.08f)
+                        color = AccentIndigo.copy(alpha = 0.08f)
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.Default.CalendarMonth,
                                 null,
-                                tint = PrimaryTeal.copy(alpha = 0.5f),
+                                tint = AccentIndigo.copy(alpha = 0.5f),
                                 modifier = Modifier.size(52.dp)
                             )
                         }
@@ -143,9 +144,10 @@ fun HistoryScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)
                 ) {
-                    items(schedules) { schedule ->
+                    itemsIndexed(schedules, key = { _, s -> s.id }) { index, schedule ->
                         ScheduleCard(
                             schedule = schedule,
+                            index = index,
                             onOpen = { onScheduleClick(schedule) },
                             onMoreClick = {
                                 selectedSchedule = schedule
@@ -213,67 +215,77 @@ private enum class SheetMode { OPTIONS, RENAME, DELETE }
 @Composable
 private fun ScheduleCard(
     schedule: Schedule,
+    index: Int,
     onOpen: () -> Unit,
     onMoreClick: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
-        modifier = Modifier.fillMaxWidth()
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(18.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f))
+            .clickable(onClick = onOpen)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Calendar icon
+            // ── Accent strip (right side in RTL = leading edge) ──────────────
+            Box(
+                modifier = Modifier
+                    .width(5.dp)
+                    .height(80.dp)
+                    .background(
+                        Brush.verticalGradient(listOf(AccentIndigo, AccentIndigoDark))
+                    )
+            )
+
+            Spacer(Modifier.width(14.dp))
+
+            // ── Index badge ────────────────────────────────────────────────
             Surface(
-                modifier = Modifier.size(46.dp),
+                modifier = Modifier.size(40.dp),
                 shape = RoundedCornerShape(12.dp),
-                color = PrimaryTeal.copy(alpha = 0.12f)
+                color = AccentIndigo.copy(alpha = 0.12f)
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.CalendarMonth, null, tint = PrimaryTeal, modifier = Modifier.size(24.dp))
+                    Text(
+                        "${index + 1}",
+                        color = AccentIndigo,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 16.sp
+                    )
                 }
             }
 
-            // Info
-            Column(Modifier.weight(1f)) {
+            Spacer(Modifier.width(14.dp))
+
+            // ── Content ────────────────────────────────────────────────────
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(vertical = 16.dp)
+            ) {
                 Text(
                     "שבוע ${formatDate(schedule.weekStart)}",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(Modifier.height(2.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     formatDateTime(schedule.createdDate),
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            // Open button
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark)))
-                    .clickable(onClick = onOpen)
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("פתח", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-            }
-
-            // More options
-            IconButton(onClick = onMoreClick, modifier = Modifier.size(36.dp)) {
+            // ── More options ───────────────────────────────────────────────
+            IconButton(onClick = onMoreClick, modifier = Modifier.size(44.dp)) {
                 Icon(
                     Icons.Default.MoreVert,
                     "אפשרויות",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -319,7 +331,7 @@ private fun OptionsSheet(
 
         Spacer(Modifier.height(20.dp))
 
-        SheetActionRow(icon = Icons.Default.FolderOpen, label = "פתח סידור", color = PrimaryTeal, onClick = onOpen)
+        SheetActionRow(icon = Icons.Default.FolderOpen, label = "פתח סידור", color = AccentIndigo, onClick = onOpen)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 4.dp))
         SheetActionRow(icon = Icons.Default.Edit, label = "שנה שם", color = MaterialTheme.colorScheme.onSurface, onClick = onRename)
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f), modifier = Modifier.padding(vertical = 4.dp))
@@ -384,8 +396,8 @@ private fun RenameSheet(
             ),
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryTeal,
-                focusedLabelColor = PrimaryTeal
+                focusedBorderColor = AccentIndigo,
+                focusedLabelColor = AccentIndigo
             )
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -398,7 +410,7 @@ private fun RenameSheet(
                 onClick = onSave,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
             ) { Text("שמור", fontWeight = FontWeight.Bold) }
         }
     }

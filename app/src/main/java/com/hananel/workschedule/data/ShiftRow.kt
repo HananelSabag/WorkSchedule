@@ -15,7 +15,8 @@ data class ShiftRow(
     val orderIndex: Int, // Order in the table (0, 1, 2, ...)
     val shiftName: String, // e.g., "בוקר", "צהריים"
     val shiftHours: String, // e.g., "06:45-15:00"
-    val displayName: String // Combined: "בוקר (06:45-15:00)"
+    val displayName: String, // Combined: "בוקר (06:45-15:00)"
+    val note: String = "" // Optional permanent note shown under shift name in table
 )
 
 

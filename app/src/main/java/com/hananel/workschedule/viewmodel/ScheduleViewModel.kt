@@ -304,18 +304,14 @@ class ScheduleViewModel(
                 // PROTECTION: Check if employee already has manual CANNOT restrictions (except automatic Shabbat blocks)
                 val hasManualCannotRestrictions = _blocks.value.any { (blockKey, isBlocked) ->
                     if (!isBlocked) return@any false
-                    
-                    val parts = blockKey.split("-")
-                    if (parts.size < 3 || parts[0] != employee.name) return@any false
-                    
-                    val blockDay = parts[1]
-                    val blockShift = parts[2]
+                    val parsed = parseBlockKey(blockKey) ?: return@any false
+                    val (empName, blockDay, blockShift) = parsed
+                    if (empName != employee.name) return@any false
                     val blockShiftKey = "$blockDay-$blockShift"
-                    
                     // This is a manual block (not automatic Shabbat block)
                     !(employee.shabbatObserver && ShiftDefinitions.shabbatBlockedShifts.contains(blockShiftKey))
                 }
-                
+
                 val newCanOnly = _canOnlyBlocks.value.toMutableMap()
                 if (newCanOnly[key] == true) {
                     // Employee is already in can-only - REMOVE it (toggle off)
@@ -438,10 +434,9 @@ class ScheduleViewModel(
         val newBlocks = mutableMapOf<String, Boolean>()
         val newCanOnlyBlocks = mutableMapOf<String, Boolean>()
 
-        // Re-apply only automatic Shabbat Observer blocks
+        // Re-apply only automatic Shabbat Observer blocks using the active template
         currentEmployees.filter { it.shabbatObserver }.forEach { employee ->
-            ShiftDefinitions.shabbatBlockedShifts.forEach { shiftKey ->
-                val blockKey = "${employee.name}-$shiftKey"
+            shabbatBlockKeysForEmployee(employee.name).forEach { blockKey ->
                 newBlocks[blockKey] = true
             }
         }
@@ -449,7 +444,7 @@ class ScheduleViewModel(
         _blocks.value = newBlocks
         _canOnlyBlocks.value = newCanOnlyBlocks
         _selectedEmployee.value = null
-        
+
         // Reset editing states when clearing blocks
         _isEditingScheduleBlocks.value = false
     }
@@ -488,9 +483,10 @@ class ScheduleViewModel(
                     val newBlocks = _blocks.value.toMutableMap()
                     employeeKeysInColumn.forEach { key ->
                         // Check if this is an automatic Shabbat block - don't remove those
-                        val parts = key.split("-")
-                        if (parts.size >= 3) {
-                            val shiftKey = "${parts[1]}-${parts[2]}"
+                        val parsed = parseBlockKey(key)
+                        if (parsed != null) {
+                            val (_, blockDay, blockShift) = parsed
+                            val shiftKey = "$blockDay-$blockShift"
                             val isAutomaticShabbatBlock = employee.shabbatObserver &&
                                     ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)
                             if (!isAutomaticShabbatBlock) {
@@ -539,18 +535,14 @@ class ScheduleViewModel(
                     // PROTECTION: Check if employee already has manual CANNOT restrictions (except automatic Shabbat blocks)
                     val hasManualCannotRestrictions = _blocks.value.any { (blockKey, isBlocked) ->
                         if (!isBlocked) return@any false
-                        
-                        val parts = blockKey.split("-")
-                        if (parts.size < 3 || parts[0] != employee.name) return@any false
-                        
-                        val blockDay = parts[1]
-                        val blockShift = parts[2]
+                        val parsed = parseBlockKey(blockKey) ?: return@any false
+                        val (empName, blockDay, blockShift) = parsed
+                        if (empName != employee.name) return@any false
                         val blockShiftKey = "$blockDay-$blockShift"
-                        
                         // This is a manual block (not automatic Shabbat block)
                         !(employee.shabbatObserver && ShiftDefinitions.shabbatBlockedShifts.contains(blockShiftKey))
                     }
-                    
+
                     if (hasManualCannotRestrictions) {
                         // Show snackbar - cannot mix CANNOT and CAN_ONLY for same employee
                         _snackbarMessage.value = "⚠️ עבור ${employee.name} כבר נבחרו תאים ב'לא יכול'.\nלא ניתן לשלב גם 'יכול רק' לאותו עובד."
@@ -938,11 +930,7 @@ class ScheduleViewModel(
     
     fun updateScheduleName(schedule: Schedule, newName: String) {
         viewModelScope.launch {
-            // Create a new schedule with updated name
-            val updatedSchedule = schedule.copy(weekStart = newName)
-            // Update in database
-            scheduleDao.deleteSchedule(schedule) // Remove old
-            scheduleDao.insertSchedule(updatedSchedule) // Insert updated
+            scheduleDao.updateSchedule(schedule.copy(weekStart = newName))
         }
     }
     
@@ -1028,19 +1016,11 @@ class ScheduleViewModel(
         
         currentCanOnly.forEach { (canOnlyKey, isCanOnly) ->
             if (isCanOnly) {
-                // Parse the key: "employeeName-day-shift"
-                val parts = canOnlyKey.split("-")
-                if (parts.size >= 3) {
-                    val employeeName = parts[0]
-                    val day = parts[1]
-                    val shift = parts[2]
-                    
-                    // Add to employee's list
-                    if (!canOnlyByEmployee.containsKey(employeeName)) {
-                        canOnlyByEmployee[employeeName] = mutableListOf()
-                    }
-                    canOnlyByEmployee[employeeName]!!.add(Pair(day, shift))
-                }
+                // Parse the key: "employeeName-day-shift" (parts may contain hyphens)
+                val parsed = parseBlockKey(canOnlyKey) ?: return@forEach
+                val (employeeName, day, shift) = parsed
+                canOnlyByEmployee.getOrPut(employeeName) { mutableListOf() }
+                    .add(Pair(day, shift))
             }
         }
         
@@ -1079,6 +1059,28 @@ class ScheduleViewModel(
         return currentBlocks
     }
     
+    /**
+     * Safely parses a block key of format "employeeName-day-shift".
+     * All three parts may contain hyphens, so index-based split("-") is incorrect.
+     * Uses known employee names and template day names to split accurately.
+     */
+    private fun parseBlockKey(key: String): Triple<String, String, String>? {
+        val knownEmployees = employees.value
+        val knownDays = activeTemplate.value?.dayColumns?.map { it.dayNameHebrew }
+            ?: ShiftDefinitions.daysOfWeek
+
+        val employeeName = knownEmployees.firstOrNull { emp ->
+            key.startsWith("${emp.name}-")
+        }?.name ?: return null
+
+        val afterEmployee = key.removePrefix("$employeeName-")
+        val day = knownDays.firstOrNull { d -> afterEmployee.startsWith("$d-") }
+            ?: return null
+        val shift = afterEmployee.removePrefix("$day-")
+
+        return Triple(employeeName, day, shift)
+    }
+
     // Get available shifts for a specific day
     private fun getShiftsForDay(day: String, isSavingMode: Boolean): List<String> {
         return when (day) {
@@ -1172,19 +1174,13 @@ class ScheduleViewModel(
         
         // Count only manual blocks (not automatic Shabbat blocks)
         val manualBlocks = _blocks.value.filter { (key, _) ->
-            val parts = key.split("-")
-            if (parts.size >= 3) {
-                val employeeName = parts[0]
-                val day = parts[1]
-                val shift = parts[2]
+            val parsed = parseBlockKey(key)
+            if (parsed != null) {
+                val (employeeName, day, shift) = parsed
                 val shiftKey = "$day-$shift"
-                
-                // Find employee
                 val employee = currentEmployees.find { it.name == employeeName }
                 val isAutomaticShabbatBlock = employee?.shabbatObserver == true &&
                         ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)
-                
-                // Only count if it's NOT an automatic Shabbat block
                 !isAutomaticShabbatBlock
             } else {
                 true // Count if we can't parse (safety)
@@ -1418,7 +1414,7 @@ class ScheduleViewModel(
         }
     }
     
-    fun addShiftRow(shiftName: String, shiftHours: String) {
+    fun addShiftRow(shiftName: String, shiftHours: String, note: String = "") {
         val currentRows = _editingShiftRows.value
         if (currentRows.size < 8 && shiftName.isNotBlank() && shiftHours.isNotBlank()) {
             val newRow = com.hananel.workschedule.data.ShiftRow(
@@ -1426,34 +1422,79 @@ class ScheduleViewModel(
                 orderIndex = currentRows.size,
                 shiftName = shiftName,
                 shiftHours = shiftHours,
-                displayName = "$shiftName ($shiftHours)"
+                displayName = "$shiftName ($shiftHours)",
+                note = note.trim()
             )
             _editingShiftRows.value = currentRows + newRow
         }
     }
-    
-    fun updateShiftRow(index: Int, shiftName: String, shiftHours: String) {
-        val currentRows = _editingShiftRows.value.toMutableList()
-        if (index in currentRows.indices) {
-            val row = currentRows[index]
-            currentRows[index] = row.copy(
-                shiftName = shiftName,
-                shiftHours = shiftHours,
-                displayName = "$shiftName ($shiftHours)"
-            )
-            _editingShiftRows.value = currentRows
-        }
-    }
-    
-    fun editShiftRow(index: Int, shiftName: String, shiftHours: String) {
+
+    fun updateShiftRow(index: Int, shiftName: String, shiftHours: String, note: String = "") {
         val currentRows = _editingShiftRows.value.toMutableList()
         if (index in currentRows.indices) {
             currentRows[index] = currentRows[index].copy(
                 shiftName = shiftName,
                 shiftHours = shiftHours,
-                displayName = "$shiftName ($shiftHours)"
+                displayName = "$shiftName ($shiftHours)",
+                note = note.trim()
             )
             _editingShiftRows.value = currentRows
+        }
+    }
+
+    fun editShiftRow(index: Int, shiftName: String, shiftHours: String, note: String = "") {
+        val currentRows = _editingShiftRows.value.toMutableList()
+        if (index in currentRows.indices) {
+            currentRows[index] = currentRows[index].copy(
+                shiftName = shiftName,
+                shiftHours = shiftHours,
+                displayName = "$shiftName ($shiftHours)",
+                note = note.trim()
+            )
+            _editingShiftRows.value = currentRows
+        }
+    }
+
+    /** Update the permanent template note for a day column by its index in the editing list */
+    fun editDayColumnNote(index: Int, note: String) {
+        val currentCols = _editingDayColumns.value.toMutableList()
+        if (index in currentCols.indices) {
+            currentCols[index] = currentCols[index].copy(note = note.trim())
+            _editingDayColumns.value = currentCols
+        }
+    }
+
+    // ─── Schedule-specific notes (stored as special keys in scheduleData) ───────
+
+    /** Key prefix for schedule-specific shift notes stored inside scheduleData */
+    companion object {
+        const val SHIFT_NOTE_PREFIX = "__SHIFT_NOTE__"
+        const val DAY_NOTE_PREFIX   = "__DAY_NOTE__"
+    }
+
+    fun updateScheduleShiftNote(shiftName: String, note: String) {
+        val key = "$SHIFT_NOTE_PREFIX$shiftName"
+        val newSchedule = _currentSchedule.value.toMutableMap()
+        if (note.isBlank()) newSchedule.remove(key)
+        else newSchedule[key] = listOf(note.trim())
+        _currentSchedule.value = newSchedule
+        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
+            saveScheduleChanges()
+        } else {
+            updateTempDraftStatus()
+        }
+    }
+
+    fun updateScheduleDayNote(dayName: String, note: String) {
+        val key = "$DAY_NOTE_PREFIX$dayName"
+        val newSchedule = _currentSchedule.value.toMutableMap()
+        if (note.isBlank()) newSchedule.remove(key)
+        else newSchedule[key] = listOf(note.trim())
+        _currentSchedule.value = newSchedule
+        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
+            saveScheduleChanges()
+        } else {
+            updateTempDraftStatus()
         }
     }
     

@@ -65,66 +65,66 @@ object ImageSharer {
         // Colors according to new specification
         val headerBackgroundPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.parseColor("#3E7C3A") // New dark green for headers
+            color = Color.parseColor("#2D3561") // Deep indigo-navy header (TableHeaderBg)
         }
-        
+
         val shiftColumnBackgroundPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.parseColor("#3E7C3A") // Same new dark green for shift column
+            color = Color.parseColor("#2D3561") // Deep indigo-navy (TableHeaderBg)
         }
-        
+
         val cellBackgroundPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.parseColor("#B6D7A8") // New light green for schedule cells
+            color = Color.parseColor("#EEF0F8") // Pale indigo-tinted white (TableCellBg)
         }
-        
+
         val blackCornerPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.BLACK // Black corner cell
+            color = Color.parseColor("#3949AB") // Deep indigo corner (AccentIndigoDark)
         }
-        
+
         val headerTextPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.BLACK // Black text (#000000)
+            color = Color.WHITE // White text on dark indigo headers
             textAlign = Paint.Align.CENTER
-            textSize = 60f // MUCH larger headers - lots of space available
+            textSize = 60f
             isFakeBoldText = true
         }
-        
+
         val shiftTextPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.BLACK // Black text (#000000)
+            color = Color.WHITE // White text on dark indigo shift column
             textAlign = Paint.Align.CENTER
-            textSize = 55f // MUCH larger shift names
+            textSize = 55f
             isFakeBoldText = true
         }
-        
+
         val bodyTextPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.BLACK // Black text (#000000)
+            color = Color.parseColor("#1A1E3A") // Dark navy text on light cells (TableCellText)
             textAlign = Paint.Align.CENTER
-            textSize = 50f // MUCH larger employee names
+            textSize = 50f
         }
-        
+
         val whiteTextPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.WHITE // White text for black corner
+            color = Color.WHITE // White text on indigo corner
             textAlign = Paint.Align.CENTER
-            textSize = 55f // MUCH larger "סידור עבודה"
+            textSize = 55f
             isFakeBoldText = true
         }
-        
+
         val timeTextPaint = Paint().apply {
             isAntiAlias = true
-            color = Color.BLACK // Black text for times
+            color = Color.WHITE // White time text on dark indigo
             textAlign = Paint.Align.CENTER
-            textSize = 40f // Separate smaller paint for times
+            textSize = 40f
         }
-        
+
         val borderPaint = Paint().apply {
-            color = Color.BLACK
+            color = Color.parseColor("#1A1E3A") // TableBorderDark
             style = Paint.Style.STROKE
-            strokeWidth = 2f // Clean borders
+            strokeWidth = 2f
         }
         
         // Draw header row - TRUE RTL: Start from RIGHT side and go LEFT

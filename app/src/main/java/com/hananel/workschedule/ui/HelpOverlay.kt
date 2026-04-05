@@ -51,7 +51,7 @@ private val helpPages = listOf(
     // ── Page 1: Setup ────────────────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.Settings,
-        gradientColors = listOf(PrimaryTeal, Color(0xFF1A4744)),
+        gradientColors = listOf(AccentIndigo, Color(0xFF1A1F4E)),
         title = "הגדרה ראשונית",
         subtitle = "פעם אחת — ואתה מוכן לתמיד",
         steps = listOf(
@@ -59,7 +59,7 @@ private val helpPages = listOf(
                 Icons.Default.PersonAdd,
                 "הוסף עובדים",
                 "שם + סוג חוזה (מלא / חלקי)",
-                PrimaryTeal
+                AccentIndigo
             ),
             HelpStep(
                 Icons.Default.TableChart,
@@ -86,7 +86,7 @@ private val helpPages = listOf(
     // ── Page 2: Blocking ────────────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.Block,
-        gradientColors = listOf(BlockedRed, Color(0xFF8B0000)),
+        gradientColors = listOf(BlockedRed, BlockedRedDark),
         title = "חסימת משמרות",
         subtitle = "הגדר מי יכול / לא יכול",
         steps = listOf(
@@ -94,7 +94,7 @@ private val helpPages = listOf(
                 Icons.Default.Person,
                 "בחר עובד",
                 "לחץ על שמו ברשימה התחתונה",
-                PrimaryTeal
+                AccentIndigo
             ),
             HelpStep(
                 Icons.Default.Block,
@@ -121,7 +121,7 @@ private val helpPages = listOf(
     // ── Page 3: Creation ────────────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.EditCalendar,
-        gradientColors = listOf(PrimaryGreen, Color(0xFF1B5E20)),
+        gradientColors = listOf(PrimaryGreen, PrimaryGreenDark),
         title = "יצירת הסידור",
         subtitle = "שיבוץ חכם עם כמה לחיצות",
         steps = listOf(
@@ -129,7 +129,7 @@ private val helpPages = listOf(
                 Icons.Default.TouchApp,
                 "לחץ תא לשיבוץ",
                 "בחר עובד → לחץ משמרת לשיבוצו",
-                PrimaryTeal
+                AccentIndigo
             ),
             HelpStep(
                 Icons.Default.Edit,
@@ -156,7 +156,7 @@ private val helpPages = listOf(
     // ── Page 4: History & Tips ───────────────────────────────────────────────
     HelpPage(
         icon = Icons.Default.History,
-        gradientColors = listOf(Orange, Color(0xFFE65100)),
+        gradientColors = listOf(Orange, OrangeDark),
         title = "היסטוריה וטיפים",
         subtitle = "כל הסידורים — תמיד בהישג יד",
         steps = listOf(
@@ -164,7 +164,7 @@ private val helpPages = listOf(
                 Icons.Default.FolderOpen,
                 "לחיצה ארוכה → תפריט אפשרויות",
                 "שנה שם | ערוך חסימות | מחק | העתק",
-                PrimaryTeal
+                AccentIndigo
             ),
             HelpStep(
                 Icons.Default.Edit,
@@ -176,7 +176,7 @@ private val helpPages = listOf(
                 Icons.Default.Share,
                 "שתף לווצאפ / הורד לגלריה",
                 "הסידור מיוצא כתמונה בצבעים מלאים",
-                Color(0xFF25D366)
+                WhatsAppGreen
             ),
             HelpStep(
                 Icons.Default.Restore,
@@ -219,7 +219,7 @@ fun HelpButton(onClick: () -> Unit) {
                     .size(46.dp)
                     .scale(ringScale)
                     .background(
-                        PrimaryTeal.copy(alpha = ringAlpha),
+                        AccentIndigo.copy(alpha = ringAlpha),
                         CircleShape
                     )
             )
@@ -228,7 +228,7 @@ fun HelpButton(onClick: () -> Unit) {
                 modifier = Modifier
                     .size(40.dp)
                     .background(
-                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTealDark)),
+                        Brush.linearGradient(listOf(AccentIndigo, AccentIndigoDark)),
                         CircleShape
                     )
                     .clip(CircleShape)
@@ -247,7 +247,7 @@ fun HelpButton(onClick: () -> Unit) {
             "עזרה",
             fontSize = 10.sp,
             fontWeight = FontWeight.Medium,
-            color = PrimaryTeal.copy(alpha = 0.8f)
+            color = AccentIndigo.copy(alpha = 0.8f)
         )
     }
 }
@@ -301,13 +301,13 @@ fun HelpBottomSheet(onDismiss: () -> Unit) {
                     // Page counter
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = PrimaryTeal.copy(alpha = 0.12f)
+                        color = AccentIndigo.copy(alpha = 0.12f)
                     ) {
                         Text(
                             "${pagerState.currentPage + 1} / ${helpPages.size}",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryTeal,
+                            color = AccentIndigo,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
                     }
@@ -366,16 +366,16 @@ fun HelpBottomSheet(onDismiss: () -> Unit) {
                                 .height(48.dp),
                             shape = RoundedCornerShape(14.dp),
                             border = androidx.compose.foundation.BorderStroke(
-                                1.dp, PrimaryTeal.copy(0.4f)
+                                1.dp, AccentIndigo.copy(0.4f)
                             )
                         ) {
                             Icon(
                                 Icons.Default.ChevronRight, null,
                                 modifier = Modifier.size(18.dp),
-                                tint = PrimaryTeal
+                                tint = AccentIndigo
                             )
                             Spacer(Modifier.width(4.dp))
-                            Text("הקודם", color = PrimaryTeal, fontWeight = FontWeight.SemiBold)
+                            Text("הקודם", color = AccentIndigo, fontWeight = FontWeight.SemiBold)
                         }
                     } else {
                         Spacer(Modifier.weight(1f))
@@ -418,7 +418,7 @@ fun HelpBottomSheet(onDismiss: () -> Unit) {
                                 .height(48.dp)
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(
-                                    Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark))
+                                    Brush.horizontalGradient(listOf(AccentIndigo, AccentIndigoDark))
                                 )
                                 .clickable(onClick = onDismiss),
                             contentAlignment = Alignment.Center

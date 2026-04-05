@@ -104,16 +104,16 @@ fun LandscapeBlockingScreen(
                 onClick = onClose,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
+                    
                     .padding(bottom = 12.dp, end = 12.dp)
                     .size(48.dp),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                border = BorderStroke(1.5.dp, AccentIndigo.copy(alpha = 0.45f)),
                 shadowElevation = 6.dp
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = AccentIndigo, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -173,7 +173,7 @@ private fun LandscapeBlockingToolbar(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(employees) { employee ->
+                items(employees, key = { it.id }) { employee ->
                     val isSelected = selectedEmployee?.id == employee.id
                     FilterChip(
                         selected = isSelected,
@@ -183,7 +183,7 @@ private fun LandscapeBlockingToolbar(
                         label = { Text(employee.name, fontSize = 12.sp) },
                         modifier = Modifier.height(32.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PrimaryTeal,
+                            selectedContainerColor = AccentIndigo,
                             selectedLabelColor = Color.White,
                         )
                     )
@@ -299,16 +299,16 @@ fun LandscapeManualScreen(
                 onClick = onClose,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
+                    
                     .padding(bottom = 12.dp, end = 12.dp)
                     .size(48.dp),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                border = BorderStroke(1.5.dp, AccentIndigo.copy(alpha = 0.45f)),
                 shadowElevation = 6.dp
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = AccentIndigo, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -353,10 +353,10 @@ fun LandscapeManualScreen(
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = CircleShape,
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                    Icon(Icons.Default.Edit, null, tint = AccentIndigo, modifier = Modifier.size(22.dp))
                                 }
                             }
                             Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -369,8 +369,8 @@ fun LandscapeManualScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal,
-                                focusedLabelColor = PrimaryTeal
+                                focusedBorderColor = AccentIndigo,
+                                focusedLabelColor = AccentIndigo
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -387,7 +387,7 @@ fun LandscapeManualScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
                             ) { Text("שמור", fontWeight = FontWeight.Bold) }
                         }
                     }
@@ -476,7 +476,7 @@ private fun LandscapeManualToolbar(
             ) {
                 LegendDot(BlockedRed, "חסום")
                 LegendDot(CanOnlyBlue, "יכול")
-                LegendDot(PrimaryTeal, "משובץ")
+                LegendDot(AccentIndigo, "משובץ")
             }
 
             Box(
@@ -490,7 +490,7 @@ private fun LandscapeManualToolbar(
                 modifier = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                items(employees) { employee ->
+                items(employees, key = { it.id }) { employee ->
                     val isSelected = selectedEmployee?.id == employee.id
                     FilterChip(
                         selected = isSelected,
@@ -500,7 +500,7 @@ private fun LandscapeManualToolbar(
                         label = { Text(employee.name, fontSize = 12.sp) },
                         modifier = Modifier.height(32.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PrimaryTeal,
+                            selectedContainerColor = AccentIndigo,
                             selectedLabelColor = Color.White,
                         )
                     )
@@ -607,16 +607,16 @@ fun LandscapePreviewScreen(
                 onClick = onClose,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
+                    
                     .padding(bottom = 12.dp, end = 12.dp)
                     .size(48.dp),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                border = BorderStroke(1.5.dp, AccentIndigo.copy(alpha = 0.45f)),
                 shadowElevation = 6.dp
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = AccentIndigo, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -663,14 +663,14 @@ fun LandscapePreviewScreen(
                         ) {
                             Icon(
                                 Icons.Default.BarChart, null,
-                                tint = PrimaryTeal,
+                                tint = AccentIndigo,
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
                                 "סטטיסטיקה שבועית",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
+                                color = AccentIndigo
                             )
                         }
                         Spacer(Modifier.height(16.dp))
@@ -717,10 +717,10 @@ fun LandscapePreviewScreen(
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = CircleShape,
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                    Icon(Icons.Default.Edit, null, tint = AccentIndigo, modifier = Modifier.size(22.dp))
                                 }
                             }
                             Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -733,8 +733,8 @@ fun LandscapePreviewScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal,
-                                focusedLabelColor = PrimaryTeal
+                                focusedBorderColor = AccentIndigo,
+                                focusedLabelColor = AccentIndigo
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -751,7 +751,7 @@ fun LandscapePreviewScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
                             ) { Text("שמור", fontWeight = FontWeight.Bold) }
                         }
                     }
@@ -775,13 +775,13 @@ private fun LandscapePreviewToolbar(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            LandscapeActionButton(Icons.Default.Download, "גלריה", PrimaryTeal, onDownload)
+            LandscapeActionButton(Icons.Default.Download, "גלריה", AccentIndigo, onDownload)
             LandscapeActionButton(
                 Icons.AutoMirrored.Filled.Chat, "ווצאפ",
-                Color(0xFF25D366), onWhatsApp
+                WhatsAppGreen, onWhatsApp
             )
-            LandscapeActionButton(Icons.Default.BarChart, "סטטיסטיקה", PrimaryTeal, onStats)
-            LandscapeActionButton(Icons.Default.Edit, "חסימות", PrimaryTeal, onReturnToBlocking)
+            LandscapeActionButton(Icons.Default.BarChart, "סטטיסטיקה", AccentIndigo, onStats)
+            LandscapeActionButton(Icons.Default.Edit, "חסימות", AccentIndigo, onReturnToBlocking)
             Spacer(Modifier.weight(1f))
             IconButton(onClick = onHide, modifier = Modifier.size(32.dp)) {
                 Icon(
@@ -858,16 +858,16 @@ fun LandscapeAutoScheduleReviewScreen(
                 onClick = onClose,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
+                    
                     .padding(bottom = 12.dp, end = 12.dp)
                     .size(48.dp),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-                border = BorderStroke(1.5.dp, PrimaryTeal.copy(alpha = 0.45f)),
+                border = BorderStroke(1.5.dp, AccentIndigo.copy(alpha = 0.45f)),
                 shadowElevation = 6.dp
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                    Icon(Icons.Default.ScreenRotation, "חזור לאנכי", tint = AccentIndigo, modifier = Modifier.size(22.dp))
                 }
             }
 
@@ -902,20 +902,20 @@ private fun LandscapeAutoReviewToolbar(
             // Status chip
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = (if (allGood) PrimaryTeal else Orange).copy(alpha = 0.15f),
-                border = BorderStroke(1.dp, (if (allGood) PrimaryTeal else Orange).copy(alpha = 0.4f))
+                color = (if (allGood) AccentIndigo else Orange).copy(alpha = 0.15f),
+                border = BorderStroke(1.dp, (if (allGood) AccentIndigo else Orange).copy(alpha = 0.4f))
             ) {
                 Text(
                     text = if (allGood) "✓ הסידור הושלם" else "${impossibleShifts.size} משמרות פתוחות",
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = if (allGood) PrimaryTeal else Orange
+                    color = if (allGood) AccentIndigo else Orange
                 )
             }
             Spacer(Modifier.weight(1f))
-            LandscapeActionButton(Icons.Default.Edit, "חסימות", PrimaryTeal, onBackToBlocking)
-            LandscapeActionButton(Icons.Default.Save, "שמירה והצגה", PrimaryTeal, onConfirm)
+            LandscapeActionButton(Icons.Default.Edit, "חסימות", AccentIndigo, onBackToBlocking)
+            LandscapeActionButton(Icons.Default.Save, "שמירה והצגה", AccentIndigo, onConfirm)
             IconButton(onClick = onHide, modifier = Modifier.size(32.dp)) {
                 Icon(
                     Icons.Default.KeyboardArrowDown, "הסתר",
@@ -936,7 +936,7 @@ private fun LandscapeTopBar(title: String, onClose: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f)),
         shadowElevation = 2.dp
     ) {
         Row(
@@ -950,7 +950,7 @@ private fun LandscapeTopBar(title: String, onClose: () -> Unit) {
             IconButton(onClick = onClose, modifier = Modifier.size(36.dp)) {
                 Icon(
                     Icons.Default.Close, "סגור",
-                    tint = PrimaryTeal,
+                    tint = AccentIndigo,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -969,7 +969,7 @@ private fun LandscapeToolbarSurface(content: @Composable RowScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.background,
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f)),
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.2f)),
         shadowElevation = 8.dp
     ) {
         Row(
@@ -988,7 +988,7 @@ private fun ShowToolbarPill(onClick: () -> Unit) {
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.4f)),
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.4f)),
         shadowElevation = 4.dp
     ) {
         Row(
@@ -998,10 +998,10 @@ private fun ShowToolbarPill(onClick: () -> Unit) {
         ) {
             Icon(
                 Icons.Default.KeyboardArrowUp, null,
-                tint = PrimaryTeal,
+                tint = AccentIndigo,
                 modifier = Modifier.size(16.dp)
             )
-            Text("הצג כלים", fontSize = 11.sp, color = PrimaryTeal)
+            Text("הצג כלים", fontSize = 11.sp, color = AccentIndigo)
         }
     }
 }

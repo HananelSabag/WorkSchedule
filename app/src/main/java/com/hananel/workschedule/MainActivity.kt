@@ -1,21 +1,33 @@
 package com.hananel.workschedule
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,7 +50,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        
+        createNotificationChannel()
+
         setContent {
             WorkScheduleTheme {
                 Surface(
@@ -48,6 +61,20 @@ class MainActivity : ComponentActivity() {
                     WorkScheduleApp()
                 }
             }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "work_schedule_reminders",
+                "תזכורות סידור עבודה",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "תזכורות לעריכת סידור העבודה השבועי"
+            }
+            val nm = getSystemService(NotificationManager::class.java)
+            nm.createNotificationChannel(channel)
         }
     }
 }
@@ -86,11 +113,11 @@ fun WorkScheduleApp() {
     val duplicateDialog by viewModel.duplicateScheduleDialog.collectAsState()
     val templateData by viewModel.activeTemplate.collectAsState()
     
-    // Handle system back button - natural navigation like other Android apps
-    BackHandler(enabled = currentScreen != Screen.HOME && currentScreen != Screen.SPLASH) {
+    // Handle system back button — tab screens let the system handle back (app close)
+    BackHandler(enabled = !currentScreen.showsBottomNav() && currentScreen != Screen.SPLASH) {
         when (currentScreen) {
-            Screen.EMPLOYEE_MANAGEMENT -> currentScreen = Screen.HOME
-            Screen.TEMPLATE_SETUP -> currentScreen = Screen.HOME
+            Screen.EMPLOYEE_MANAGEMENT -> currentScreen = Screen.SETTINGS
+            Screen.TEMPLATE_SETUP -> currentScreen = Screen.SETTINGS
             Screen.BLOCKING -> currentScreen = Screen.HOME
             Screen.MANUAL_CREATION -> currentScreen = Screen.BLOCKING
             Screen.AUTO_SCHEDULE_REVIEW -> {
@@ -98,19 +125,29 @@ fun WorkScheduleApp() {
                 currentScreen = Screen.BLOCKING
             }
             Screen.PREVIEW -> {
-                // Must reset session so stale in-memory state isn't mistaken for a new draft
                 viewModel.resetSessionOnReturnHome()
                 currentScreen = Screen.HOME
             }
-            Screen.HISTORY -> currentScreen = Screen.HOME
             Screen.LANDSCAPE_BLOCKING -> currentScreen = Screen.BLOCKING
             Screen.LANDSCAPE_MANUAL -> currentScreen = Screen.MANUAL_CREATION
             Screen.LANDSCAPE_PREVIEW -> currentScreen = Screen.PREVIEW
-            Screen.LANDSCAPE_AUTO_SCHEDULE_REVIEW -> currentScreen = Screen.AUTO_SCHEDULE_REVIEW // no discard - just close landscape view
+            Screen.LANDSCAPE_AUTO_SCHEDULE_REVIEW -> currentScreen = Screen.AUTO_SCHEDULE_REVIEW
             else -> currentScreen = Screen.HOME
         }
     }
     
+    Scaffold(
+        bottomBar = {
+            if (currentScreen.showsBottomNav()) {
+                AppBottomNavBar(
+                    currentScreen = currentScreen,
+                    onNavigate = { currentScreen = it }
+                )
+            }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding)) {
+
     when (currentScreen) {
         Screen.SPLASH -> {
             SplashScreen(
@@ -157,6 +194,7 @@ fun WorkScheduleApp() {
                 },
                 onEmployeeManagementClick = { currentScreen = Screen.EMPLOYEE_MANAGEMENT },
                 onTemplateSetupClick = { currentScreen = Screen.TEMPLATE_SETUP },
+                onReminderClick = { currentScreen = Screen.REMINDER_SETTINGS },
                 hasTempDraft = hasTempDraft
             )
         }
@@ -173,10 +211,10 @@ fun WorkScheduleApp() {
                 onDeleteEmployee = { employee -> 
                     viewModel.deleteEmployee(employee)
                 },
-                onBackClick = { currentScreen = Screen.HOME }
+                onBackClick = { currentScreen = Screen.SETTINGS }
             )
         }
-        
+
         Screen.TEMPLATE_SETUP -> {
             val editingShiftRows by viewModel.editingShiftRows.collectAsState()
             val editingDayColumns by viewModel.editingDayColumns.collectAsState()
@@ -191,11 +229,14 @@ fun WorkScheduleApp() {
                 shiftRows = editingShiftRows,
                 dayColumns = editingDayColumns,
                 hasExistingTemplate = hasExistingTemplate, // Dynamic title
-                onAddShiftRow = { name, hours ->
-                    viewModel.addShiftRow(name, hours) // New: requires name and hours
+                onAddShiftRow = { name, hours, note ->
+                    viewModel.addShiftRow(name, hours, note)
                 },
-                onEditShiftRow = { index, name, hours ->
-                    viewModel.editShiftRow(index, name, hours)
+                onEditShiftRow = { index, name, hours, note ->
+                    viewModel.editShiftRow(index, name, hours, note)
+                },
+                onEditDayColumnNote = { index, note ->
+                    viewModel.editDayColumnNote(index, note)
                 },
                 onDeleteShiftRow = { index ->
                     viewModel.deleteShiftRow(index)
@@ -211,9 +252,9 @@ fun WorkScheduleApp() {
                 },
                 onSaveAndExit = {
                     viewModel.saveTemplate()
-                    currentScreen = Screen.HOME // Save AND navigate
+                    currentScreen = Screen.SETTINGS
                 },
-                onBackClick = { currentScreen = Screen.HOME }
+                onBackClick = { currentScreen = Screen.SETTINGS }
             )
         }
         
@@ -415,37 +456,19 @@ fun WorkScheduleApp() {
                     // Keep for compatibility but don't use
                 },
                 onShareSchedule = { shareType ->
-                    when (shareType) {
-                        ShareType.WHATSAPP_IMAGE -> {
-                            // Generate and share schedule image via WhatsApp with correct date
-                            val weekStartString = weekStartDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                                context,
-                                currentSchedule,
-                                savingMode,
-                                weekStartString,
-                                templateData
-                            )
-                            com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(
-                                context,
-                                bitmap
-                            )
+                    try {
+                        val weekStartString = weekStartDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+                        val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
+                            context, currentSchedule, savingMode, weekStartString, templateData
+                        )
+                        when (shareType) {
+                            ShareType.WHATSAPP_IMAGE ->
+                                com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(context, bitmap)
+                            ShareType.DOWNLOAD_IMAGE ->
+                                com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(context, bitmap)
                         }
-                        ShareType.DOWNLOAD_IMAGE -> {
-                            // Generate and save schedule image to gallery with correct date
-                            val weekStartString = weekStartDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                                context,
-                                currentSchedule,
-                                savingMode,
-                                weekStartString,
-                                templateData
-                            )
-                            com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(
-                                context,
-                                bitmap
-                            )
-                        }
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(context, "שגיאה ביצירת תמונה", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 onBackClick = {
@@ -453,7 +476,6 @@ fun WorkScheduleApp() {
                     currentScreen = Screen.HOME
                 },
                 onReturnToBlocking = {
-                    // Navigate to blocking - enable editing mode if this is existing schedule
                     viewModel.navigateToBlocksEditingFromPreview()
                     currentScreen = Screen.BLOCKING
                 },
@@ -461,6 +483,12 @@ fun WorkScheduleApp() {
                     viewModel.clearErrorMessage()
                 },
                 onEnterLandscape = { currentScreen = Screen.LANDSCAPE_PREVIEW },
+                onUpdateShiftNote = { shiftName, note ->
+                    viewModel.updateScheduleShiftNote(shiftName, note)
+                },
+                onUpdateDayNote = { dayName, note ->
+                    viewModel.updateScheduleDayNote(dayName, note)
+                },
                 isEditingExistingSchedule = isEditingExistingSchedule
             )
         }
@@ -480,6 +508,22 @@ fun WorkScheduleApp() {
                     viewModel.updateScheduleName(schedule, newName)
                 },
                 onBackClick = { currentScreen = Screen.HOME }
+            )
+        }
+
+        Screen.REMINDER_SETTINGS -> {
+            ReminderScreen(
+                onBackClick = { currentScreen = Screen.HOME }
+            )
+        }
+
+        Screen.SETTINGS -> {
+            SettingsScreen(
+                employeeCount = employees.size,
+                appVersion = "2.1",
+                onNavigateToEmployees = { currentScreen = Screen.EMPLOYEE_MANAGEMENT },
+                onNavigateToTemplate = { currentScreen = Screen.TEMPLATE_SETUP },
+                onNavigateToReminders = { currentScreen = Screen.REMINDER_SETTINGS }
             )
         }
 
@@ -557,25 +601,21 @@ fun WorkScheduleApp() {
                     viewModel.updateScheduleCell(key, value)
                 },
                 onShareSchedule = { shareType ->
-                    when (shareType) {
-                        ShareType.WHATSAPP_IMAGE -> {
-                            val weekStartString = weekStartDate.format(
-                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                            )
-                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                                context, currentSchedule, savingMode, weekStartString, templateData
-                            )
-                            com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(context, bitmap)
+                    try {
+                        val weekStartString = weekStartDate.format(
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+                        )
+                        val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
+                            context, currentSchedule, savingMode, weekStartString, templateData
+                        )
+                        when (shareType) {
+                            ShareType.WHATSAPP_IMAGE ->
+                                com.hananel.workschedule.utils.ImageSharer.shareScheduleImage(context, bitmap)
+                            ShareType.DOWNLOAD_IMAGE ->
+                                com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(context, bitmap)
                         }
-                        ShareType.DOWNLOAD_IMAGE -> {
-                            val weekStartString = weekStartDate.format(
-                                java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
-                            )
-                            val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                                context, currentSchedule, savingMode, weekStartString, templateData
-                            )
-                            com.hananel.workschedule.utils.ImageSharer.saveScheduleImageToGallery(context, bitmap)
-                        }
+                    } catch (e: Exception) {
+                        android.widget.Toast.makeText(context, "שגיאה ביצירת תמונה", android.widget.Toast.LENGTH_SHORT).show()
                     }
                 },
                 onReturnToBlocking = {
@@ -620,19 +660,10 @@ fun WorkScheduleApp() {
                 onClose = { currentScreen = Screen.AUTO_SCHEDULE_REVIEW }
             )
         }
-    }
+    } // end when(currentScreen)
+    } // end Box
+    } // end Scaffold
 
-    // Handle automatic navigation to preview after duplicate dialog closes
-    LaunchedEffect(duplicateDialog) {
-        // Only navigate if dialog was just dismissed (changed from non-null to null)
-        // This handles the case where user chose "overwrite" or "create new" in duplicate dialog
-        if (duplicateDialog == null && 
-            currentScreen == Screen.MANUAL_CREATION) {
-            // Dialog was dismissed, check if we're ready to navigate
-            // (this will only happen after the dialog actions, not on every schedule change)
-        }
-    }
-    
     // Unified Duplicate Schedule Dialog
     duplicateDialog?.let { dialog ->
         AlertDialog(
@@ -678,7 +709,7 @@ fun WorkScheduleApp() {
                             viewModel.onDuplicateDialogCreateNew()
                             currentScreen = Screen.PREVIEW
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("ליצור עותק חדש (${dialog.existingCount})", color = Color.White, fontWeight = FontWeight.Bold)
@@ -692,6 +723,47 @@ fun WorkScheduleApp() {
 
 enum class Screen {
     SPLASH, HOME, EMPLOYEE_MANAGEMENT, TEMPLATE_SETUP, BLOCKING, MANUAL_CREATION,
-    AUTO_SCHEDULE_REVIEW, PREVIEW, HISTORY,
+    AUTO_SCHEDULE_REVIEW, PREVIEW, HISTORY, REMINDER_SETTINGS, SETTINGS,
     LANDSCAPE_BLOCKING, LANDSCAPE_MANUAL, LANDSCAPE_PREVIEW, LANDSCAPE_AUTO_SCHEDULE_REVIEW
+}
+
+/** Tab screens show the bottom navigation bar; workflow/detail screens hide it. */
+fun Screen.showsBottomNav(): Boolean = this in setOf(
+    Screen.HOME, Screen.HISTORY, Screen.REMINDER_SETTINGS, Screen.SETTINGS
+)
+
+@Composable
+fun AppBottomNavBar(
+    currentScreen: Screen,
+    onNavigate: (Screen) -> Unit
+) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp
+    ) {
+        NavigationBarItem(
+            selected = currentScreen == Screen.HOME,
+            onClick = { onNavigate(Screen.HOME) },
+            icon = { Icon(Icons.Default.Home, contentDescription = null) },
+            label = { Text("בית") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.HISTORY,
+            onClick = { onNavigate(Screen.HISTORY) },
+            icon = { Icon(Icons.Default.History, contentDescription = null) },
+            label = { Text("סידורים") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.REMINDER_SETTINGS,
+            onClick = { onNavigate(Screen.REMINDER_SETTINGS) },
+            icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
+            label = { Text("תזכורות") }
+        )
+        NavigationBarItem(
+            selected = currentScreen == Screen.SETTINGS,
+            onClick = { onNavigate(Screen.SETTINGS) },
+            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
+            label = { Text("הגדרות") }
+        )
+    }
 }

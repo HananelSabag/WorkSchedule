@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,7 +24,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.R
-import com.hananel.workschedule.ui.theme.PrimaryTeal
+import com.hananel.workschedule.ui.theme.AccentIndigo
 import kotlinx.coroutines.delay
 
 @Composable
@@ -81,7 +82,7 @@ fun SplashScreen(
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(Color.White),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             // ── Center content ─────────────────────────────────────────────
@@ -98,8 +99,8 @@ fun SplashScreen(
                         .shadow(
                             elevation = 18.dp,
                             shape = RoundedCornerShape(28.dp),
-                            ambientColor = PrimaryTeal.copy(alpha = 0.20f),
-                            spotColor = PrimaryTeal.copy(alpha = 0.30f)
+                            ambientColor = AccentIndigo.copy(alpha = 0.20f),
+                            spotColor = AccentIndigo.copy(alpha = 0.30f)
                         )
                         .clip(RoundedCornerShape(28.dp))
                 ) {
@@ -117,7 +118,7 @@ fun SplashScreen(
                     text = "סידור עבודה",
                     fontSize = 40.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF0D2B28),
+                    color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .alpha(textAlpha)
@@ -130,7 +131,7 @@ fun SplashScreen(
                     text = "Work Schedule Manager",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = PrimaryTeal.copy(alpha = 0.75f),
+                    color = AccentIndigo.copy(alpha = 0.75f),
                     textAlign = TextAlign.Center,
                     letterSpacing = 3.sp,
                     modifier = Modifier.alpha(textAlpha)
@@ -151,12 +152,12 @@ fun SplashScreen(
                         .width(52.dp)
                         .height(2.dp)
                         .alpha(linePulse)
-                        .background(PrimaryTeal, RoundedCornerShape(1.dp))
+                        .background(AccentIndigo, RoundedCornerShape(1.dp))
                 )
                 Text(
                     text = "v1.0",
                     fontSize = 11.sp,
-                    color = PrimaryTeal.copy(alpha = 0.35f),
+                    color = AccentIndigo.copy(alpha = 0.35f),
                     letterSpacing = 1.sp
                 )
             }

@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
+import com.hananel.workschedule.ui.components.WorkflowStepBar
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.TemplateData
 import com.hananel.workschedule.ui.theme.*
@@ -76,7 +77,7 @@ fun ManualCreationScreen(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.background,
                 shape = RoundedCornerShape(16.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f)),
                 shadowElevation = 2.dp
             ) {
                 Row(
@@ -90,7 +91,7 @@ fun ManualCreationScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "חזור לחסימות",
-                            tint = PrimaryTeal
+                            tint = AccentIndigo
                         )
                     }
                     Column(
@@ -102,7 +103,7 @@ fun ManualCreationScreen(
                             text = "יצירת סידור ידני",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = PrimaryTeal,
+                            color = AccentIndigo,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -113,16 +114,16 @@ fun ManualCreationScreen(
                         Surface(
                             onClick = onEnterLandscape,
                             shape = RoundedCornerShape(8.dp),
-                            color = PrimaryTeal.copy(alpha = 0.10f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
+                            color = AccentIndigo.copy(alpha = 0.10f),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.35f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.ScreenRotation, null, tint = PrimaryTeal, modifier = Modifier.size(13.dp))
-                                Text("תצוגה אופקית", fontSize = 10.sp, color = PrimaryTeal, fontWeight = FontWeight.Medium)
+                                Icon(Icons.Default.ScreenRotation, null, tint = AccentIndigo, modifier = Modifier.size(13.dp))
+                                Text("תצוגה אופקית", fontSize = 10.sp, color = AccentIndigo, fontWeight = FontWeight.Medium)
                             }
                         }
                         IconButton(
@@ -139,6 +140,9 @@ fun ManualCreationScreen(
                     }
                 }
             }
+
+            // ─── Workflow step indicator ────────────────────────────────────
+            WorkflowStepBar(currentStep = 2)
 
             // ─── Schedule Table ─────────────────────────────────────────────
             SimpleScheduleTable(
@@ -214,7 +218,7 @@ fun ManualCreationScreen(
                     .fillMaxWidth()
                     .height(56.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark)))
+                    .background(Brush.horizontalGradient(listOf(AccentIndigo, AccentIndigoDark)))
                     .clickable(onClick = onGenerateManualSchedule),
                 contentAlignment = Alignment.Center
             ) {
@@ -349,10 +353,10 @@ fun ManualCreationScreen(
                             Surface(
                                 modifier = Modifier.size(40.dp),
                                 shape = CircleShape,
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.Edit, null, tint = PrimaryTeal, modifier = Modifier.size(22.dp))
+                                    Icon(Icons.Default.Edit, null, tint = AccentIndigo, modifier = Modifier.size(22.dp))
                                 }
                             }
                             Text("עריכת תא", fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -365,8 +369,8 @@ fun ManualCreationScreen(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = PrimaryTeal,
-                                focusedLabelColor = PrimaryTeal
+                                focusedBorderColor = AccentIndigo,
+                                focusedLabelColor = AccentIndigo
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -383,7 +387,7 @@ fun ManualCreationScreen(
                                 },
                                 modifier = Modifier.weight(1f),
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
                             ) { Text("שמור", fontWeight = FontWeight.Bold) }
                         }
                     }
@@ -474,7 +478,7 @@ private fun EmployeeSelectionPanel(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -484,8 +488,8 @@ private fun EmployeeSelectionPanel(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    color = PrimaryTeal.copy(alpha = 0.15f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    color = AccentIndigo.copy(alpha = 0.15f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -494,15 +498,15 @@ private fun EmployeeSelectionPanel(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Surface(color = PrimaryTeal.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) {
+                        Surface(color = AccentIndigo.copy(alpha = 0.2f), shape = RoundedCornerShape(8.dp)) {
                             Icon(
                                 Icons.Default.Person,
                                 null,
                                 modifier = Modifier.size(28.dp).padding(4.dp),
-                                tint = PrimaryTeal
+                                tint = AccentIndigo
                             )
                         }
-                        Text(selectedEmployee.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal, modifier = Modifier.weight(1f))
+                        Text(selectedEmployee.name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AccentIndigo, modifier = Modifier.weight(1f))
                         Text("לחץ על תא לשיבוץ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
@@ -518,7 +522,7 @@ private fun EmployeeSelectionPanel(
             }
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(employees) { employee ->
+                items(employees, key = { it.id }) { employee ->
                     val isSelected = selectedEmployee?.id == employee.id
                     FilterChip(
                         onClick = { if (isSelected) onSelectEmployee(null) else onSelectEmployee(employee) },
@@ -531,14 +535,14 @@ private fun EmployeeSelectionPanel(
                         },
                         selected = isSelected,
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = PrimaryTeal,
+                            selectedContainerColor = AccentIndigo,
                             selectedLabelColor = Color.White,
                             containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurface
                         ),
                         border = FilterChipDefaults.filterChipBorder(
-                            borderColor = PrimaryTeal.copy(alpha = 0.3f),
-                            selectedBorderColor = PrimaryTeal,
+                            borderColor = AccentIndigo.copy(alpha = 0.3f),
+                            selectedBorderColor = AccentIndigo,
                             enabled = true,
                             selected = isSelected
                         )

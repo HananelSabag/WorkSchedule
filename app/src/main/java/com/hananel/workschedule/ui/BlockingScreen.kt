@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.animation.core.*
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
+import com.hananel.workschedule.ui.components.WorkflowStepBar
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
 import com.hananel.workschedule.data.TemplateData
@@ -149,7 +150,7 @@ fun BlockingScreen(
                     
                     Button(
                         onClick = onBackClick,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                         modifier = Modifier
                             .fillMaxWidth(0.7f)
                             .height(56.dp),
@@ -179,7 +180,7 @@ fun BlockingScreen(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.background,
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f)),
                         shadowElevation = 2.dp
                     ) {
                         Row(
@@ -194,7 +195,7 @@ fun BlockingScreen(
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                     contentDescription = "חזור",
-                                    tint = PrimaryTeal
+                                    tint = AccentIndigo
                                 )
                             }
 
@@ -210,7 +211,7 @@ fun BlockingScreen(
                                     else "חסימת משמרות",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = PrimaryTeal,
+                                    color = AccentIndigo,
                                     textAlign = TextAlign.Center,
                                     maxLines = 1
                                 )
@@ -233,8 +234,8 @@ fun BlockingScreen(
                                 Surface(
                                     onClick = onEnterLandscape,
                                     shape = RoundedCornerShape(8.dp),
-                                    color = PrimaryTeal.copy(alpha = 0.10f),
-                                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
+                                    color = AccentIndigo.copy(alpha = 0.10f),
+                                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.35f))
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
@@ -243,13 +244,13 @@ fun BlockingScreen(
                                     ) {
                                         Icon(
                                             Icons.Default.ScreenRotation, null,
-                                            tint = PrimaryTeal,
+                                            tint = AccentIndigo,
                                             modifier = Modifier.size(13.dp)
                                         )
                                         Text(
                                             "תצוגה אופקית",
                                             fontSize = 10.sp,
-                                            color = PrimaryTeal,
+                                            color = AccentIndigo,
                                             fontWeight = FontWeight.Medium
                                         )
                                     }
@@ -269,6 +270,9 @@ fun BlockingScreen(
                         }
                     }
             
+            // ─── Workflow step indicator ────────────────────────────────────
+            WorkflowStepBar(currentStep = 1)
+
             // Simple and Stable Schedule Table (moved to TOP to avoid cutting)
             SimpleScheduleTable(
                 employees = employees,
@@ -348,7 +352,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                    colors = listOf(AccentIndigo, AccentIndigoDark)
                                 )
                             )
                             .clickable(onClick = onReturnToSavedSchedule),
@@ -397,7 +401,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                    colors = listOf(AccentIndigo, AccentIndigoDark)
                                 )
                             )
                             .clickable(onClick = onCreateScheduleCopy),
@@ -439,7 +443,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(Orange, Color(0xFFE64A19))
+                                    colors = listOf(Orange, OrangeDark)
                                 )
                             )
                             .clickable(onClick = onOverrideAndCreateNew),
@@ -496,7 +500,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                    colors = listOf(AccentIndigo, AccentIndigoDark)
                                 )
                             )
                             .clickable(onClick = onGenerateManualSchedule),
@@ -545,7 +549,7 @@ fun BlockingScreen(
                             .clip(RoundedCornerShape(18.dp))
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                    colors = listOf(AccentIndigo, AccentIndigoDark)
                                 )
                             )
                             .clickable(onClick = onGenerateAutomaticSchedule),
@@ -683,7 +687,7 @@ private fun EmployeeSelectionPanel(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
@@ -694,10 +698,10 @@ private fun EmployeeSelectionPanel(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = PrimaryTeal.copy(alpha = 0.15f)
+                        containerColor = AccentIndigo.copy(alpha = 0.15f)
                     ),
                     shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.3f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -707,14 +711,14 @@ private fun EmployeeSelectionPanel(
                     ) {
                         // Person icon with background
                         Surface(
-                            color = PrimaryTeal.copy(alpha = 0.2f),
+                            color = AccentIndigo.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp)
                         ) {
                             Icon(
                                 Icons.Default.Person, 
                                 contentDescription = null, 
                                 modifier = Modifier.size(32.dp).padding(4.dp),
-                                tint = PrimaryTeal
+                                tint = AccentIndigo
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -728,7 +732,7 @@ private fun EmployeeSelectionPanel(
                                 text = selectedEmployee.name,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
+                                color = AccentIndigo
                             )
                         }
                         Spacer(modifier = Modifier.weight(1f))
@@ -765,7 +769,7 @@ private fun EmployeeSelectionPanel(
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(employees) { employee ->
+                    items(employees, key = { it.id }) { employee ->
                         val isSelected = selectedEmployee?.id == employee.id
                         FilterChip(
                             onClick = { 
@@ -780,14 +784,14 @@ private fun EmployeeSelectionPanel(
                             },
                             selected = isSelected,
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryTeal,
+                                selectedContainerColor = AccentIndigo,
                                 selectedLabelColor = Color.White,
                                 containerColor = MaterialTheme.colorScheme.surface,
                                 labelColor = MaterialTheme.colorScheme.onSurface
                             ),
                             border = FilterChipDefaults.filterChipBorder(
-                                borderColor = PrimaryTeal.copy(alpha = 0.3f),
-                                selectedBorderColor = PrimaryTeal,
+                                borderColor = AccentIndigo.copy(alpha = 0.3f),
+                                selectedBorderColor = AccentIndigo,
                                 enabled = true,
                                 selected = isSelected
                             )
@@ -860,7 +864,7 @@ private fun MobileOptimizedTable(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryTeal)
+                    .background(AccentIndigo)
             ) {
                 // Empty cell for shift names column
                 Box(
@@ -923,7 +927,7 @@ private fun MobileOptimizedTable(
                         modifier = Modifier
                             .width(if (isCompact) 70.dp else 100.dp)
                             .height(if (isCompact) 35.dp else 45.dp)
-                            .background(PrimaryTeal)
+                            .background(AccentIndigo)
                             .border(1.dp, Color.Black),
                         contentAlignment = Alignment.Center
                     ) {

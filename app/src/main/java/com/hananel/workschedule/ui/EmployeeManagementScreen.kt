@@ -60,7 +60,7 @@ fun EmployeeManagementScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(onClick = onBackClick) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = PrimaryTeal)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, "חזור", tint = AccentIndigo)
                         }
                         Text(
                             text = "ניהול עובדים",
@@ -73,14 +73,14 @@ fun EmployeeManagementScreen(
                         if (employees.isNotEmpty()) {
                             Surface(
                                 shape = RoundedCornerShape(20.dp),
-                                color = PrimaryTeal.copy(alpha = 0.12f)
+                                color = AccentIndigo.copy(alpha = 0.12f)
                             ) {
                                 Text(
                                     "${employees.size}",
                                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = PrimaryTeal
+                                    color = AccentIndigo
                                 )
                             }
                         } else {
@@ -105,15 +105,15 @@ fun EmployeeManagementScreen(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp),
                         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.2f))
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Icon(Icons.Default.PersonAdd, null, tint = PrimaryTeal, modifier = Modifier.size(20.dp))
-                                Text("הוסף עובד חדש", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = PrimaryTeal)
+                                Icon(Icons.Default.PersonAdd, null, tint = AccentIndigo, modifier = Modifier.size(20.dp))
+                                Text("הוסף עובד חדש", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = AccentIndigo)
                             }
 
                             OutlinedTextField(
@@ -124,8 +124,8 @@ fun EmployeeManagementScreen(
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryTeal,
-                                    focusedLabelColor = PrimaryTeal
+                                    focusedBorderColor = AccentIndigo,
+                                    focusedLabelColor = AccentIndigo
                                 ),
                                 shape = RoundedCornerShape(12.dp)
                             )
@@ -198,8 +198,8 @@ fun EmployeeManagementScreen(
                                     .background(
                                         Brush.horizontalGradient(
                                             if (newEmployeeName.trim().isNotEmpty())
-                                                listOf(PrimaryTeal, PrimaryTealDark)
-                                            else listOf(Color(0xFF9E9E9E), Color(0xFF616161))
+                                                listOf(AccentIndigo, AccentIndigoDark)
+                                            else listOf(DisabledGray, DisabledGrayDark)
                                         )
                                     )
                                     .clickable(enabled = newEmployeeName.trim().isNotEmpty()) {
@@ -227,18 +227,18 @@ fun EmployeeManagementScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        color = PrimaryTeal.copy(alpha = 0.07f)
+                        color = AccentIndigo.copy(alpha = 0.07f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Info, null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
                             Text(
                                 "שומר שבת: חסום שישי-שבת אוטומטית  •  מתגבר: גמיש בשיבוץ",
                                 fontSize = 12.sp,
-                                color = PrimaryTeal,
+                                color = AccentIndigo,
                                 fontWeight = FontWeight.Medium
                             )
                         }
@@ -255,9 +255,9 @@ fun EmployeeManagementScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Surface(modifier = Modifier.size(72.dp), shape = CircleShape, color = PrimaryTeal.copy(alpha = 0.08f)) {
+                            Surface(modifier = Modifier.size(72.dp), shape = CircleShape, color = AccentIndigo.copy(alpha = 0.08f)) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Icon(Icons.Default.People, null, tint = PrimaryTeal.copy(alpha = 0.4f), modifier = Modifier.size(36.dp))
+                                    Icon(Icons.Default.People, null, tint = AccentIndigo.copy(alpha = 0.4f), modifier = Modifier.size(36.dp))
                                 }
                             }
                             Text("אין עובדים עדיין", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
@@ -265,7 +265,7 @@ fun EmployeeManagementScreen(
                         }
                     }
                 } else {
-                    items(employees) { employee ->
+                    items(employees, key = { it.id }) { employee ->
                         EmployeeCard(
                             employee = employee,
                             onToggleShabbatObserver = { onUpdateEmployee(it) },
@@ -312,10 +312,10 @@ private fun EmployeeCard(
             Surface(
                 modifier = Modifier.size(44.dp),
                 shape = CircleShape,
-                color = PrimaryTeal.copy(alpha = 0.1f)
+                color = AccentIndigo.copy(alpha = 0.1f)
             ) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Person, null, tint = PrimaryTeal, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Person, null, tint = AccentIndigo, modifier = Modifier.size(24.dp))
                 }
             }
 

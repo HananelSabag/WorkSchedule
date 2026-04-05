@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ScreenRotation
@@ -39,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.R
 import com.hananel.workschedule.ui.components.SimpleScheduleTable
+import com.hananel.workschedule.ui.components.WorkflowStepBar
 import com.hananel.workschedule.data.Employee
 import com.hananel.workschedule.data.ShiftDefinitions
 import com.hananel.workschedule.data.TemplateData
@@ -57,22 +59,28 @@ fun PreviewScreen(
     onSaveSchedule: () -> Unit, // Deprecated - smart save system handles this automatically
     onShareSchedule: (ShareType) -> Unit,
     onBackClick: () -> Unit,
-    onReturnToBlocking: () -> Unit, // New callback for returning to blocking
-    onDismissError: () -> Unit, // New callback for dismissing error popup
-    onEnterLandscape: () -> Unit = {}, // New: open full-screen landscape table view
-    isEditingExistingSchedule: Boolean = false, // Smart save system - indicates if editing existing schedule
+    onReturnToBlocking: () -> Unit,
+    onDismissError: () -> Unit,
+    onEnterLandscape: () -> Unit = {},
+    onUpdateShiftNote: ((String, String) -> Unit)? = null, // shiftName → note
+    onUpdateDayNote: ((String, String) -> Unit)? = null,   // dayName  → note
+    isEditingExistingSchedule: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     var editableSchedule by remember {
         mutableStateOf(schedule.mapValues { it.value.joinToString(", ") })
     }
 
-    // Statistics bottom sheet
+    // Statistics / actions bottom sheets
     val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val actionsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
     var showStatisticsSheet by remember { mutableStateOf(false) }
     var showActionsSheet by remember { mutableStateOf(false) }
+
+    // Note editing state
+    var noteSheetTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(type="shift"|"day", name)
+    var noteSheetText  by remember { mutableStateOf("") }
 
     // Update editable schedule when schedule changes
     LaunchedEffect(schedule) {
@@ -98,7 +106,7 @@ fun PreviewScreen(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.background,
                     shape = RoundedCornerShape(16.dp),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f)),
                     shadowElevation = 2.dp
                 ) {
                     Row(
@@ -113,7 +121,7 @@ fun PreviewScreen(
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = "חזור",
-                                tint = PrimaryTeal
+                                tint = AccentIndigo
                             )
                         }
 
@@ -127,7 +135,7 @@ fun PreviewScreen(
                                 text = if (isEditingExistingSchedule) "צפייה בסידור" else "סידור עבודה",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = PrimaryTeal,
+                                color = AccentIndigo,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -140,16 +148,16 @@ fun PreviewScreen(
                             Surface(
                                 onClick = onEnterLandscape,
                                 shape = RoundedCornerShape(8.dp),
-                                color = PrimaryTeal.copy(alpha = 0.10f),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
+                                color = AccentIndigo.copy(alpha = 0.10f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.35f))
                             ) {
                                 Row(
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(Icons.Default.ScreenRotation, null, tint = PrimaryTeal, modifier = Modifier.size(13.dp))
-                                    Text("תצוגה אופקית", fontSize = 10.sp, color = PrimaryTeal, fontWeight = FontWeight.Medium)
+                                    Icon(Icons.Default.ScreenRotation, null, tint = AccentIndigo, modifier = Modifier.size(13.dp))
+                                    Text("תצוגה אופקית", fontSize = 10.sp, color = AccentIndigo, fontWeight = FontWeight.Medium)
                                 }
                             }
                         }
@@ -157,12 +165,17 @@ fun PreviewScreen(
                 }
             }
 
+            // ─── Workflow step indicator ─────────────────────────────────────
+            item {
+                WorkflowStepBar(currentStep = 3)
+            }
+
             // Info Box - Compact explanation about editing
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = PrimaryTeal.copy(alpha = 0.08f)),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.25f))
+                    colors = CardDefaults.cardColors(containerColor = AccentIndigo.copy(alpha = 0.08f)),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.25f))
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -173,7 +186,7 @@ fun PreviewScreen(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = PrimaryTeal,
+                            tint = AccentIndigo,
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -200,17 +213,27 @@ fun PreviewScreen(
                     canOnlyBlocks = emptyMap(),
                     savingMode = savingMode,
                     schedule = schedule,
-                    templateData = templateData, // Dynamic template support
-                    isEditMode = true, // Always enable long-press editing
+                    templateData = templateData,
+                    isEditMode = true,
                     weekStartDate = weekStartDate,
-                    isBlockingMode = false, // Professional colors like export - no red border
+                    isBlockingMode = false,
                     onCellEdit = { key, value ->
-                        editableSchedule = editableSchedule.toMutableMap().apply { 
-                            put(key, value) 
+                        editableSchedule = editableSchedule.toMutableMap().apply {
+                            put(key, value)
                         }
                         onUpdateCell(key, value)
                     },
-                    modifier = Modifier.height(500.dp) // Fixed height for the table
+                    onShiftHeaderLongPress = if (onUpdateShiftNote != null) { shiftName ->
+                        val current = schedule["__SHIFT_NOTE__$shiftName"]?.firstOrNull() ?: ""
+                        noteSheetTarget = Pair("shift", shiftName)
+                        noteSheetText = current
+                    } else null,
+                    onDayHeaderLongPress = if (onUpdateDayNote != null) { dayName ->
+                        val current = schedule["__DAY_NOTE__$dayName"]?.firstOrNull() ?: ""
+                        noteSheetTarget = Pair("day", dayName)
+                        noteSheetText = current
+                    } else null,
+                    modifier = Modifier.height(500.dp)
                 )
             }
             
@@ -223,7 +246,7 @@ fun PreviewScreen(
                         .clip(RoundedCornerShape(16.dp))
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                colors = listOf(AccentIndigo, AccentIndigoDark)
                             )
                         )
                         .clickable {
@@ -279,7 +302,7 @@ fun PreviewScreen(
                         .clip(RoundedCornerShape(16.dp))
                         .background(
                             Brush.horizontalGradient(
-                                colors = listOf(PrimaryTeal, PrimaryTealDark)
+                                colors = listOf(AccentIndigo, AccentIndigoDark)
                             )
                         )
                         .clickable(onClick = onReturnToBlocking),
@@ -367,14 +390,14 @@ fun PreviewScreen(
                             "פעולות ושיתוף",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = PrimaryTeal
+                            color = AccentIndigo
                         )
                         Spacer(Modifier.height(16.dp))
 
                         // Download
                         ActionSheetItem(
                             icon = Icons.Default.Download,
-                            color = PrimaryTeal,
+                            color = AccentIndigo,
                             title = "הורד לגלריה",
                             subtitle = "שמור תמונה של הסידור בטלפון",
                             onClick = {
@@ -390,7 +413,7 @@ fun PreviewScreen(
                         // WhatsApp
                         ActionSheetItem(
                             icon = Icons.AutoMirrored.Filled.Chat,
-                            color = Color(0xFF25D366),
+                            color = WhatsAppGreen,
                             title = "שתף בווצאפ",
                             subtitle = "שלח לקבוצה או לאיש קשר",
                             onClick = {
@@ -406,7 +429,7 @@ fun PreviewScreen(
                         // Statistics
                         ActionSheetItem(
                             icon = Icons.Default.BarChart,
-                            color = PrimaryTeal,
+                            color = AccentIndigo,
                             title = "סטטיסטיקה שבועית",
                             subtitle = "משמרות ושעות לכל עובד",
                             onClick = {
@@ -449,12 +472,12 @@ fun PreviewScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Icon(Icons.Default.BarChart, null, tint = PrimaryTeal, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.BarChart, null, tint = AccentIndigo, modifier = Modifier.size(24.dp))
                             Text(
                                 "סטטיסטיקה שבועית",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryTeal
+                                color = AccentIndigo
                             )
                         }
                         Spacer(Modifier.height(16.dp))
@@ -467,6 +490,75 @@ fun PreviewScreen(
                                 templateData = templateData
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    // ─── Note editing bottom sheet (for schedule-specific notes on shift/day headers) ───
+    noteSheetTarget?.let { (type, name) ->
+        val label = if (type == "shift") "הערה למשמרת $name" else "הערה ליום $name"
+        ModalBottomSheet(
+            onDismissRequest = { noteSheetTarget = null },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        ) {
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp)
+                        .padding(bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(40.dp).height(4.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant,
+                                androidx.compose.foundation.shape.CircleShape)
+                            .align(Alignment.CenterHorizontally)
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.AutoMirrored.Filled.Notes, null, tint = Orange, modifier = Modifier.size(22.dp))
+                        Text(label, fontSize = 18.sp, fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface)
+                    }
+                    Text(
+                        text = "הערה זו ספציפית לסידור זה בלבד ומוצגת בטבלה",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = noteSheetText,
+                        onValueChange = { noteSheetText = it },
+                        label = { Text("הערה (ריק = מחק)") },
+                        placeholder = { Text("ערב חג פסח, יום ירושלים...") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Orange,
+                            focusedLabelColor = Orange
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { noteSheetTarget = null },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) { Text("ביטול") }
+                        Button(
+                            onClick = {
+                                if (type == "shift") onUpdateShiftNote?.invoke(name, noteSheetText)
+                                else onUpdateDayNote?.invoke(name, noteSheetText)
+                                noteSheetTarget = null
+                            },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Orange)
+                        ) { Text("שמור", fontWeight = FontWeight.Bold) }
                     }
                 }
             }
@@ -594,7 +686,7 @@ internal fun EmployeeStatistics(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.2f))
+        border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
@@ -608,13 +700,13 @@ internal fun EmployeeStatistics(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    color = PrimaryTeal.copy(alpha = 0.15f),
+                    color = AccentIndigo.copy(alpha = 0.15f),
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.BarChart,
                         contentDescription = null,
-                        tint = PrimaryTeal,
+                        tint = AccentIndigo,
                         modifier = Modifier.size(28.dp).padding(4.dp)
                     )
                 }
@@ -623,7 +715,7 @@ internal fun EmployeeStatistics(
                     text = "📊 סטטיסטיקה שבועית",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal
+                    color = AccentIndigo
                 )
             }
             
@@ -631,7 +723,7 @@ internal fun EmployeeStatistics(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryTeal.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .background(AccentIndigo.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
                     .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -639,14 +731,14 @@ internal fun EmployeeStatistics(
                     text = "שם עובד",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal,
+                    color = AccentIndigo,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     text = "משמרות",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal,
+                    color = AccentIndigo,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.width(70.dp)
                 )
@@ -654,7 +746,7 @@ internal fun EmployeeStatistics(
                     text = "שעות",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryTeal,
+                    color = AccentIndigo,
                     textAlign = TextAlign.End,
                     modifier = Modifier.width(70.dp)
                 )
@@ -701,7 +793,7 @@ internal fun EmployeeStatistics(
                     
                     // Shift count badge
                     Surface(
-                        color = if (shiftCount > 0) PrimaryTeal.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (shiftCount > 0) AccentIndigo.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.width(70.dp)
                     ) {
@@ -709,7 +801,7 @@ internal fun EmployeeStatistics(
                             text = shiftCount.toString(),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (shiftCount > 0) PrimaryTeal else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (shiftCount > 0) AccentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                             textAlign = TextAlign.Center
                         )
@@ -719,7 +811,7 @@ internal fun EmployeeStatistics(
                     
                     // Weekly hours badge
                     Surface(
-                        color = if (totalHours > 0) PrimaryTeal.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (totalHours > 0) AccentIndigo.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant,
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.width(70.dp)
                     ) {
@@ -731,7 +823,7 @@ internal fun EmployeeStatistics(
                             },
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = if (totalHours > 0) PrimaryTeal else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (totalHours > 0) AccentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                             textAlign = TextAlign.Center
                         )
@@ -768,7 +860,7 @@ private fun SchedulePreviewTable(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryTeal)
+                    .background(AccentIndigo)
             ) {
                 // Empty cell for shift names column
                 Box(
@@ -830,7 +922,7 @@ private fun SchedulePreviewTable(
                         modifier = Modifier
                             .width(120.dp)
                             .height(50.dp)
-                            .background(PrimaryTeal)
+                            .background(AccentIndigo)
                             .border(1.dp, Color.Black),
                         contentAlignment = Alignment.Center
                     ) {
@@ -1005,7 +1097,7 @@ private fun ShareMenuItem(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = PrimaryTeal
+                tint = AccentIndigo
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
@@ -1075,7 +1167,7 @@ private fun ErrorPopup(
                 // OK Button
                 Button(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {

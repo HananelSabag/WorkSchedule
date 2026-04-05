@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
@@ -18,18 +19,18 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hananel.workschedule.data.ShiftRow
-import com.hananel.workschedule.ui.theme.PrimaryTeal
-import com.hananel.workschedule.ui.theme.PrimaryTeal
+import com.hananel.workschedule.ui.theme.AccentIndigo
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftRowEditDialog(
     shiftRow: ShiftRow?,
     onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit
+    onSave: (String, String, String) -> Unit  // name, hours, note
 ) {
     var shiftName by remember { mutableStateOf(shiftRow?.shiftName ?: "") }
     var shiftHours by remember { mutableStateOf(shiftRow?.shiftHours ?: "") }
+    var shiftNote by remember { mutableStateOf(shiftRow?.note ?: "") }
     var showError by remember { mutableStateOf(false) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -66,13 +67,13 @@ fun ShiftRowEditDialog(
                     Surface(
                         modifier = Modifier.size(40.dp),
                         shape = CircleShape,
-                        color = PrimaryTeal.copy(alpha = 0.12f)
+                        color = AccentIndigo.copy(alpha = 0.12f)
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isNew) Icons.Default.AccessTime else Icons.Default.Edit,
                                 contentDescription = null,
-                                tint = PrimaryTeal,
+                                tint = AccentIndigo,
                                 modifier = Modifier.size(22.dp)
                             )
                         }
@@ -98,8 +99,8 @@ fun ShiftRowEditDialog(
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryTeal,
-                        focusedLabelColor = PrimaryTeal
+                        focusedBorderColor = AccentIndigo,
+                        focusedLabelColor = AccentIndigo
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -117,8 +118,26 @@ fun ShiftRowEditDialog(
                     } else null,
                     modifier = Modifier.fillMaxWidth(),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryTeal,
-                        focusedLabelColor = PrimaryTeal
+                        focusedBorderColor = AccentIndigo,
+                        focusedLabelColor = AccentIndigo
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Note (optional — shown under shift name in table)
+                OutlinedTextField(
+                    value = shiftNote,
+                    onValueChange = { shiftNote = it },
+                    label = { Text("הערה קבועה (אופציונלי)") },
+                    placeholder = { Text("בוקר קצר בשישי, ערב חג...") },
+                    singleLine = true,
+                    leadingIcon = {
+                        Icon(Icons.AutoMirrored.Filled.Notes, null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AccentIndigo,
+                        focusedLabelColor = AccentIndigo
                     ),
                     shape = RoundedCornerShape(12.dp)
                 )
@@ -127,19 +146,19 @@ fun ShiftRowEditDialog(
                 if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = PrimaryTeal.copy(alpha = 0.1f)
+                        color = AccentIndigo.copy(alpha = 0.1f)
                     ) {
                         Row(
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.AccessTime, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.AccessTime, null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
                             Text(
                                 "$shiftName · $shiftHours",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = PrimaryTeal
+                                color = AccentIndigo
                             )
                         }
                     }
@@ -156,7 +175,7 @@ fun ShiftRowEditDialog(
                     Button(
                         onClick = {
                             if (shiftName.isNotBlank() && shiftHours.isNotBlank()) {
-                                onSave(shiftName.trim(), shiftHours.trim())
+                                onSave(shiftName.trim(), shiftHours.trim(), shiftNote.trim())
                                 onDismiss()
                             } else {
                                 showError = true
@@ -164,7 +183,7 @@ fun ShiftRowEditDialog(
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryTeal)
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
                     ) {
                         Text(
                             text = if (isNew) "הוסף" else "שמור",

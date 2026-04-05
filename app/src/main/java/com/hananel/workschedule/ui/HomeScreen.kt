@@ -37,16 +37,18 @@ import com.hananel.workschedule.ui.theme.*
 
 @Composable
 fun HomeScreen(
-    scheduleCount: Int = 0,
-    onRecentSchedulesClick: () -> Unit,
     onNewScheduleClick: () -> Unit,
     onContinueTempDraftClick: () -> Unit,
     onEmployeeManagementClick: () -> Unit,
-    onTemplateSetupClick: () -> Unit,
     onGoToTemplateSetup: () -> Unit = {},
     hasTempDraft: Boolean = false,
     hasTemplate: Boolean = true,
     employeeCount: Int = 0,
+    // Kept for backwards compat but ignored — History is now in bottom nav
+    scheduleCount: Int = 0,
+    onRecentSchedulesClick: () -> Unit = {},
+    onTemplateSetupClick: () -> Unit = {},
+    onReminderClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showDraftConfirmDialog by remember { mutableStateOf(false) }
@@ -74,7 +76,7 @@ fun HomeScreen(
                     .blur(100.dp)
                     .alpha(0.09f)
                     .background(
-                        Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)),
+                        Brush.radialGradient(listOf(AccentIndigo, Color.Transparent)),
                         CircleShape
                     )
             )
@@ -111,7 +113,7 @@ fun HomeScreen(
                                         .scale(pulseScale)
                                         .alpha(0.14f)
                                         .background(
-                                            Brush.radialGradient(listOf(PrimaryTeal, Color.Transparent)),
+                                            Brush.radialGradient(listOf(AccentIndigo, Color.Transparent)),
                                             CircleShape
                                         )
                                 )
@@ -121,7 +123,7 @@ fun HomeScreen(
                                     color = MaterialTheme.colorScheme.surface,
                                     border = BorderStroke(
                                         1.5.dp,
-                                        Brush.linearGradient(listOf(PrimaryTeal, PrimaryTeal.copy(0.5f)))
+                                        Brush.linearGradient(listOf(AccentIndigo, AccentIndigo.copy(0.5f)))
                                     )
                                 ) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -139,7 +141,7 @@ fun HomeScreen(
                                     "סידור עבודה",
                                     fontSize = 24.sp,
                                     fontWeight = FontWeight.ExtraBold,
-                                    color = PrimaryTeal
+                                    color = AccentIndigo
                                 )
                                 Text(
                                     "ניהול משמרות חכם",
@@ -150,7 +152,8 @@ fun HomeScreen(
                             }
                         }
 
-                        Spacer(Modifier.width(52.dp))
+                        // Balance spacer (mirrors the HelpButton width on the left)
+                        Spacer(Modifier.size(48.dp))
                     }
 
                     Spacer(Modifier.height(24.dp))
@@ -170,9 +173,13 @@ fun HomeScreen(
                         Spacer(Modifier.height(14.dp))
                     }
 
-                    // ─── Card grid — visual hierarchy ─────────────────────────
+                    // ─── Stats ────────────────────────────────────────────────
+                    StatsRow(employeeCount = employeeCount, scheduleCount = scheduleCount)
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // ─── Cards ────────────────────────────────────────────────
                     val canCreate = employeeCount > 0 && hasTemplate
-                    val canHistory = employeeCount > 0
 
                     Column(
                         modifier = Modifier.fillMaxWidth(),
@@ -182,13 +189,13 @@ fun HomeScreen(
                         MainActionCard(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(162.dp),
+                                .height(200.dp),
                             icon = Icons.Default.Add,
                             label = "סידור חדש",
                             description = "צור סידור שבועי חדש",
                             gradient = if (canCreate)
-                                listOf(PrimaryTeal, PrimaryTealDark)
-                            else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
+                                listOf(CardIndigo, CardIndigoDark)
+                            else listOf(DisabledGray, DisabledGrayDark),
                             enabled = canCreate,
                             badge = if (hasTempDraft) "!" else null,
                             onClick = {
@@ -197,48 +204,18 @@ fun HomeScreen(
                             }
                         )
 
-                        // ② History + Employees — side by side, different colors
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(134.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            MainActionCard(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                icon = Icons.Default.History,
-                                label = "היסטוריה",
-                                description = "סידורים שמורים",
-                                gradient = if (canHistory)
-                                    listOf(CardBlue, CardBlueDark)
-                                else listOf(Color(0xFF9E9E9E), Color(0xFF616161)),
-                                enabled = canHistory,
-                                badge = if (scheduleCount > 0) scheduleCount.toString() else null,
-                                onClick = onRecentSchedulesClick
-                            )
-                            MainActionCard(
-                                modifier = Modifier.weight(1f).fillMaxHeight(),
-                                icon = Icons.Default.People,
-                                label = "עובדים",
-                                description = "הוסף ונהל עובדים",
-                                gradient = listOf(CardEmerald, CardEmeraldDark),
-                                badge = if (employeeCount > 0) employeeCount.toString() else null,
-                                onClick = onEmployeeManagementClick
-                            )
-                        }
-
-                        // ③ Template Settings — full width, compact row layout
+                        // ② Employees — full width compact row
                         MainActionCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(72.dp),
-                            icon = Icons.Default.TableChart,
-                            label = "הגדרות טבלה",
-                            description = "משמרות וימים",
-                            gradient = listOf(CardViolet, CardVioletDark),
-                            badge = if (!hasTemplate) "!" else null,
+                            icon = Icons.Default.People,
+                            label = "ניהול עובדים",
+                            description = "הוסף, ערוך ונהל עובדים",
+                            gradient = listOf(CardAmber, CardAmberDark),
+                            badge = if (employeeCount > 0) employeeCount.toString() else null,
                             compact = true,
-                            onClick = onTemplateSetupClick
+                            onClick = onEmployeeManagementClick
                         )
                     }
 
@@ -483,15 +460,15 @@ private fun SetupBanner(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.20f))
+        border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.20f))
     ) {
         Column(
             modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Default.Info, null, tint = PrimaryTeal, modifier = Modifier.size(16.dp))
-                Text("נדרשת הגדרה", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = PrimaryTeal)
+                Icon(Icons.Default.Info, null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
+                Text("נדרשת הגדרה", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = AccentIndigo)
             }
             if (needsEmployees) SetupChip("הוסף עובדים", Icons.Default.PersonAdd, onAddEmployees)
             if (needsTemplate) SetupChip("הגדר מבנה טבלה", Icons.Default.TableChart, onSetupTemplate)
@@ -505,14 +482,89 @@ private fun SetupChip(label: String, icon: ImageVector, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(10.dp))
-            .background(PrimaryTeal.copy(alpha = 0.10f))
+            .background(AccentIndigo.copy(alpha = 0.10f))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Icon(icon, null, tint = PrimaryTeal, modifier = Modifier.size(18.dp))
-        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = PrimaryTeal, modifier = Modifier.weight(1f))
-        Icon(Icons.Default.ChevronLeft, null, tint = PrimaryTeal.copy(0.6f), modifier = Modifier.size(16.dp))
+        Icon(icon, null, tint = AccentIndigo, modifier = Modifier.size(18.dp))
+        Text(label, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = AccentIndigo, modifier = Modifier.weight(1f))
+        Icon(Icons.Default.ChevronLeft, null, tint = AccentIndigo.copy(0.6f), modifier = Modifier.size(16.dp))
+    }
+}
+
+@Composable
+private fun StatsRow(employeeCount: Int, scheduleCount: Int) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        // Employees stat
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(14.dp),
+            color = CardAmber.copy(alpha = 0.12f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, CardAmber.copy(alpha = 0.25f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    Icons.Default.People,
+                    null,
+                    tint = CardAmber,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        "$employeeCount",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = CardAmber
+                    )
+                    Text(
+                        "עובדים",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        // Schedules stat
+        Surface(
+            modifier = Modifier.weight(1f),
+            shape = RoundedCornerShape(14.dp),
+            color = AccentIndigo.copy(alpha = 0.12f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.25f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Icon(
+                    Icons.Default.CalendarMonth,
+                    null,
+                    tint = AccentIndigo,
+                    modifier = Modifier.size(20.dp)
+                )
+                Column {
+                    Text(
+                        "$scheduleCount",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = AccentIndigo
+                    )
+                    Text(
+                        "סידורים",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 }

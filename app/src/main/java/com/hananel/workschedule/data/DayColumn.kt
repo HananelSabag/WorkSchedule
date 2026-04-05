@@ -15,7 +15,8 @@ data class DayColumn(
     val dayIndex: Int, // 0=Sunday, 1=Monday, ..., 6=Saturday
     val dayNameHebrew: String, // "ראשון", "שני", etc.
     val dayNameEnglish: String, // "Sunday", "Monday", etc.
-    val isEnabled: Boolean = true // Can be disabled by user
+    val isEnabled: Boolean = true, // Can be disabled by user
+    val note: String = "" // Optional permanent note shown under day name in table header
 )
 
 

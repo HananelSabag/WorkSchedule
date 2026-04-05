@@ -69,7 +69,7 @@ fun AutoScheduleReviewScreen(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.colorScheme.background,
                 shape = RoundedCornerShape(16.dp),
-                border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.12f)),
+                border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.12f)),
                 shadowElevation = 2.dp
             ) {
                 Row(
@@ -83,7 +83,7 @@ fun AutoScheduleReviewScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "חזור לחסימות",
-                            tint = PrimaryTeal
+                            tint = AccentIndigo
                         )
                     }
 
@@ -97,7 +97,7 @@ fun AutoScheduleReviewScreen(
                             text = "סקירת סידור אוטומטי",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.ExtraBold,
-                            color = PrimaryTeal,
+                            color = AccentIndigo,
                             textAlign = TextAlign.Center,
                             maxLines = 1
                         )
@@ -111,16 +111,16 @@ fun AutoScheduleReviewScreen(
                         Surface(
                             onClick = onEnterLandscape,
                             shape = RoundedCornerShape(8.dp),
-                            color = PrimaryTeal.copy(alpha = 0.10f),
-                            border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.35f))
+                            color = AccentIndigo.copy(alpha = 0.10f),
+                            border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.35f))
                         ) {
                             Row(
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.ScreenRotation, null, tint = PrimaryTeal, modifier = Modifier.size(13.dp))
-                                Text("תצוגה אופקית", fontSize = 10.sp, color = PrimaryTeal, fontWeight = FontWeight.Medium)
+                                Icon(Icons.Default.ScreenRotation, null, tint = AccentIndigo, modifier = Modifier.size(13.dp))
+                                Text("תצוגה אופקית", fontSize = 10.sp, color = AccentIndigo, fontWeight = FontWeight.Medium)
                             }
                         }
                     }
@@ -138,7 +138,7 @@ fun AutoScheduleReviewScreen(
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                     border = BorderStroke(
                         1.dp,
-                        if (allGood) PrimaryTeal.copy(alpha = 0.4f) else Orange.copy(alpha = 0.4f)
+                        if (allGood) AccentIndigo.copy(alpha = 0.4f) else Orange.copy(alpha = 0.4f)
                     )
                 ) {
                     Column(
@@ -153,13 +153,13 @@ fun AutoScheduleReviewScreen(
                             Surface(
                                 modifier = Modifier.size(36.dp),
                                 shape = CircleShape,
-                                color = (if (allGood) PrimaryTeal else Orange).copy(alpha = 0.15f)
+                                color = (if (allGood) AccentIndigo else Orange).copy(alpha = 0.15f)
                             ) {
                                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = if (allGood) Icons.Default.CheckCircle else Icons.Default.Warning,
                                         contentDescription = null,
-                                        tint = if (allGood) PrimaryTeal else Orange,
+                                        tint = if (allGood) AccentIndigo else Orange,
                                         modifier = Modifier.size(22.dp)
                                     )
                                 }
@@ -168,7 +168,7 @@ fun AutoScheduleReviewScreen(
                                 text = if (allGood) "הסידור הושלם בהצלחה!" else "הסידור נוצר עם חורים",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (allGood) PrimaryTeal else Orange
+                                color = if (allGood) AccentIndigo else Orange
                             )
                         }
 
@@ -180,7 +180,7 @@ fun AutoScheduleReviewScreen(
                             StatChip(
                                 label = "מולאו",
                                 value = "$filledShifts",
-                                color = PrimaryTeal,
+                                color = AccentIndigo,
                                 modifier = Modifier.weight(1f)
                             )
                             StatChip(
@@ -270,7 +270,7 @@ fun AutoScheduleReviewScreen(
                         .weight(1f)
                         .height(52.dp),
                     shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, PrimaryTeal.copy(alpha = 0.5f))
+                    border = BorderStroke(1.dp, AccentIndigo.copy(alpha = 0.5f))
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
@@ -287,7 +287,7 @@ fun AutoScheduleReviewScreen(
                         .height(52.dp)
                         .clip(RoundedCornerShape(14.dp))
                         .background(
-                            Brush.horizontalGradient(listOf(PrimaryTeal, PrimaryTealDark))
+                            Brush.horizontalGradient(listOf(AccentIndigo, AccentIndigoDark))
                         )
                         .clickable(
                             onClick = onConfirm,
