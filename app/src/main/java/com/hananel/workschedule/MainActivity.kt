@@ -432,15 +432,7 @@ fun WorkScheduleApp() {
             val isEditingExistingSchedule by viewModel.isEditingExistingSchedule.collectAsState()
             val templateData by viewModel.activeTemplate.collectAsState()
             
-            // Clear draft only when it's a NEW schedule reaching preview.
-            // When viewing from History (isEditingExistingSchedule=true), do NOT touch the draft -
-            // the user might have a real in-progress draft in DB that must not be deleted.
-            LaunchedEffect(isEditingExistingSchedule) {
-                if (!isEditingExistingSchedule) {
-                    viewModel.clearDraft()
-                }
-            }
-            
+            // Draft is cleared inside finishScheduleCreation() — no UI-layer intervention needed.
             PreviewScreen(
                 employees = employees,
                 schedule = currentSchedule,

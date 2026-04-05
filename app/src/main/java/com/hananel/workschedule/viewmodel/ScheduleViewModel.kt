@@ -76,12 +76,15 @@ class ScheduleViewModel(
     private val _hasTempDraft = MutableStateFlow(false)
     val hasTempDraft = _hasTempDraft.asStateFlow()
     
-    // Smart save system - track schedule source for intelligent saving
-    private val _currentScheduleId = MutableStateFlow<Int?>(null) // null = new schedule, non-null = editing existing
+    // Smart save system — null = new/draft schedule, non-null = saved schedule in history
+    private val _currentScheduleId = MutableStateFlow<Int?>(null)
     val currentScheduleId = _currentScheduleId.asStateFlow()
-    
-    private val _isEditingExistingSchedule = MutableStateFlow(false)
-    val isEditingExistingSchedule = _isEditingExistingSchedule.asStateFlow()
+
+    // Derived: true whenever we are viewing/editing a schedule that already exists in the DB.
+    // Single source of truth — driven entirely by _currentScheduleId so it is never out of sync.
+    val isEditingExistingSchedule: StateFlow<Boolean> = _currentScheduleId
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
     
     // Track if we're editing blocks of an existing schedule (from history)
     private val _isEditingScheduleBlocks = MutableStateFlow(false)
@@ -387,7 +390,6 @@ class ScheduleViewModel(
                 val duplicates = checkDuplicateScheduleName(weekStart)
                 
                 if (duplicates.isNotEmpty()) {
-                    // Show unified duplicate dialog
                     _duplicateScheduleDialog.value = DuplicateDialogState(
                         originalName = weekStart,
                         existingCount = duplicates.size,
@@ -395,8 +397,7 @@ class ScheduleViewModel(
                         isFromManualCreation = true
                     )
                 } else {
-                    // No duplicates - save directly
-                    saveSchedule(weekStart)
+                    saveScheduleInternal(weekStart)
                     finishScheduleCreation()
                 }
             } else {
@@ -664,7 +665,7 @@ class ScheduleViewModel(
                         isFromManualCreation = false
                     )
                 } else {
-                    saveSchedule(weekStart)
+                    saveScheduleInternal(weekStart)
                     finishScheduleCreation()
                     _autoConfirmComplete.value = true
                 }
@@ -689,13 +690,7 @@ class ScheduleViewModel(
         val newSchedule = _currentSchedule.value.toMutableMap()
         newSchedule[cellKey] = if (value.isEmpty()) emptyList() else value.split(", ").map { it.trim() }
         _currentSchedule.value = newSchedule
-        
-        // Smart save: if editing existing schedule, auto-save changes
-        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-            saveScheduleChanges() // Update existing record in database
-        } else {
-            updateTempDraftStatus() // Mark as temp draft for new schedules
-        }
+        if (_currentScheduleId.value != null) saveScheduleChanges() else updateTempDraftStatus()
     }
     
     fun clearErrorMessage() {
@@ -706,22 +701,25 @@ class ScheduleViewModel(
         _snackbarMessage.value = null
     }
     
+    // Internal: must be called from within a coroutine. Inserts the schedule and captures the
+    // auto-generated ID so that isEditingExistingSchedule flips to true immediately.
+    private suspend fun saveScheduleInternal(weekStart: String = getScheduleWeekStart()) {
+        val gson = com.google.gson.Gson()
+        val schedule = Schedule(
+            weekStart = weekStart,
+            scheduleData = gson.toJson(_currentSchedule.value),
+            blocksData = gson.toJson(_blocks.value),
+            canOnlyData = gson.toJson(_canOnlyBlocks.value),
+            savingModeData = gson.toJson(_savingMode.value),
+            createdDate = System.currentTimeMillis()
+        )
+        val insertedId = scheduleDao.insertSchedule(schedule)
+        _currentScheduleId.value = insertedId.toInt()
+    }
+
+    // Public wrapper — kept for any callers that launch their own coroutine.
     fun saveSchedule(weekStart: String = getScheduleWeekStart()) {
-        viewModelScope.launch {
-            // Convert current state to JSON strings for database storage
-            val gson = com.google.gson.Gson()
-            
-            val schedule = Schedule(
-                weekStart = weekStart,
-                scheduleData = gson.toJson(_currentSchedule.value),
-                blocksData = gson.toJson(_blocks.value),
-                canOnlyData = gson.toJson(_canOnlyBlocks.value),
-                savingModeData = gson.toJson(_savingMode.value),
-                createdDate = System.currentTimeMillis()
-            )
-            
-            scheduleDao.insertSchedule(schedule)
-        }
+        viewModelScope.launch { saveScheduleInternal(weekStart) }
     }
     
     private fun getCurrentWeekStart(): String {
@@ -750,10 +748,8 @@ class ScheduleViewModel(
                 _savingMode.value = gson.fromJson(schedule.savingModeData, blocksType) ?: emptyMap()
                 _errorMessage.value = ""
                 
-                // Mark as editing existing schedule for smart save system
                 _currentScheduleId.value = schedule.id
-                _isEditingExistingSchedule.value = true
-                _isEditingScheduleBlocks.value = false // Not editing blocks, just viewing
+                _isEditingScheduleBlocks.value = false
                 
                 // Parse and restore the week start date from the schedule
                 parseAndRestoreWeekStartDate(schedule.weekStart)
@@ -833,11 +829,9 @@ class ScheduleViewModel(
                 _savingMode.value = gson.fromJson(schedule.savingModeData, blocksType) ?: emptyMap()
                 _errorMessage.value = ""
                 
-                // Mark as editing blocks of existing schedule
                 _currentScheduleId.value = schedule.id
-                _isEditingExistingSchedule.value = true
-                _isEditingScheduleBlocks.value = true // Special mode: editing blocks from history
-                _editedScheduleName.value = schedule.weekStart // Store schedule name/date for display
+                _isEditingScheduleBlocks.value = true
+                _editedScheduleName.value = schedule.weekStart
                 
                 // Parse and restore the week start date from the schedule
                 parseAndRestoreWeekStartDate(schedule.weekStart)
@@ -855,9 +849,7 @@ class ScheduleViewModel(
     fun createScheduleCopy() {
         viewModelScope.launch {
             try {
-                // Clear the current schedule ID - this will create a NEW schedule
                 _currentScheduleId.value = null
-                _isEditingExistingSchedule.value = false
                 _isEditingScheduleBlocks.value = false
                 _editedScheduleName.value = null
                 
@@ -899,9 +891,7 @@ class ScheduleViewModel(
     
     // Override and create new manual schedule (discard existing schedule, create new)
     fun overrideAndCreateNewManualSchedule() {
-        // Clear the editing state and create as new schedule
         _currentScheduleId.value = null
-        _isEditingExistingSchedule.value = false
         _isEditingScheduleBlocks.value = false
         
         // Clear current schedule but keep blocks
@@ -911,10 +901,8 @@ class ScheduleViewModel(
         prepareForManualCreation()
     }
     
-    // Navigate to blocks editing from preview (set editing mode if this is existing schedule)
     fun navigateToBlocksEditingFromPreview() {
-        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-            // This is an existing schedule - enable blocks editing mode
+        if (_currentScheduleId.value != null) {
             _isEditingScheduleBlocks.value = true
         } else {
             // This is a new schedule - just cancel and return
@@ -945,64 +933,28 @@ class ScheduleViewModel(
         return scheduleDao.getSchedulesByWeekStart(weekStart)
     }
     
-    // Smart save - updates existing schedule instead of creating new one
+    // Persists any in-memory changes back to the already-saved schedule record.
     fun saveScheduleChanges() {
+        val currentId = _currentScheduleId.value ?: return // no-op for new/draft schedules
         viewModelScope.launch {
-            val currentId = _currentScheduleId.value
-            if (currentId != null && _isEditingExistingSchedule.value) {
-                // Update existing schedule
-                val gson = com.google.gson.Gson()
-                val existingSchedule = scheduleDao.getScheduleById(currentId)
-                
-                if (existingSchedule != null) {
-                    val updatedSchedule = existingSchedule.copy(
-                        scheduleData = gson.toJson(_currentSchedule.value),
-                        blocksData = gson.toJson(_blocks.value),
-                        canOnlyData = gson.toJson(_canOnlyBlocks.value),
-                        savingModeData = gson.toJson(_savingMode.value)
-                    )
-                    scheduleDao.updateSchedule(updatedSchedule)
-                }
-            } else {
-                // Create new schedule (fallback to regular save)
-                saveSchedule()
-            }
+            val existing = scheduleDao.getScheduleById(currentId) ?: return@launch
+            val gson = com.google.gson.Gson()
+            scheduleDao.updateSchedule(
+                existing.copy(
+                    scheduleData = gson.toJson(_currentSchedule.value),
+                    blocksData   = gson.toJson(_blocks.value),
+                    canOnlyData  = gson.toJson(_canOnlyBlocks.value),
+                    savingModeData = gson.toJson(_savingMode.value)
+                )
+            )
         }
-    }
-    
-    // Create new schedule with duplicate handling
-    suspend fun saveNewScheduleWithDuplicateCheck(weekStart: String): SaveResult {
-        // Check if schedule is empty
-        if (isScheduleEmpty()) {
-            return SaveResult.Empty
-        }
-        
-        // Check for duplicates
-        val duplicates = checkDuplicateScheduleName(weekStart)
-        if (duplicates.isNotEmpty()) {
-            return SaveResult.Duplicate(duplicates.size, weekStart)
-        }
-        
-        // Save new schedule
-        saveSchedule(weekStart)
-        return SaveResult.Success
-    }
-    
-    // Force save with version number (for duplicate resolution)
-    fun saveScheduleWithVersion(baseWeekStart: String, version: Int) {
-        val versionedName = if (version > 0) "$baseWeekStart ($version)" else baseWeekStart
-        saveSchedule(versionedName)
     }
     
     // Helper function to finish schedule creation process
+    // Called after a new schedule is inserted. Clears the draft; _currentScheduleId is already
+    // set by saveScheduleInternal(), so isEditingExistingSchedule is now true automatically.
     private fun finishScheduleCreation() {
-        // DON'T clear blocks - they need to stay for preview and history!
-        // User can manually reset if they want to start fresh
-        
-        // Clear draft - schedule is now saved in history!
         clearDraft()
-        
-        // Keep currentScheduleId and isEditingExistingSchedule - they're needed for history
     }
     
     // Convert "can-only" blocks to "cannot" blocks for all other positions
@@ -1102,12 +1054,9 @@ class ScheduleViewModel(
     fun onDuplicateDialogOverwrite() {
         val dialogState = _duplicateScheduleDialog.value ?: return
         viewModelScope.launch {
-            // Delete existing schedules with same name
             val existingSchedules = checkDuplicateScheduleName(dialogState.originalName)
             existingSchedules.forEach { scheduleDao.deleteSchedule(it) }
-            
-            // Save new schedule with original name
-            saveSchedule(dialogState.originalName)
+            saveScheduleInternal(dialogState.originalName)
             finishScheduleCreation()
             
             // Close dialog
@@ -1118,9 +1067,8 @@ class ScheduleViewModel(
     fun onDuplicateDialogCreateNew() {
         val dialogState = _duplicateScheduleDialog.value ?: return
         viewModelScope.launch {
-            // Save with version number
             val versionedName = "${dialogState.originalName} (${dialogState.existingCount})"
-            saveSchedule(versionedName)
+            saveScheduleInternal(versionedName)
             finishScheduleCreation()
             
             // Close dialog
@@ -1132,12 +1080,7 @@ class ScheduleViewModel(
         _duplicateScheduleDialog.value = null
     }
     
-    // Prepare data for manual creation screen - keep can-only as is (no conversion!)
     fun prepareForManualCreation() {
-        // NEW: Don't convert! Keep both blocks and canOnlyBlocks for manual screen
-        // This way user sees:
-        // - Red cells for "לא יכול" (blocks)
-        // - Blue cells for "יכול" (canOnlyBlocks)
         updateTempDraftStatus()
     }
     
@@ -1152,38 +1095,28 @@ class ScheduleViewModel(
         CANNOT, CAN_ONLY
     }
     
-    // Temp Draft Management
+    // Temp Draft Management — only relevant when _currentScheduleId == null (new schedule flow).
     private fun updateTempDraftStatus() {
-        // IMPORTANT: If viewing or editing an existing schedule from history,
-        // do NOT update temp draft status - we're not in draft mode!
-        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-            // We're viewing/editing an existing saved schedule from history
-            // The data in state is the history schedule, NOT a new draft
+        // Never write a draft while viewing/editing a saved schedule — changes go directly to DB.
+        if (_currentScheduleId.value != null) {
             _hasTempDraft.value = false
-            
-            // If specifically editing blocks, save changes to the schedule
-            if (_isEditingScheduleBlocks.value) {
-                saveScheduleChanges()
-            }
+            if (_isEditingScheduleBlocks.value) saveScheduleChanges()
             return
         }
-        
-        // Check if there's any temp work (manual blocks, schedules, etc.)
-        // Ignore automatic Shabbat blocks - they don't count as temp draft
+
         val currentEmployees = employees.value
-        
-        // Count only manual blocks (not automatic Shabbat blocks)
+
+        // Only count manual blocks; ignore auto-applied Shabbat observer blocks.
         val manualBlocks = _blocks.value.filter { (key, _) ->
             val parsed = parseBlockKey(key)
             if (parsed != null) {
                 val (employeeName, day, shift) = parsed
-                val shiftKey = "$day-$shift"
                 val employee = currentEmployees.find { it.name == employeeName }
-                val isAutomaticShabbatBlock = employee?.shabbatObserver == true &&
-                        ShiftDefinitions.shabbatBlockedShifts.contains(shiftKey)
-                !isAutomaticShabbatBlock
+                val isAutoShabbat = employee?.shabbatObserver == true &&
+                        ShiftDefinitions.shabbatBlockedShifts.contains("$day-$shift")
+                !isAutoShabbat
             } else {
-                true // Count if we can't parse (safety)
+                true
             }
         }
         
@@ -1213,50 +1146,36 @@ class ScheduleViewModel(
     }
     
     fun startNewSchedule() {
-        // User wants to start completely fresh - clear everything and reset smart save system
         clearAllBlocks()
         clearManualSchedule()
-        clearDraft() // Delete draft from DB
-        // Reset smart save system for new schedule
+        clearDraft()
         _currentScheduleId.value = null
-        _isEditingExistingSchedule.value = false
     }
 
     // Called when navigating back to HOME from PREVIEW.
-    // Clears leftover in-memory session data so checkTempDraftOnStart()
-    // doesn't mistake stale schedule state for an active draft.
+    // For new schedules (id == null): wipe all in-memory state.
+    // For history schedules (id != null): just clear the session flags — the DB record is already
+    // up-to-date, no state to preserve in memory.
     fun resetSessionOnReturnHome() {
-        if (!_isEditingExistingSchedule.value) {
-            // Was a new schedule flow — wipe in-memory state
-            _currentSchedule.value = emptyMap()
-            _blocks.value = emptyMap()
-            _canOnlyBlocks.value = emptyMap()
-            _hasTempDraft.value = false
-            _currentScheduleId.value = null
-        }
-        _isEditingExistingSchedule.value = false
+        _currentSchedule.value = emptyMap()
+        _blocks.value = emptyMap()
+        _canOnlyBlocks.value = emptyMap()
+        _hasTempDraft.value = false
+        _currentScheduleId.value = null
         _isEditingScheduleBlocks.value = false
     }
     
-    // Save draft when app closes - persist temp work to database
+    // Persist draft to DB when app goes to background.
+    // Only relevant in the new-schedule flow; history schedules are already saved in DB.
     fun saveDraftOnAppClose() {
         viewModelScope.launch {
             try {
-                // IMPORTANT: Don't save draft if we're viewing/editing a history schedule!
-                // This would overwrite the user's actual draft with the history schedule data
-                if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-                    // We're viewing a history schedule - don't touch the draft
-                    return@launch
-                }
-                
-                // Only save if there's actual temp draft data
+                if (_currentScheduleId.value != null) return@launch
                 if (_hasTempDraft.value) {
                     val gson = com.google.gson.Gson()
-                    
-                    // Create a special draft schedule with marker name
                     val draftSchedule = Schedule(
-                        id = 0, // Will be auto-generated or replaced
-                        weekStart = "__TEMP_DRAFT__", // Special marker for draft
+                        id = 0,
+                        weekStart = "__TEMP_DRAFT__",
                         scheduleData = gson.toJson(_currentSchedule.value),
                         blocksData = gson.toJson(_blocks.value),
                         canOnlyData = gson.toJson(_canOnlyBlocks.value),
@@ -1429,19 +1348,6 @@ class ScheduleViewModel(
         }
     }
 
-    fun updateShiftRow(index: Int, shiftName: String, shiftHours: String, note: String = "") {
-        val currentRows = _editingShiftRows.value.toMutableList()
-        if (index in currentRows.indices) {
-            currentRows[index] = currentRows[index].copy(
-                shiftName = shiftName,
-                shiftHours = shiftHours,
-                displayName = "$shiftName ($shiftHours)",
-                note = note.trim()
-            )
-            _editingShiftRows.value = currentRows
-        }
-    }
-
     fun editShiftRow(index: Int, shiftName: String, shiftHours: String, note: String = "") {
         val currentRows = _editingShiftRows.value.toMutableList()
         if (index in currentRows.indices) {
@@ -1475,27 +1381,17 @@ class ScheduleViewModel(
     fun updateScheduleShiftNote(shiftName: String, note: String) {
         val key = "$SHIFT_NOTE_PREFIX$shiftName"
         val newSchedule = _currentSchedule.value.toMutableMap()
-        if (note.isBlank()) newSchedule.remove(key)
-        else newSchedule[key] = listOf(note.trim())
+        if (note.isBlank()) newSchedule.remove(key) else newSchedule[key] = listOf(note.trim())
         _currentSchedule.value = newSchedule
-        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-            saveScheduleChanges()
-        } else {
-            updateTempDraftStatus()
-        }
+        if (_currentScheduleId.value != null) saveScheduleChanges() else updateTempDraftStatus()
     }
 
     fun updateScheduleDayNote(dayName: String, note: String) {
         val key = "$DAY_NOTE_PREFIX$dayName"
         val newSchedule = _currentSchedule.value.toMutableMap()
-        if (note.isBlank()) newSchedule.remove(key)
-        else newSchedule[key] = listOf(note.trim())
+        if (note.isBlank()) newSchedule.remove(key) else newSchedule[key] = listOf(note.trim())
         _currentSchedule.value = newSchedule
-        if (_isEditingExistingSchedule.value && _currentScheduleId.value != null) {
-            saveScheduleChanges()
-        } else {
-            updateTempDraftStatus()
-        }
+        if (_currentScheduleId.value != null) saveScheduleChanges() else updateTempDraftStatus()
     }
     
     fun deleteShiftRow(index: Int) {
