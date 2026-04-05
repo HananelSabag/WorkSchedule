@@ -54,16 +54,16 @@ fun PreviewScreen(
     errorMessage: String,
     savingMode: Map<String, Boolean>,
     weekStartDate: java.time.LocalDate,
-    templateData: TemplateData? = null, // Dynamic template
+    templateData: TemplateData? = null,
     onUpdateCell: (String, String) -> Unit,
-    onSaveSchedule: () -> Unit, // Deprecated - smart save system handles this automatically
-    onShareSchedule: (ShareType) -> Unit,
+    onSaveSchedule: () -> Unit, // Deprecated — smart save handles this
+    onShareSchedule: (ShareType, com.hananel.workschedule.utils.PrintSettings) -> Unit,
     onBackClick: () -> Unit,
     onReturnToBlocking: () -> Unit,
     onDismissError: () -> Unit,
     onEnterLandscape: () -> Unit = {},
-    onUpdateShiftNote: ((String, String) -> Unit)? = null, // shiftName → note
-    onUpdateDayNote: ((String, String) -> Unit)? = null,   // dayName  → note
+    onUpdateShiftNote: ((String, String) -> Unit)? = null,
+    onUpdateDayNote: ((String, String) -> Unit)? = null,
     isEditingExistingSchedule: Boolean = false,
     modifier: Modifier = Modifier
 ) {
@@ -71,16 +71,21 @@ fun PreviewScreen(
         mutableStateOf(schedule.mapValues { it.value.joinToString(", ") })
     }
 
-    // Statistics / actions bottom sheets
-    val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    // Print / export settings — persisted for the session
+    var printSettings by remember { mutableStateOf(com.hananel.workschedule.utils.PrintSettings.DEFAULT) }
+
+    // Bottom sheets
+    val statsSheetState   = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val actionsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val printSheetState   = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    var showStatisticsSheet by remember { mutableStateOf(false) }
-    var showActionsSheet by remember { mutableStateOf(false) }
+    var showStatisticsSheet  by remember { mutableStateOf(false) }
+    var showActionsSheet     by remember { mutableStateOf(false) }
+    var showPrintSettings    by remember { mutableStateOf(false) }
 
     // Note editing state
-    var noteSheetTarget by remember { mutableStateOf<Pair<String, String>?>(null) } // Pair(type="shift"|"day", name)
-    var noteSheetText  by remember { mutableStateOf("") }
+    var noteSheetTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var noteSheetText   by remember { mutableStateOf("") }
 
     // Update editable schedule when schedule changes
     LaunchedEffect(schedule) {
@@ -402,7 +407,7 @@ fun PreviewScreen(
                             subtitle = "שמור תמונה של הסידור בטלפון",
                             onClick = {
                                 showActionsSheet = false
-                                onShareSchedule(ShareType.DOWNLOAD_IMAGE)
+                                onShareSchedule(ShareType.DOWNLOAD_IMAGE, printSettings)
                             }
                         )
                         HorizontalDivider(
@@ -418,7 +423,25 @@ fun PreviewScreen(
                             subtitle = "שלח לקבוצה או לאיש קשר",
                             onClick = {
                                 showActionsSheet = false
-                                onShareSchedule(ShareType.WHATSAPP_IMAGE)
+                                onShareSchedule(ShareType.WHATSAPP_IMAGE, printSettings)
+                            }
+                        )
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        // Print settings
+                        ActionSheetItem(
+                            icon = Icons.Default.Tune,
+                            color = Orange,
+                            title = "הגדרות ייצוא",
+                            subtitle = "צבעים • גודל טקסט • הערות • כותרת",
+                            onClick = {
+                                showActionsSheet = false
+                                scope.launch { actionsSheetState.hide() }
+                                showPrintSettings = true
+                                scope.launch { printSheetState.show() }
                             }
                         )
                         HorizontalDivider(
@@ -494,6 +517,20 @@ fun PreviewScreen(
                 }
             }
         }
+    }
+
+    // ─── Print / Export Settings sheet ─────────────────────────────────────────
+    if (showPrintSettings) {
+        PrintSettingsSheet(
+            sheetState = printSheetState,
+            current = printSettings,
+            onDismiss = { showPrintSettings = false },
+            onApply = { newSettings -> printSettings = newSettings },
+            onShareNow = { shareType ->
+                showPrintSettings = false
+                onShareSchedule(shareType, printSettings)
+            }
+        )
     }
 
     // ─── Note editing bottom sheet (for schedule-specific notes on shift/day headers) ───
@@ -1219,6 +1256,219 @@ private fun ActionSheetItem(
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
+    }
+}
+
+// ─── PrintSettingsSheet ──────────────────────────────────────────────────────
+
+private data class ColorPreset(
+    val label: String,
+    val headerColor: Int,
+    val cellBgColor: Int,
+    val cellTextColor: Int
+)
+
+private val COLOR_PRESETS = listOf(
+    ColorPreset("כחול",      android.graphics.Color.parseColor("#2D3561"), android.graphics.Color.parseColor("#EEF0F8"), android.graphics.Color.parseColor("#1A1E3A")),
+    ColorPreset("כחול כהה",  android.graphics.Color.parseColor("#1A237E"), android.graphics.Color.parseColor("#E8EAF6"), android.graphics.Color.parseColor("#0D1348")),
+    ColorPreset("ירוק",      android.graphics.Color.parseColor("#004D40"), android.graphics.Color.parseColor("#E0F2F1"), android.graphics.Color.parseColor("#002D26")),
+    ColorPreset("סגול",      android.graphics.Color.parseColor("#4A148C"), android.graphics.Color.parseColor("#F3E5F5"), android.graphics.Color.parseColor("#2E0054")),
+    ColorPreset("חם",        android.graphics.Color.parseColor("#BF360C"), android.graphics.Color.parseColor("#FBE9E7"), android.graphics.Color.parseColor("#7F2400")),
+    ColorPreset("כהה",       android.graphics.Color.parseColor("#212121"), android.graphics.Color.parseColor("#F5F5F5"), android.graphics.Color.parseColor("#121212")),
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PrintSettingsSheet(
+    sheetState: SheetState,
+    current: com.hananel.workschedule.utils.PrintSettings,
+    onDismiss: () -> Unit,
+    onApply: (com.hananel.workschedule.utils.PrintSettings) -> Unit,
+    onShareNow: (ShareType) -> Unit
+) {
+    var draft by remember { mutableStateOf(current) }
+
+    // Find which preset is active (or -1 = custom)
+    val selectedPreset = COLOR_PRESETS.indexOfFirst {
+        it.headerColor == draft.headerColor && it.cellBgColor == draft.cellBgColor
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    ) {
+        CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides LayoutDirection.Rtl) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp)
+                    .padding(bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Handle
+                Box(
+                    modifier = Modifier.width(40.dp).height(4.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))
+                        .align(Alignment.CenterHorizontally)
+                )
+
+                // Title
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Tune, null, tint = Orange, modifier = Modifier.size(22.dp))
+                    Text("הגדרות ייצוא", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                // ── Color scheme ──────────────────────────────────────────
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("ערכת צבעים", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    androidx.compose.foundation.lazy.LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(COLOR_PRESETS.size) { i ->
+                            val preset = COLOR_PRESETS[i]
+                            val isSelected = i == selectedPreset
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable {
+                                        draft = draft.copy(
+                                            headerColor  = preset.headerColor,
+                                            cellBgColor  = preset.cellBgColor,
+                                            cellTextColor = preset.cellTextColor
+                                        )
+                                    }
+                                    .background(
+                                        if (isSelected) AccentIndigo.copy(alpha = 0.12f)
+                                        else Color.Transparent
+                                    )
+                                    .border(
+                                        if (isSelected) androidx.compose.foundation.BorderStroke(2.dp, AccentIndigo)
+                                        else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                                        RoundedCornerShape(12.dp)
+                                    )
+                                    .padding(8.dp)
+                            ) {
+                                // Mini color swatch
+                                Column(
+                                    modifier = Modifier.size(52.dp, 36.dp).clip(RoundedCornerShape(6.dp))
+                                ) {
+                                    Box(modifier = Modifier.fillMaxWidth().weight(1.2f)
+                                        .background(Color(preset.headerColor)))
+                                    Box(modifier = Modifier.fillMaxWidth().weight(1f)
+                                        .background(Color(preset.cellBgColor)))
+                                }
+                                Text(preset.label, fontSize = 11.sp,
+                                    color = if (isSelected) AccentIndigo else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                            }
+                        }
+                    }
+                }
+
+                // ── Font size ─────────────────────────────────────────────
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("גודל טקסט", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(Triple("קטן", 0.82f, 13.sp), Triple("רגיל", 1.0f, 15.sp), Triple("גדול", 1.22f, 17.sp))
+                            .forEach { (label, scale, fsize) ->
+                                val sel = kotlin.math.abs(draft.fontSizeScale - scale) < 0.05f
+                                Surface(
+                                    onClick = { draft = draft.copy(fontSizeScale = scale) },
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = if (sel) AccentIndigo else MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(Modifier.padding(vertical = 10.dp), Alignment.Center) {
+                                        Text(label, fontSize = fsize, fontWeight = FontWeight.SemiBold,
+                                            color = if (sel) Color.White else MaterialTheme.colorScheme.onSurface)
+                                    }
+                                }
+                            }
+                    }
+                }
+
+                // ── Notes toggle ──────────────────────────────────────────
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("הצג הערות", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface)
+                        Text("הערות על שורות ועמודות יופיעו בתמונה", fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = draft.showNotes,
+                        onCheckedChange = { draft = draft.copy(showNotes = it) },
+                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White,
+                            checkedTrackColor = AccentIndigo)
+                    )
+                }
+
+                // ── Table title ───────────────────────────────────────────
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("כותרת הטבלה", fontSize = 14.sp, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface)
+                    OutlinedTextField(
+                        value = draft.tableTitle,
+                        onValueChange = { if (it.length <= 20) draft = draft.copy(tableTitle = it) },
+                        placeholder = { Text("סידור עבודה") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = AccentIndigo,
+                            focusedLabelColor  = AccentIndigo
+                        )
+                    )
+                }
+
+                // ── Apply + Share buttons ─────────────────────────────────
+                Button(
+                    onClick = { onApply(draft); onDismiss() },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentIndigo)
+                ) {
+                    Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text("שמור הגדרות", fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(
+                        onClick = { onApply(draft); onShareNow(ShareType.DOWNLOAD_IMAGE) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.5.dp, AccentIndigo)
+                    ) {
+                        Icon(Icons.Default.Download, null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("הורד", color = AccentIndigo, fontWeight = FontWeight.SemiBold)
+                    }
+                    Button(
+                        onClick = { onApply(draft); onShareNow(ShareType.WHATSAPP_IMAGE) },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = WhatsAppGreen)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Chat, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("ווצאפ", fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+        }
     }
 }
 

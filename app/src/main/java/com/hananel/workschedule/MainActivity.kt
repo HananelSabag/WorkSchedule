@@ -137,6 +137,9 @@ fun WorkScheduleApp() {
     }
     
     Scaffold(
+        // Each screen manages its own top inset (statusBarsPadding / statusBarsSpacer).
+        // Tell Scaffold only to handle the bottom navigation inset so we don't double-pad.
+        contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
         bottomBar = {
             if (currentScreen.showsBottomNav()) {
                 AppBottomNavBar(
@@ -447,11 +450,11 @@ fun WorkScheduleApp() {
                     // Deprecated - smart save handles this automatically
                     // Keep for compatibility but don't use
                 },
-                onShareSchedule = { shareType ->
+                onShareSchedule = { shareType, printSettings ->
                     try {
                         val weekStartString = weekStartDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd"))
                         val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                            context, currentSchedule, savingMode, weekStartString, templateData
+                            context, currentSchedule, savingMode, weekStartString, templateData, printSettings
                         )
                         when (shareType) {
                             ShareType.WHATSAPP_IMAGE ->
@@ -592,13 +595,13 @@ fun WorkScheduleApp() {
                 onUpdateCell = { key, value ->
                     viewModel.updateScheduleCell(key, value)
                 },
-                onShareSchedule = { shareType ->
+                onShareSchedule = { shareType, printSettings ->
                     try {
                         val weekStartString = weekStartDate.format(
                             java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
                         )
                         val bitmap = com.hananel.workschedule.utils.ImageSharer.generateScheduleImage(
-                            context, currentSchedule, savingMode, weekStartString, templateData
+                            context, currentSchedule, savingMode, weekStartString, templateData, printSettings
                         )
                         when (shareType) {
                             ShareType.WHATSAPP_IMAGE ->

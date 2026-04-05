@@ -88,8 +88,9 @@ fun HomeScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .statusBarsPadding()
                         .padding(horizontal = 20.dp)
-                        .padding(top = 48.dp, bottom = 20.dp),
+                        .padding(top = 8.dp, bottom = 20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // ─── Header ───────────────────────────────────────────────

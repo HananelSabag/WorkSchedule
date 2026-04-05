@@ -531,7 +531,7 @@ fun LandscapePreviewScreen(
     weekStartDate: java.time.LocalDate,
     templateData: TemplateData? = null,
     onUpdateCell: (String, String) -> Unit,
-    onShareSchedule: (ShareType) -> Unit,
+    onShareSchedule: (ShareType, com.hananel.workschedule.utils.PrintSettings) -> Unit,
     onReturnToBlocking: () -> Unit,
     onClose: () -> Unit,
 ) {
@@ -590,8 +590,8 @@ fun LandscapePreviewScreen(
                     exit = slideOutVertically { it }
                 ) {
                     LandscapePreviewToolbar(
-                        onDownload = { onShareSchedule(ShareType.DOWNLOAD_IMAGE) },
-                        onWhatsApp = { onShareSchedule(ShareType.WHATSAPP_IMAGE) },
+                        onDownload = { onShareSchedule(ShareType.DOWNLOAD_IMAGE, com.hananel.workschedule.utils.PrintSettings.DEFAULT) },
+                        onWhatsApp = { onShareSchedule(ShareType.WHATSAPP_IMAGE, com.hananel.workschedule.utils.PrintSettings.DEFAULT) },
                         onStats = {
                             showStatsSheet = true
                             scope.launch { statsSheetState.show() }

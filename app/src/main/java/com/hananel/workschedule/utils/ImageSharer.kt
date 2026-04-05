@@ -21,110 +21,92 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Utility for generating schedule images for WhatsApp sharing
- * Now supports dynamic templates!
+ * User-facing export configuration. All color values are ARGB Android Color ints.
+ */
+data class PrintSettings(
+    val headerColor: Int          = Color.parseColor("#2D3561"), // deep indigo (default)
+    val cellBgColor: Int          = Color.parseColor("#EEF0F8"), // pale indigo (default)
+    val cellTextColor: Int        = Color.parseColor("#1A1E3A"), // dark navy (default)
+    val fontSizeScale: Float      = 1.0f,  // 0.85 = small, 1.0 = normal, 1.2 = large
+    val showNotes: Boolean        = true,
+    val tableTitle: String        = "סידור עבודה"
+) {
+    companion object {
+        val DEFAULT = PrintSettings()
+    }
+}
+
+/**
+ * Utility for generating schedule images for WhatsApp sharing.
+ * Supports dynamic templates and user-configured PrintSettings.
  */
 object ImageSharer {
-    
+
     /**
-     * Generate schedule image that matches EXACTLY the app's table
+     * Generate a high-resolution schedule image.
      * @param templateData Dynamic template (null = use hardcoded ShiftDefinitions)
+     * @param settings      User export preferences (colors, font scale, title)
      */
     fun generateScheduleImage(
         context: Context,
         schedule: Map<String, List<String>>,
         savingMode: Map<String, Boolean>,
         weekStart: String = getCurrentDateString(),
-        templateData: TemplateData? = null
+        templateData: TemplateData? = null,
+        settings: PrintSettings = PrintSettings.DEFAULT
     ): Bitmap {
-        
-        // Use EXACT dimensions from SimpleScheduleTable
-        val cellWidth = 140 * 3 // Scale up for better quality
-        val cellHeight = 70 * 3
-        val headerHeight = 70 * 3
-        val shiftColumnWidth = 180 * 3
-        
-        // RTL layout - days should be RIGHT to LEFT like in the app (dynamic or hardcoded)
+
+        // Base dimensions — scaled 3× for high quality output
+        val scale = 3
+        val cellWidth        = 140 * scale
+        val cellHeight       = 70  * scale
+        val headerHeight     = 70  * scale
+        val shiftColumnWidth = 180 * scale
+
         val daysOfWeek = templateData?.dayColumns?.map { it.dayNameHebrew } ?: ShiftDefinitions.daysOfWeek
-        val daysRTL = daysOfWeek.reversed()
-        
-        // Get shift rows from template (dynamic count!)
-        val shiftRows = templateData?.shiftRows ?: emptyList()
-        val numShifts = if (templateData != null) shiftRows.size else 4 // Dynamic or 4 for legacy
-        
-        val totalWidth = shiftColumnWidth + (daysRTL.size * cellWidth)
-        val totalHeight = headerHeight + (numShifts * cellHeight)
-        
+        val shiftRows  = templateData?.shiftRows ?: emptyList()
+        val numShifts  = if (templateData != null) shiftRows.size else 4
+
+        val totalWidth  = shiftColumnWidth + daysOfWeek.size * cellWidth
+        val totalHeight = headerHeight     + numShifts * cellHeight
+
         val bitmap = Bitmap.createBitmap(totalWidth, totalHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        
-        // Fill with white background
         canvas.drawColor(Color.WHITE)
-        
-        // Paint objects with exact colors from the app
-        // Colors according to new specification
-        val headerBackgroundPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.parseColor("#2D3561") // Deep indigo-navy header (TableHeaderBg)
-        }
 
-        val shiftColumnBackgroundPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.parseColor("#2D3561") // Deep indigo-navy (TableHeaderBg)
-        }
+        // Derive corner accent from header color (slightly lighter shade)
+        val cornerColor = blendColors(settings.headerColor, Color.WHITE, 0.12f)
 
-        val cellBackgroundPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.parseColor("#EEF0F8") // Pale indigo-tinted white (TableCellBg)
-        }
+        val fs = settings.fontSizeScale
 
-        val blackCornerPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.parseColor("#3949AB") // Deep indigo corner (AccentIndigoDark)
-        }
+        val headerBackgroundPaint = Paint().apply { isAntiAlias = true; color = settings.headerColor }
+        val shiftColumnBackgroundPaint = Paint().apply { isAntiAlias = true; color = settings.headerColor }
+        val cellBackgroundPaint = Paint().apply { isAntiAlias = true; color = settings.cellBgColor }
+        val blackCornerPaint    = Paint().apply { isAntiAlias = true; color = cornerColor }
 
         val headerTextPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.WHITE // White text on dark indigo headers
-            textAlign = Paint.Align.CENTER
-            textSize = 60f
-            isFakeBoldText = true
+            isAntiAlias = true; color = Color.WHITE
+            textAlign = Paint.Align.CENTER; textSize = 60f * fs; isFakeBoldText = true
         }
-
         val shiftTextPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.WHITE // White text on dark indigo shift column
-            textAlign = Paint.Align.CENTER
-            textSize = 55f
-            isFakeBoldText = true
+            isAntiAlias = true; color = Color.WHITE
+            textAlign = Paint.Align.CENTER; textSize = 55f * fs; isFakeBoldText = true
         }
-
         val bodyTextPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.parseColor("#1A1E3A") // Dark navy text on light cells (TableCellText)
-            textAlign = Paint.Align.CENTER
-            textSize = 50f
+            isAntiAlias = true; color = settings.cellTextColor
+            textAlign = Paint.Align.CENTER; textSize = 50f * fs
         }
-
         val whiteTextPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.WHITE // White text on indigo corner
-            textAlign = Paint.Align.CENTER
-            textSize = 55f
-            isFakeBoldText = true
+            isAntiAlias = true; color = Color.WHITE
+            textAlign = Paint.Align.CENTER; textSize = 55f * fs; isFakeBoldText = true
         }
-
         val timeTextPaint = Paint().apply {
-            isAntiAlias = true
-            color = Color.WHITE // White time text on dark indigo
-            textAlign = Paint.Align.CENTER
-            textSize = 40f
+            isAntiAlias = true; color = Color.WHITE
+            textAlign = Paint.Align.CENTER; textSize = 40f * fs
         }
-
         val borderPaint = Paint().apply {
-            color = Color.parseColor("#1A1E3A") // TableBorderDark
-            style = Paint.Style.STROKE
-            strokeWidth = 2f
+            color = Color.parseColor("#1A1E3A")
+            style = Paint.Style.STROKE; strokeWidth = 2f
         }
         
         // Draw header row - TRUE RTL: Start from RIGHT side and go LEFT
@@ -138,18 +120,11 @@ object ImageSharer {
             headerHeight.toFloat(), 
             blackCornerPaint
         )
-        canvas.drawText(
-            "סידור",
-            currentX + shiftColumnWidth / 2f,
-            headerHeight / 2f - 25f,
-            whiteTextPaint
-        )
-        canvas.drawText(
-            "עבודה",
-            currentX + shiftColumnWidth / 2f,
-            headerHeight / 2f + 25f,
-            whiteTextPaint
-        )
+        val titleLines = settings.tableTitle.split(" ")
+        val line1 = titleLines.firstOrNull() ?: "סידור"
+        val line2 = if (titleLines.size > 1) titleLines.drop(1).joinToString(" ") else "עבודה"
+        canvas.drawText(line1, currentX + shiftColumnWidth / 2f, headerHeight / 2f - 25f, whiteTextPaint)
+        canvas.drawText(line2, currentX + shiftColumnWidth / 2f, headerHeight / 2f + 25f, whiteTextPaint)
         canvas.drawRect(
             currentX.toFloat(), 
             0f, 
@@ -161,56 +136,51 @@ object ImageSharer {
         // Move LEFT for day headers
         currentX -= cellWidth
         
-        // Day headers - RTL order (ראשון → שבת) going from right to left
-        daysOfWeek.forEachIndexed { index, day ->
-            canvas.drawRect(
-                currentX.toFloat(), 
-                0f, 
-                (currentX + cellWidth).toFloat(), 
-                headerHeight.toFloat(), 
-                headerBackgroundPaint
-            )
-            
-            // Draw day name
-            canvas.drawText(
-                day,
-                currentX + cellWidth / 2f,
-                headerHeight / 2f - 25f,
-                headerTextPaint
-            )
-            
-            // Draw date - use direct index for proper weekStart calculation
-            val date = getDateForWeek(weekStart, index)
-            canvas.drawText(
-                date,
-                currentX + cellWidth / 2f,
-                headerHeight / 2f + 35f,
-                timeTextPaint // Use smaller paint for dates
-            )
-            
-            canvas.drawRect(
-                currentX.toFloat(), 
-                0f, 
-                (currentX + cellWidth).toFloat(), 
-                headerHeight.toFloat(), 
-                borderPaint
-            )
-            
-            currentX -= cellWidth // Move LEFT for next day
+        // Note paint — small amber text drawn below day name
+        val notePaint = Paint().apply {
+            isAntiAlias = true; color = Color.parseColor("#FF8C00")
+            textAlign = Paint.Align.CENTER; textSize = 28f * fs
         }
-        
-        // Draw shift rows - FULLY DYNAMIC from template
+
+        // Day headers — RTL order (ראשון → שבת) going right to left
+        daysOfWeek.forEachIndexed { index, day ->
+            canvas.drawRect(currentX.toFloat(), 0f,
+                (currentX + cellWidth).toFloat(), headerHeight.toFloat(), headerBackgroundPaint)
+
+            canvas.drawText(day, currentX + cellWidth / 2f, headerHeight / 2f - 25f, headerTextPaint)
+
+            val date = getDateForWeek(weekStart, index)
+            canvas.drawText(date, currentX + cellWidth / 2f, headerHeight / 2f + 35f, timeTextPaint)
+
+            // Schedule-specific day note
+            if (settings.showNotes) {
+                val dayNote = schedule["__DAY_NOTE__$day"]?.firstOrNull().orEmpty()
+                if (dayNote.isNotBlank()) {
+                    canvas.drawText(dayNote, currentX + cellWidth / 2f, headerHeight - 10f, notePaint)
+                }
+            }
+
+            canvas.drawRect(currentX.toFloat(), 0f,
+                (currentX + cellWidth).toFloat(), headerHeight.toFloat(), borderPaint)
+            currentX -= cellWidth
+        }
+
+        // Draw shift rows
         var currentY = headerHeight
-        
+
         if (templateData != null) {
-            // Dynamic: use template shift rows
             templateData.shiftRows.forEach { shiftRow ->
+                // Schedule-specific shift note
+                val shiftNote = if (settings.showNotes)
+                    schedule["__SHIFT_NOTE__${shiftRow.shiftName}"]?.firstOrNull().orEmpty()
+                else ""
+
                 drawShiftRow(
-                    canvas, shiftRow.shiftName, shiftRow.shiftHours,
+                    canvas, shiftRow.shiftName, shiftRow.shiftHours, shiftNote,
                     daysOfWeek, schedule, currentY, totalWidth,
                     cellWidth, cellHeight, shiftColumnWidth,
                     shiftColumnBackgroundPaint, cellBackgroundPaint,
-                    shiftTextPaint, timeTextPaint, bodyTextPaint, borderPaint
+                    shiftTextPaint, timeTextPaint, bodyTextPaint, borderPaint, notePaint
                 )
                 currentY += cellHeight
             }
@@ -218,11 +188,10 @@ object ImageSharer {
             // Legacy hardcoded shifts for backward compatibility
             val legacyShifts = listOf(
                 Pair("בוקר", "06:45-15:00"),
-                Pair("בוקר ארוך\n(שישי עד 13:00)", "06:45-18:45"), 
+                Pair("בוקר ארוך\n(שישי עד 13:00)", "06:45-18:45"),
                 Pair("צהריים", "14:45-23:00"),
                 Pair("לילה", "22:30-07:00")
             )
-            
             legacyShifts.forEach { (shiftName, timeRange) ->
                 drawLegacyShiftRow(
                     canvas, shiftName, timeRange,
@@ -234,17 +203,15 @@ object ImageSharer {
                 currentY += cellHeight
             }
         }
-        
+
         return bitmap
     }
     
-    /**
-     * Draw a dynamic shift row (uses shift name directly from template)
-     */
     private fun drawShiftRow(
         canvas: Canvas,
         shiftName: String,
         shiftHours: String,
+        shiftNote: String,
         daysOfWeek: List<String>,
         schedule: Map<String, List<String>>,
         currentY: Int,
@@ -257,32 +224,25 @@ object ImageSharer {
         shiftTextPaint: Paint,
         timeTextPaint: Paint,
         bodyTextPaint: Paint,
-        borderPaint: Paint
+        borderPaint: Paint,
+        notePaint: Paint
     ) {
         var currentX = totalWidth - shiftColumnWidth
-        
-        // Shift column (rightmost in RTL)
-        canvas.drawRect(
-            currentX.toFloat(), 
-            currentY.toFloat(), 
-            (currentX + shiftColumnWidth).toFloat(), 
-            (currentY + cellHeight).toFloat(), 
-            shiftColumnBackgroundPaint
-        )
-        
-        // Draw shift name and hours
-        canvas.drawText(
-            shiftName,
-            currentX + shiftColumnWidth / 2f,
-            currentY + cellHeight / 2f - 20f,
-            shiftTextPaint
-        )
-        canvas.drawText(
-            shiftHours,
-            currentX + shiftColumnWidth / 2f,
-            currentY + cellHeight / 2f + 30f,
-            timeTextPaint
-        )
+
+        canvas.drawRect(currentX.toFloat(), currentY.toFloat(),
+            (currentX + shiftColumnWidth).toFloat(), (currentY + cellHeight).toFloat(),
+            shiftColumnBackgroundPaint)
+
+        // Shift name + hours; shift note below them if present
+        val hasNote = shiftNote.isNotBlank()
+        val nameY  = if (hasNote) currentY + cellHeight / 2f - 35f else currentY + cellHeight / 2f - 20f
+        val hoursY = if (hasNote) currentY + cellHeight / 2f + 10f else currentY + cellHeight / 2f + 30f
+        canvas.drawText(shiftName,  currentX + shiftColumnWidth / 2f, nameY,  shiftTextPaint)
+        canvas.drawText(shiftHours, currentX + shiftColumnWidth / 2f, hoursY, timeTextPaint)
+        if (hasNote) {
+            canvas.drawText(shiftNote, currentX + shiftColumnWidth / 2f,
+                currentY + cellHeight - 18f, notePaint)
+        }
         
         canvas.drawRect(
             currentX.toFloat(), 
@@ -599,15 +559,21 @@ object ImageSharer {
     
     private fun getDateForWeek(weekStart: String, dayOffset: Int): String {
         return try {
-            // Parse weekStart as yyyy-MM-dd format
             val startDate = java.time.LocalDate.parse(weekStart)
             val targetDate = startDate.plusDays(dayOffset.toLong())
-            val formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM")
-            targetDate.format(formatter)
+            targetDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))
         } catch (e: Exception) {
-            // Fallback to current date calculation
             getCurrentDateString(dayOffset)
         }
+    }
+
+    /** Linear blend between two ARGB colors. ratio=0 → a, ratio=1 → b */
+    private fun blendColors(a: Int, b: Int, ratio: Float): Int {
+        val inv = 1f - ratio
+        val r = (Color.red(a)   * inv + Color.red(b)   * ratio).toInt()
+        val g = (Color.green(a) * inv + Color.green(b) * ratio).toInt()
+        val bl= (Color.blue(a)  * inv + Color.blue(b)  * ratio).toInt()
+        return Color.rgb(r, g, bl)
     }
 }
 
