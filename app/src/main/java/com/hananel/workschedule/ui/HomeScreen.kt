@@ -129,7 +129,7 @@ fun HomeScreen(
                                 ) {
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Image(
-                                            painter = painterResource(R.drawable.ic_app_logo_new),
+                                            painter = painterResource(R.mipmap.ic_launcher),
                                             contentDescription = null,
                                             modifier = Modifier.size(30.dp).clip(CircleShape)
                                         )
