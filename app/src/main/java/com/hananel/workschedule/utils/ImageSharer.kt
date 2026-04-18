@@ -136,7 +136,7 @@ object ImageSharer {
         // Move LEFT for day headers
         currentX -= cellWidth
         
-        // Note paint — small amber text drawn below day name
+        // Note paint — small amber text drawn below day name / shift name
         val notePaint = Paint().apply {
             isAntiAlias = true; color = Color.parseColor("#FF8C00")
             textAlign = Paint.Align.CENTER; textSize = 28f * fs
@@ -147,17 +147,24 @@ object ImageSharer {
             canvas.drawRect(currentX.toFloat(), 0f,
                 (currentX + cellWidth).toFloat(), headerHeight.toFloat(), headerBackgroundPaint)
 
-            canvas.drawText(day, currentX + cellWidth / 2f, headerHeight / 2f - 25f, headerTextPaint)
+            // Effective note: schedule-specific first, then template permanent note as fallback
+            val effectiveDayNote = if (settings.showNotes) {
+                schedule["__DAY_NOTE__$day"]?.firstOrNull()?.takeIf { it.isNotBlank() }
+                    ?: templateData?.dayColumns?.find { it.dayNameHebrew == day }?.note.orEmpty()
+            } else ""
+
+            // When there is a note, push day+date upward to make room for it
+            val hasNote = effectiveDayNote.isNotBlank()
+            val dayNameY = if (hasNote) headerHeight / 2f - 45f else headerHeight / 2f - 25f
+            val dateY    = if (hasNote) headerHeight / 2f + 10f  else headerHeight / 2f + 35f
+
+            canvas.drawText(day, currentX + cellWidth / 2f, dayNameY, headerTextPaint)
 
             val date = getDateForWeek(weekStart, index)
-            canvas.drawText(date, currentX + cellWidth / 2f, headerHeight / 2f + 35f, timeTextPaint)
+            canvas.drawText(date, currentX + cellWidth / 2f, dateY, timeTextPaint)
 
-            // Schedule-specific day note
-            if (settings.showNotes) {
-                val dayNote = schedule["__DAY_NOTE__$day"]?.firstOrNull().orEmpty()
-                if (dayNote.isNotBlank()) {
-                    canvas.drawText(dayNote, currentX + cellWidth / 2f, headerHeight - 10f, notePaint)
-                }
+            if (hasNote) {
+                canvas.drawText(effectiveDayNote, currentX + cellWidth / 2f, headerHeight - 12f, notePaint)
             }
 
             canvas.drawRect(currentX.toFloat(), 0f,
@@ -170,9 +177,10 @@ object ImageSharer {
 
         if (templateData != null) {
             templateData.shiftRows.forEach { shiftRow ->
-                // Schedule-specific shift note
+                // Effective shift note: schedule-specific first, template permanent note as fallback
                 val shiftNote = if (settings.showNotes)
-                    schedule["__SHIFT_NOTE__${shiftRow.shiftName}"]?.firstOrNull().orEmpty()
+                    schedule["__SHIFT_NOTE__${shiftRow.shiftName}"]?.firstOrNull()?.takeIf { it.isNotBlank() }
+                        ?: shiftRow.note
                 else ""
 
                 drawShiftRow(
