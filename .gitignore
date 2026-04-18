@@ -86,6 +86,10 @@ lint-baseline.xml
 # Temporary files
 temp_end.txt
 
+# Local source/design assets (not part of the app)
+WorkAndroidLogo.png
+app/src/main/ic_launcher-playstore.png
+
 # Database files - prevent any local data from being committed
 *.db
 *.db-shm
