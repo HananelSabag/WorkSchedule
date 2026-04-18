@@ -105,7 +105,7 @@ fun SplashScreen(
                         .clip(RoundedCornerShape(28.dp))
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.ic_in_app_icon),
+                        painter = painterResource(R.drawable.ic_in_app_logo),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize()
                     )
