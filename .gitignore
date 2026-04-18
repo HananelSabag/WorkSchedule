@@ -1,7 +1,7 @@
 # Built application files
 *.apk
 # Exception: Allow the release APK in root directory for users to download
-!סידור עבודהV2.apk
+!סידור עבודהV3.apk
 *.aar
 *.ap_
 *.aab
