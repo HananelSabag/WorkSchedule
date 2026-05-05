@@ -98,3 +98,8 @@ app/src/main/ic_launcher-playstore.png
 *.sqlite3
 app/databases/
 app/src/main/databases/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+*.pyo
