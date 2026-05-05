@@ -11,8 +11,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -23,10 +25,12 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,7 +39,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -732,33 +738,53 @@ fun AppBottomNavBar(
     currentScreen: Screen,
     onNavigate: (Screen) -> Unit
 ) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        tonalElevation = 0.dp
-    ) {
-        NavigationBarItem(
-            selected = currentScreen == Screen.HOME,
-            onClick = { onNavigate(Screen.HOME) },
-            icon = { Icon(Icons.Default.Home, contentDescription = null) },
-            label = { Text("בית") }
-        )
-        NavigationBarItem(
-            selected = currentScreen == Screen.HISTORY,
-            onClick = { onNavigate(Screen.HISTORY) },
-            icon = { Icon(Icons.Default.History, contentDescription = null) },
-            label = { Text("סידורים") }
-        )
-        NavigationBarItem(
-            selected = currentScreen == Screen.REMINDER_SETTINGS,
-            onClick = { onNavigate(Screen.REMINDER_SETTINGS) },
-            icon = { Icon(Icons.Default.Notifications, contentDescription = null) },
-            label = { Text("תזכורות") }
-        )
-        NavigationBarItem(
-            selected = currentScreen == Screen.SETTINGS,
-            onClick = { onNavigate(Screen.SETTINGS) },
-            icon = { Icon(Icons.Default.Settings, contentDescription = null) },
-            label = { Text("הגדרות") }
-        )
+    val itemColors = NavigationBarItemDefaults.colors(
+        selectedIconColor = AccentIndigo,
+        selectedTextColor = AccentIndigo,
+        indicatorColor = AccentIndigo.copy(alpha = 0.14f),
+        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Column {
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surface,
+                tonalElevation = 0.dp,
+                windowInsets = WindowInsets.navigationBars
+            ) {
+                NavigationBarItem(
+                    selected = currentScreen == Screen.HOME,
+                    onClick = { onNavigate(Screen.HOME) },
+                    icon = { Icon(Icons.Default.Home, contentDescription = "בית") },
+                    label = { Text("בית") },
+                    colors = itemColors
+                )
+                NavigationBarItem(
+                    selected = currentScreen == Screen.HISTORY,
+                    onClick = { onNavigate(Screen.HISTORY) },
+                    icon = { Icon(Icons.Default.History, contentDescription = "סידורים") },
+                    label = { Text("סידורים") },
+                    colors = itemColors
+                )
+                NavigationBarItem(
+                    selected = currentScreen == Screen.REMINDER_SETTINGS,
+                    onClick = { onNavigate(Screen.REMINDER_SETTINGS) },
+                    icon = { Icon(Icons.Default.Notifications, contentDescription = "תזכורות") },
+                    label = { Text("תזכורות") },
+                    colors = itemColors
+                )
+                NavigationBarItem(
+                    selected = currentScreen == Screen.SETTINGS,
+                    onClick = { onNavigate(Screen.SETTINGS) },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "הגדרות") },
+                    label = { Text("הגדרות") },
+                    colors = itemColors
+                )
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -130,7 +131,7 @@ fun HomeScreen(
                                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                         Image(
                                             painter = painterResource(R.drawable.ic_in_app_logo),
-                                            contentDescription = null,
+                                            contentDescription = "לוגו סידור עבודה",
                                             modifier = Modifier.size(30.dp).clip(CircleShape)
                                         )
                                     }
@@ -220,13 +221,16 @@ fun HomeScreen(
                         )
                     }
 
+                    Spacer(Modifier.height(12.dp))
+                    WorkflowGuideCard(canCreate = canCreate, scheduleCount = scheduleCount)
+
                     Spacer(Modifier.weight(1f))
 
                     // ─── Footer ────────────────────────────────────────────────
                     Text(
                         "פותח ע\"י חננאל סבג",
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
                         textAlign = TextAlign.Center
                     )
                 }
@@ -291,7 +295,13 @@ private fun MainActionCard(
     compact: Boolean = false          // true = horizontal layout (for flat bottom card)
 ) {
     val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-    Box(modifier = modifier) {
+    val pressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed && enabled) 0.96f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessHigh),
+        label = "cardPress"
+    )
+    Box(modifier = modifier.scale(pressScale)) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -482,6 +492,7 @@ private fun SetupChip(label: String, icon: ImageVector, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(10.dp))
             .background(AccentIndigo.copy(alpha = 0.10f))
             .clickable(onClick = onClick)
@@ -522,7 +533,7 @@ private fun StatsRow(employeeCount: Int, scheduleCount: Int) {
                 Column {
                     Text(
                         "$employeeCount",
-                        fontSize = 20.sp,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = CardAmber
                     )
@@ -555,7 +566,7 @@ private fun StatsRow(employeeCount: Int, scheduleCount: Int) {
                 Column {
                     Text(
                         "$scheduleCount",
-                        fontSize = 20.sp,
+                        fontSize = 26.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = AccentIndigo
                     )
@@ -566,6 +577,72 @@ private fun StatsRow(employeeCount: Int, scheduleCount: Int) {
                     )
                 }
             }
+        }
+    }
+}
+
+// ─── WorkflowGuideCard ───────────────────────────────────────────────────────
+
+@Composable
+private fun WorkflowGuideCard(canCreate: Boolean, scheduleCount: Int) {
+    val steps = listOf(
+        Triple(Icons.Default.EventBusy,    "חסימות",         "סמן מי לא זמין לכל משמרת"),
+        Triple(Icons.Default.AutoAwesome,  "סידור אוטומטי",  "האלגוריתם מחלק משמרות חכם"),
+        Triple(Icons.Default.Edit,         "ערוך ידנית",     "התאמות אחרונות לפני שמירה"),
+        Triple(Icons.Default.Share,        "שתף",            "וואטסאפ, תמונה, או שמור")
+    )
+
+    val title = if (!canCreate) "להתחיל: הגדר עובדים ותבנית"
+                else if (scheduleCount == 0) "איך יוצרים סידור?"
+                else "תהליך יצירת סידור"
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(Icons.Default.Lightbulb, null, tint = AccentIndigo, modifier = Modifier.size(15.dp))
+                Text(
+                    title,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentIndigo
+                )
+            }
+            steps.forEach { (icon, stepTitle, stepDesc) ->
+                WorkflowStep(icon = icon, title = stepTitle, desc = stepDesc)
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkflowStep(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, desc: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .background(AccentIndigo.copy(alpha = 0.10f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, tint = AccentIndigo, modifier = Modifier.size(16.dp))
+        }
+        Column {
+            Text(title, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface)
+            Text(desc, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
