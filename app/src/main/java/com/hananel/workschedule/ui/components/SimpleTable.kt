@@ -64,7 +64,12 @@ fun SimpleScheduleTable(
     }
     
     var scale by remember { mutableFloatStateOf(1f) }
-    
+
+    // Pinch-to-zoom state — responds only to multi-finger gestures, coexists with scroll
+    val transformableState = rememberTransformableState { zoomChange, _, _ ->
+        scale = (scale * zoomChange).coerceIn(0.5f, 2.5f)
+    }
+
     // RTL Layout
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         Column(
@@ -162,14 +167,18 @@ fun SimpleScheduleTable(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Scrollable Table - Both Horizontal and Vertical  
-            // Scrollable container for both horizontal AND vertical scrolling
+            // Scrollable Table - pinch-to-zoom + button zoom + scroll
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .horizontalScroll(rememberScrollState())
+                    .transformable(state = transformableState) // pinch gesture (multi-touch only)
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .horizontalScroll(rememberScrollState())
+                ) {
                 Box(
                     modifier = Modifier.graphicsLayer(
                         scaleX = scale,
@@ -195,7 +204,8 @@ fun SimpleScheduleTable(
                         isBlockingMode = isBlockingMode
                     )
                 }
-            }
+                } // inner scroll Box
+            } // transformable outer Box
         }
     }
 }

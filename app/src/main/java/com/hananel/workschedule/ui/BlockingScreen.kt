@@ -9,8 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -89,8 +88,10 @@ fun BlockingScreen(
 ) {
     // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
-    
-    // Show confirmation dialog for reset
+
+    // Reset bottom sheet state
+    val resetSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
     var showResetConfirmation by remember { mutableStateOf(false) }
     
     // Show snackbar when message changes
@@ -162,16 +163,15 @@ fun BlockingScreen(
                     }
                 }
             } else {
-                // Normal blocking screen content
+                // Normal blocking screen content - NO SCROLL, weights fill screen
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(8.dp) // Reduced spacing for better UX
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    // Add space from status bar - reduced
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Status bar spacer
+                    Spacer(modifier = Modifier.statusBarsPadding())
                     
                     // Title with Logo and Back Button
                     Row(
@@ -213,7 +213,7 @@ fun BlockingScreen(
                 ) {
                     // Small reset button
                     IconButton(
-                        onClick = { showResetConfirmation = true },
+                        onClick = { showResetConfirmation = true; scope.launch { resetSheetState.show() } },
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
@@ -260,7 +260,7 @@ fun BlockingScreen(
                 onCellClick = { employee, day, shift ->
                     onToggleBlock(employee, day, shift)
                 },
-                modifier = Modifier.fillMaxWidth().height(450.dp) // Same height as ManualCreationScreen
+                modifier = Modifier.fillMaxWidth().weight(1f) // Fills remaining vertical space
             )
             
             // Employee Selection Panel (moved to BOTTOM so it won't push table down)
@@ -530,49 +530,64 @@ fun BlockingScreen(
             }
         } // End of Box
         
-        // Reset Confirmation Dialog
+        // Reset Confirmation - BottomSheet
         if (showResetConfirmation) {
-            AlertDialog(
+            ModalBottomSheet(
                 onDismissRequest = { showResetConfirmation = false },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = BlockedRed
-                    )
-                },
-                title = {
-                    Text(
-                        text = "איפוס טבלת חסימות",
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                },
-                text = {
-                    Text(
-                        text = "האם אתה בטוח שברצונך לאפס את כל טבלת החסימות?\n\nפעולה זו תמחק את כל החסימות והגבלות שהוגדרו.",
-                        textAlign = TextAlign.Center
-                    )
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            onClearAllBlocks()
-                            showResetConfirmation = false
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
+                sheetState = resetSheetState,
+                containerColor = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(bottom = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Text("אפס", color = Color.White, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(
-                        onClick = { showResetConfirmation = false }
-                    ) {
-                        Text("ביטול")
+                        Box(
+                            modifier = Modifier
+                                .width(40.dp)
+                                .height(4.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(2.dp))
+                        )
+                        Surface(
+                            modifier = Modifier.size(60.dp),
+                            shape = CircleShape,
+                            color = BlockedRed.copy(alpha = 0.1f)
+                        ) {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Default.Refresh, null, tint = BlockedRed, modifier = Modifier.size(30.dp))
+                            }
+                        }
+                        Text("איפוס טבלת חסימות?", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            "כל החסימות והגבלות יימחקו",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { showResetConfirmation = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp)
+                            ) { Text("ביטול") }
+                            Button(
+                                onClick = { onClearAllBlocks(); showResetConfirmation = false },
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = BlockedRed)
+                            ) { Text("אפס", fontWeight = FontWeight.Bold) }
+                        }
                     }
                 }
-            )
+            }
         }
     }
 }
