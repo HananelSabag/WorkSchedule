@@ -98,3 +98,9 @@ app/src/main/ic_launcher-playstore.png
 *.sqlite3
 app/databases/
 app/src/main/databases/
+
+# Local-only: AI-agent notes, IDE settings and build outputs
+.claude/
+.vscode/
+Update Summary p.txt
+*.apk

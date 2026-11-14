@@ -118,14 +118,14 @@ WorkSchedule was developed as a complete solution for shift management challenge
 ### For End Users
 
 **Download & Install APK:**
-1. Download: `סידור עבודהV2.apk` from the repository root
+1. Download the latest APK from [GitHub Releases](https://github.com/HananelSabag/WorkSchedule/releases/latest)
 2. Transfer the file to your Android device
 3. On your device, enable "Install from unknown sources" in Settings (if prompted)
 4. Tap the APK file to install
 5. Grant necessary permissions (Storage for exports)
 6. Start scheduling!
 
-> **Note:** The APK is ready to use and includes all features of Version 2.0
+> **Note:** The APK is ready to use. Older builds are listed on the Releases page.
 
 ### For Developers
 
